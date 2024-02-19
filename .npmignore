@@ -1,0 +1,9 @@
+build/
+src/
+sol/
+examples/
+assets/
+.eslintrc.yml
+.gitignore
+.prettierrc.yml
+tsconfig.esm.json

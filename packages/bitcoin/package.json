@@ -1,0 +1,52 @@
+{
+  "name": "@atomicport/bitcoin",
+  "version": "0.0.1",
+  "description": "Support Cross-Chain-Swap with HTLC on any blockchains",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "license": "MIT",
+  "author": "Symbol Blockchain Community",
+  "private": false,
+  "keywords": [
+    "bitcoin",
+    "blockchain",
+    "cross-chain-swap",
+    "htlc"
+  ],
+  "contributors": [
+    "faunsu19000",
+    "0x070696E65"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ymuichiro/atomic-port"
+  },
+  "engines": {
+    "node": ">=12.22.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": "https://github.com/ymuichiro/atomic-port/issues",
+  "homepage": "https://github.com/ymuichiro/atomic-port",
+  "files": [
+    "dist",
+    "package.json",
+    "package-lock.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "npm run pre-build && npx tsc -p ./tsconfig.json && npx tsc -p ./tsconfig.esm.json",
+    "pre-build": "eslint './src/**/*.{ts, js, json}' && prettier --write src"
+  },
+  "peerDependencies": {
+    "@mempool/mempool.js": "^2.3.0",
+    "bip65": "^1.0.3",
+    "bitcoinjs-lib": "^6.1.0",
+    "ecpair": "^2.1.0",
+    "tiny-secp256k1": "^2.2.1",
+    "varuint-bitcoin": "^1.1.2"
+  }
+}
