@@ -9,59 +9,49 @@ The executor keeps the generated Proof and shares the Secret with the counterpar
 
 ```ts
 async function lock() {
-  // setup
-  const client = new SymbolHtlc(
-    SYMBOL.NETWORK.ENDPOINT,
-    NetworkType.TEST_NET,
-    SYMBOL.NETWORK.GENERATION_HASH_SEED,
-    SYMBOL.NETWORK.EPOCH_ADJUSTMENT
-  );
-  const recipientAccount = Account.createFromPrivateKey(SYMBOL.PRIVATEKEY.TO, NetworkType.TEST_NET);
-  const senderAccount = Account.createFromPrivateKey(SYMBOL.PRIVATEKEY.FROM, NetworkType.TEST_NET);
-  const hashPair = client.createHashPair();
-  // lock
-  const transaction = client.lock(recipientAccount.address.plain(), SYMBOL.CURRENCY.MOSAIC_ID, hashPair.secret, 1);
-  const signedTx = await client.sign(SYMBOL.PRIVATEKEY.FROM, transaction);
-  console.log('----- wait until transaction is approved -----', {
-    fromAddress: senderAccount.address.pretty(),
-    toAddress: recipientAccount.address.pretty(),
-    transactionHash: signedTx.hash,
-    proof: hashPair.proof,
-    secret: hashPair.secret,
-  });
-  // Wait for secret transaction to be approved
-  await waitConfirmedTransaction(SYMBOL.NETWORK.ENDPOINT, senderAccount.address, signedTx.hash);
+  const ECPair = ECPairFactory(ecc);
+  const { WIF } = BITCOIN;
+  const Alice = ECPair.fromWIF(WIF.FROM, bitcoin.networks.testnet);
+  const Bob = ECPair.fromWIF(WIF.TO, bitcoin.networks.testnet);
+
+  const swap = new BitcoinHtlc(bitcoin.networks.testnet);
+
+  const hashPair = swap.createHashPair();
+  console.log('hashPair', hashPair);
+
+  const lock = await swap.lock(Alice, Bob, hashPair.secret, 7000, { fee: 1800, lockHeight: 2 });
+  console.log(lock);
 }
 
 async function start() {
   await lock();
 }
+
+start();
 ```
 
 When a transaction is completed, you will receive tokens from the block.
 The Proof generated at this time is used.
 
 ```ts
-async function withDraw(proof: string, secret: string) {
-  const client = new SymbolHtlc(
-    SYMBOL.NETWORK.ENDPOINT,
-    NetworkType.TEST_NET,
-    SYMBOL.NETWORK.GENERATION_HASH_SEED,
-    SYMBOL.NETWORK.EPOCH_ADJUSTMENT
-  );
-  const recipientAccount = Account.createFromPrivateKey(SYMBOL.PRIVATEKEY.TO, NetworkType.TEST_NET);
-  const drawTx = client.withDraw(recipientAccount.address.plain(), proof, secret);
-  const signedTx = await client.sign(recipientAccount.privateKey, drawTx);
-  console.log('waiting...', signedTx.hash);
-  await waitConfirmedTransaction(SYMBOL.NETWORK.ENDPOINT, recipientAccount.address, signedTx.hash);
-  console.log(signedTx);
+
+async function withDraw(hash: string, contractAddress: string, witnessScript: string, proof: string) {
+  const { WIF } = BITCOIN;
+  const ECPair = ECPairFactory(ecc);
+  const Bob = ECPair.fromWIF(WIF.TO, bitcoin.networks.testnet);
+  const swap = new BitcoinHtlc(bitcoin.networks.testnet);
+  return await swap.withdraw(hash, contractAddress, witnessScript, Bob, proof);
 }
 
 async function start() {
+  const hash = '************************';
+  const contractAddress = '************************';
+  const witnessScript = '************************';
   const proof = '************************';
-  const secret = '************************';
-  await withDraw(proof, secret);
+  await withDraw(hash, contractAddress, witnessScript, proof);
 }
+
+start();
 ```
 
 An example of a flow is shown below.
