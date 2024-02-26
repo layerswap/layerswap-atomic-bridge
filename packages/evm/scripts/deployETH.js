@@ -9,8 +9,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
 
-  // const cre = "0x854D71776C48155c712502DA3f212A6C2a914375"; test spo
-  //const cre = "0x21B8bfbbefc9E2b9A994871Ecd742A5132B98AeD"; // main net
   const HashedTimelockEther = await hre.ethers.deployContract("HashedTimelockEther",[]);
 
   await HashedTimelockEther.waitForDeployment();
