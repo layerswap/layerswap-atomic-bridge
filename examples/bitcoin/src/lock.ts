@@ -5,21 +5,31 @@ import ECPairFactory from 'ecpair';
 import { BitcoinHtlc } from '../../../packages/bitcoin/src/BitcoinHtlc';
 import { BITCOIN } from './config';
 
+const NETWORK = bitcoin.networks.testnet;
+const FEE = 1800;
+const ECPair = ECPairFactory(ecc);
+const { KEYS, TRANSACTION_DEFAULTS } = BITCOIN;
+
 async function lock() {
-  const ECPair = ECPairFactory(ecc);
-  const { WIF } = BITCOIN;
+  const Alice = ECPair.fromWIF(KEYS.FROM_WIF, NETWORK);
+  const Bob = ECPair.fromWIF(KEYS.TO_WIF, NETWORK);
 
-  const Alice = ECPair.fromWIF(WIF.FROM, bitcoin.networks.testnet);
-  const Bob = ECPair.fromWIF(WIF.TO, bitcoin.networks.testnet);
+  const htlc = new BitcoinHtlc(NETWORK);
 
-  const swap = new BitcoinHtlc(bitcoin.networks.testnet);
+  try {
+    const hashPair = htlc.createHashPair();
+    console.log('Hash Pair:', hashPair);
 
-  const hashPair = swap.createHashPair();
-  console.log('hashPair', hashPair);
-
-  const lock = await swap.lock(Alice, Bob, hashPair.secret, 7000, { fee: 1800, lockHeight: 2 });
-  console.log(lock);
+    const lock = await htlc.lock(Alice, Bob, hashPair.secret, TRANSACTION_DEFAULTS.AMOUNT, {
+      fee: FEE,
+      lockHeight: TRANSACTION_DEFAULTS.LOCK_HEIGHT,
+    });
+    console.log('Data:', lock);
+  } catch (error) {
+    console.error('Failed to lock funds:', error);
+  }
 }
+
 async function start() {
   await lock();
 }

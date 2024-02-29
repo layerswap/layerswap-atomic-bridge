@@ -4,7 +4,7 @@
   "description": "HTLC processing in Bitcoin",
   "scripts": {
     "start:lock": "ts-node ./src/lock.ts",
-    "start:withdraw": "ts-node ./src/withDraw.ts",
+    "start:withdraw": "ts-node ./src/withdraw.ts",
     "start:refund": "ts-node ./src/refund.ts"
   },
   "license": "MIT",
