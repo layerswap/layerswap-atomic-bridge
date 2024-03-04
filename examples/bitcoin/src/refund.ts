@@ -9,15 +9,15 @@ const NETWORK = bitcoin.networks.testnet;
 const ECPair = ECPairFactory(ecc);
 const { KEYS } = BITCOIN;
 
-async function withdraw(hash: string, contractAddress: string, witnessScript: string, proof: string) {
-  const Bob = ECPair.fromWIF(KEYS.TO_WIF, NETWORK);
+async function refund(hash: string, contractAddress: string, witnessScript: string) {
+  const Alice = ECPair.fromWIF(KEYS.FROM_WIF, NETWORK);
   const swap = new BitcoinHtlc(NETWORK);
 
   try {
-    const txHash = await swap.withdraw(hash, contractAddress, witnessScript, Bob, proof);
-    console.log(`Transaction successful with hash: ${txHash}`);
+    const txHash = await swap.refund(hash, contractAddress, witnessScript, Alice);
+    console.log(`Refund successful. Transaction Hash: ${txHash}`);
   } catch (error) {
-    console.error('Withdrawal failed:', error);
+    console.error('Refund failed:', error.message);
   }
 }
 
@@ -25,9 +25,8 @@ async function start() {
   const hash = '<hash_value>';
   const contractAddress = '<contract_address>';
   const witnessScript = '<witness_script>';
-  const proof = '<proof_value>';
 
-  await withdraw(hash, contractAddress, witnessScript, proof);
+  await refund(hash, contractAddress, witnessScript);
 }
 
 start();

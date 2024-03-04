@@ -1,12 +1,11 @@
 {
-  "name": "@atomicport/bitcoin",
+  "name": "@layerswap/bitcoin",
   "version": "0.0.1",
   "description": "Support Cross-Chain-Swap with HTLC on any blockchains",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
   "license": "MIT",
-  "author": "Symbol Blockchain Community",
   "private": false,
   "keywords": [
     "bitcoin",
@@ -14,22 +13,15 @@
     "cross-chain-swap",
     "htlc"
   ],
-  "contributors": [
-    "faunsu19000",
-    "0x070696E65"
-  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/ymuichiro/atomic-port"
+    "url": "https://github.com/layerswap/layerswap-atomic-bridge"
   },
   "engines": {
     "node": ">=12.22.1"
   },
-  "publishConfig": {
-    "access": "public"
-  },
-  "bugs": "https://github.com/ymuichiro/atomic-port/issues",
-  "homepage": "https://github.com/ymuichiro/atomic-port",
+  "bugs": "https://github.com/layerswap/layerswap-atomic-bridge",
+  "homepage": "https://github.com/layerswap/layerswap-atomic-bridge",
   "files": [
     "dist",
     "package.json",
