@@ -153,7 +153,7 @@ contract HashedTimelockEther {
    * @dev Get contract details.
    * @param _contractId HTLC contract id
    */
-  function getContract(bytes32 _contractId)
+  function getHTLCDetails(bytes32 _contractId)
     public
     view
     returns (
