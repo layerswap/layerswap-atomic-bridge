@@ -27,6 +27,4 @@ node_modules/
 dist
 .DS_Store
 
-abi/
 build/
-

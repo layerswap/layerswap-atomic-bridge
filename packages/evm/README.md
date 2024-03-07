@@ -1,81 +1,74 @@
-# Hashed Timelock Contracts (HTLCs)
+# @layerswap/evm
 
-This part of the repository contains two Solidity smart contracts for implementing Hashed Timelock Contracts (HTLCs) on Ethereum. These contracts enable users to create, manage, and interact with HTLCs, facilitating secure and trustless transactions. The contracts include functions such as creating new HTLCs, redeeming funds locked in HTLCs with a secret hash, and refunding funds in case of expiration or non-redeem. Users can refer to the contract source code and documentation for detailed information on each function's usage and parameters.
+This package is for HTLC transactions between the any blockchains. HTLC allows direct transactions between different chains. Usage and examples are shown below.
 
-## Contracts Overview
-
-### HashedTimelockEther.sol
-
-**Description**: This contract allows users to create HTLCs for Ether. It follows a protocol where a sender can create a new HTLC, a receiver can claim the Ether after revealing the secret, and the sender can refund the Ether if the time lock expires.
-
-#### Functions
-
-- **createHTLC**: Allows a sender to create a new HTLC for Ether by specifying the receiver, hashlock, and timelock.
-- **redeem**: Allows the receiver to claim the Ether locked in the HTLC by providing the secret hash.
-- **refund**: Allows the sender to refund the Ether if the timelock expires and the receiver has not redeemed the funds.
-- **getContract**: Retrieves details of a specific HTLC by its contract ID.
-
-### HashedTimelockERC20.sol
-
-**Description**: This contract extends the functionality of HashedTimelockEther.sol to support HTLCs for ERC20 tokens. It allows users to create HTLCs for a specific ERC20 token, transfer tokens upon redemption, and refund tokens if the time lock expires.
-
-#### Functions
-
-- **createHTLC**: Allows a sender to create a new HTLC for ERC20 tokens by specifying the receiver, hashlock, timelock, token contract, and amount.
-- **redeem**: Allows the receiver to claim the ERC20 tokens locked in the HTLC by providing the secret hash.
-- **refund**: Allows the sender to refund the ERC20 tokens if the timelock expires and the receiver has not redeemed the funds.
-- **getHTLCDetails**: Retrieves details of a specific HTLC by its contract ID.
+### Deployed Contracts
 
 
-## Deployment
+#### Sepolia（TestNet）
 
-### Prerequisites
+##### native
 
-- Node.js and npm installed
-- Hardhat installed (`npm install --save-dev hardhat`)
-- Ethereum network connection (e.g., localhost, sepolia, etc.)
-- Ether or test tokens for deployment gas fees
+- Endpoint: https://sepolia.etherscan.io/address/0x9b2e421e5F516bcC991A355E8712af72621C54dF
+- Contract address: 0x9b2e421e5F516bcC991A355E8712af72621C54dF
 
-### Steps
+##### ERC20
+- Endpoint: https://sepolia.etherscan.io/address/0x2F16E9D5bd67F30AB355369413cA94d858FbDd91
+- Contract address: 0x2F16E9D5bd67F30AB355369413cA94d858FbDd91
 
-1. Clone this repository:
 
-   ```bash
-   git clone <repository_url>
+##### ERC20 Token
+- Endpoint: https://sepolia.etherscan.io/address/0xe2E65a43dC5616B1e28472DfD72F40D3a4f81c6E
+- Contract address: 0xe2E65a43dC5616B1e28472DfD72F40D3a4f81c6E
 
-2. Navigate to the project directory:
 
-    ```bash
-    cd <project_directory>
-3. Install dependencies:
+## Introduction
 
-    ```bash
-    npm install
+Install the necessary libraries
 
-4. Update deployment scripts (deploy.js):
+**npm**
 
-    - Modify the deployment scripts to set the necessary parameters, such as gas limits, contract constructors, etc.
+```bash
+npm install --save web3 @layerswap/evm
+```
 
-5. Deploy the contracts:
+**yarn**
 
-    ```bash
-    npx hardhat run deploy.js [--network <network_name>]
+```bash
+yarn add web3 @layerswap/evm
+```
 
-   Replace <network_name> with the desired Ethereum network (e.g., sepolia, mainnet, etc.).
+HTLC issues a secret and key in advance and uses this to issue a secret lock.
 
-6. Verify the deployed contracts:
+When both parties agree to the transaction, the secret and key are exchanged separately, and the key is used to receive a token. This is how the cross-chain swap is performed.
 
-    ```bash
-    npx hardhat run verify:verify --network <network_name>
 
-   This step is optional but recommended for ensuring contract correctness and transparency.
+## Issue a secret lock
 
-Usage
-Once deployed, users can interact with the contracts using Ethereum wallets or through contract function calls programmatically.
+You can publish using this package with the following operations.
 
-For HashedTimelockEther.sol: Users can create HTLCs for Ether, redeem funds, and request refunds.
-For HashedTimelockERC20.sol: Users can create HTLCs for ERC20 tokens, redeem tokens, and request refunds.
-Refer to the contract source code for function details and usage instructions.
+The output hashPair contains a secret and a proof. The secret is shared in advance, and the proof is issued at a mutually agreed timing.
 
-License
-This project is licensed under the MIT License. See the LICENSE file for details.
+
+[native/lock.ts](../../examples/evm/src/native/lock.ts)<br>
+
+[erc20/lock.ts](../../examples/evm/src/erc20/lock.ts)<br>
+
+## Unlocking by Proof
+
+With a secret lock, locked assets are withdrawn through a secret proof transaction.
+
+
+[native/withdraw.ts](../../examples/evm/src/native/withdraw.ts)<br>
+
+[erc20/withdraw.ts](../../examples/evm/src/erc20/withdraw.ts)<br>
+
+
+For more detailed examples, please check the sample collection below
+
+[examples](examples/README.md)
+
+
+## More Documents
+
+- [about ethereum](https://ethereum.org/)

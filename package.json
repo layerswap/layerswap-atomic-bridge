@@ -26,12 +26,15 @@
     "typescript": "^5.3.3"
   },
   "workspaces": [
-    "packages/bitcoin"
+    "packages/bitcoin",
+    "packages/evm"
   ],
   "scripts": {
     "build": "run-s build:*",
+    "build:evm": "npm run build -w packages/evm",
     "build:bitcoin": "npm run build -w packages/bitcoin",
     "test": "run-s test:*",
+    "test:evm": "npm run pre-build -w packages/evm",
     "test:bitcoin": "npm run pre-build -w packages/bitcoin"
   }
 }

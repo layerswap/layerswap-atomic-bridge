@@ -1,8 +1,7 @@
 build/
 src/
-sol/
+solidity/
 examples/
-assets/
 .eslintrc.yml
 .gitignore
 .prettierrc.yml

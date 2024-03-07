@@ -4,12 +4,11 @@
 // You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
-const hre = require("hardhat");
+const hre = require('hardhat');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-
-  const HashedTimelockEther = await hre.ethers.deployContract("HashedTimelockEther",[]);
+  const HashedTimelockEther = await hre.ethers.deployContract('HashedTimelockEther', []);
 
   await HashedTimelockEther.waitForDeployment();
 
@@ -17,10 +16,10 @@ async function main() {
 
   await sleep(30000);
 
-  await hre.run("verify:verify", {
+  await hre.run('verify:verify', {
     address: HashedTimelockEther.target,
     constructorArguments: [],
-    contract: "contracts/HashedTimelockEther.sol:HashedTimelockEther"
+    contract: 'contracts/HashedTimelockEther.sol:HashedTimelockEther',
   });
 }
 
