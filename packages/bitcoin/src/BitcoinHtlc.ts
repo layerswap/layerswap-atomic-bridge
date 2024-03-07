@@ -69,7 +69,6 @@ export class BitcoinHtlc extends Bitcoin {
   ): Promise<string> {
     // set option paramater
     const fee = option?.fee || 1800;
-    const platformFee = 2000;
     const witnessUtxoValue = await this.getInputData(hash, contractAddress);
     const p2wpkh = payments.p2wpkh({ pubkey: receiver.publicKey, network: this.network });
     if (p2wpkh.address === undefined) throw new Error(`recieverAddress is undefined`);
@@ -86,14 +85,9 @@ export class BitcoinHtlc extends Bitcoin {
           value: witnessUtxoValue.value,
         },
       })
-      // Platform fee
-      .addOutput({
-        address: 'tb1qmpxr6z0dp3dluzhu3ty5q9ft4p7yxkyazy9a8r',
-        value: platformFee,
-      })
       .addOutput({
         address: p2wpkh.address,
-        value: witnessUtxoValue.value - fee - platformFee,
+        value: witnessUtxoValue.value - fee,
       })
       .signInput(0, receiver)
       .finalizeInput(0, (inputIndex: number, input: any, tapLeafHashToFinalize: Buffer | (number | Buffer)[]) => {
