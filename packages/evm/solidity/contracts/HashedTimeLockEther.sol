@@ -28,30 +28,35 @@ contract HashedTimelockEther {
   error AlreadyRefunded();
   error NotReceiver();
   error NotSender();
+  error IncorrectData();
 
   struct HTLC {
+    bytes32 hashlock;
+    bytes32 secret;
+    uint256 amount;
+    uint256 timelock;
     address payable sender;
     address payable receiver;
-    uint256 amount;
-    bytes32 hashlock;
-    uint256 timelock;
     bool redeemed;
     bool refunded;
-    bytes32 secret;
   }
 
   mapping(bytes32 => HTLC) contracts;
 
   event HTLCEtherCreated(
     bytes32 indexed contractId,
+    bytes32 hashlock,
+    uint256 amount,
+    uint256 chainID, //
+    uint256 timelock,
     address indexed sender,
     address indexed receiver,
-    uint256 amount,
-    bytes32 hashlock,
-    uint256 timelock
+    string targetCurrencyReceiverAddress
   );
   event HTLCEtherRedeemed(bytes32 indexed contractId);
   event HTLCEtherRefunded(bytes32 indexed contractId);
+  event HTLCEtherBatchRedeemed(bytes32[] indexed contractId);
+
 
   modifier contractExists(bytes32 _contractId) {
     if(!hasContract(_contractId)) revert ContractNotExist();
@@ -72,7 +77,9 @@ contract HashedTimelockEther {
   function createHTLC(
     address payable _receiver,
     bytes32 _hashlock,
-    uint256 _timelock
+    uint256 _timelock,
+    uint256 _chainID,
+    string memory _targetCurrencyReceiverAddress
   ) external payable returns (bytes32 contractId){
     if(msg.value == 0){
       revert FundsNotSent();
@@ -86,17 +93,17 @@ contract HashedTimelockEther {
       revert ContractAlreadyExist();
     }
     contracts[contractId] = HTLC(
+      _hashlock,
+      0x0,
+      msg.value,
+      _timelock,
       payable(msg.sender),
       _receiver,
-      msg.value,
-      _hashlock,
-      _timelock,
       false,
-      false,
-      0x0
+      false
     );
 
-    emit HTLCEtherCreated(contractId, msg.sender, _receiver, msg.value, _hashlock, _timelock);
+    emit HTLCEtherCreated(contractId, _hashlock, msg.value, _chainID, _timelock, msg.sender, _receiver, _targetCurrencyReceiverAddress);
   }
 
   /**
@@ -125,6 +132,39 @@ contract HashedTimelockEther {
     htlc.redeemed = true;
     htlc.receiver.transfer(htlc.amount);
     emit HTLCEtherRedeemed(_contractId);
+    return true;
+  }
+
+  //Batch reedem
+
+  function batchRedeem(bytes32[] memory _contractIds, bytes32[] memory _secrets)
+    external
+    returns (bool)
+  {
+    if(_contractIds.length != _secrets.length){
+      revert IncorrectData();
+    }
+    for(uint256 i; i < _contractIds.length; i++){
+      if(!hasContract(_contractIds[i])) revert ContractNotExist();
+    }
+    uint256 totalToRedeem;
+    for (uint256 i; i < _contractIds.length; i++) 
+    {
+      HTLC storage htlc = contracts[_contractIds[i]];
+      bytes32 pre = sha256(abi.encodePacked(_secrets[i]));
+      if(htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
+      if(htlc.receiver != msg.sender) revert NotReceiver();
+      if(htlc.refunded) revert AlreadyRefunded();
+      if(htlc.redeemed) revert AlreadyRedeemed();
+      if(htlc.timelock <= block.timestamp) revert NotFutureTimelock();
+
+      htlc.secret = _secrets[i];
+      htlc.redeemed = true;
+      totalToRedeem += htlc.amount;
+
+    }
+    payable(msg.sender).transfer(totalToRedeem);
+    emit HTLCEtherBatchRedeemed(_contractIds);
     return true;
   }
 

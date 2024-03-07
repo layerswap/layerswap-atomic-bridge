@@ -25,6 +25,8 @@ const {
 const hourSeconds = 3600;
 const timeLock1Hour = nowSeconds() + hourSeconds;
 const oneFinney = parseUnits('1').toString();
+const chainId = 1;
+const _address = "0x0";
 
 describe('HashedTimelock', () => {
   let HashedTimelock;
@@ -38,41 +40,41 @@ describe('HashedTimelock', () => {
 
     accounts = await ethers.getSigners();
 
-    // const hashPair = newSecretHashPair();
-    // const sender = accounts[0].address;
-    // const receiver = accounts[1].address;
   });
 
   it('newContract() should create new contract and store correct details', async () => {
     const hashPair = newSecretHashPair();
-    const sender = accounts[0].address;
-    const receiver = accounts[1].address;
+    const sender = accounts[0];
+    const receiver = accounts[1];
 
-    const txReceipt = await htlc.createHTLC(receiver, hashPair.hash, timeLock1Hour, {
+    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, {
       value: oneFinney,
     });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
-
     const contractId = logArgs.contractId;
+
     assert(isSha256Hash(contractId));
 
-    assert.equal(logArgs.sender, sender);
-    assert.equal(logArgs.receiver, receiver);
+    assert.equal(logArgs.sender, sender.address);
+    assert.equal(logArgs.receiver, receiver.address);
     assert.equal(logArgs.amount.toString(), oneFinney.toString());
     assert.equal(logArgs.hashlock, hashPair.hash);
     assert.equal(logArgs.timelock, timeLock1Hour);
 
     const contractArr = await htlc.getHTLCDetails(contractId);
     const contract = htlcArrayToObj(contractArr);
-    assert.equal(contract.sender, sender);
-    assert.equal(contract.receiver, receiver);
+    assert.equal(contract.sender, sender.address);
+    assert.equal(contract.receiver, receiver.address);
     assert.equal(contract.amount.toString(), oneFinney.toString());
     assert.equal(contract.hashlock, hashPair.hash);
     assert.equal(contract.timelock, timeLock1Hour);
     assert.isFalse(contract.withdrawn);
     assert.isFalse(contract.refunded);
-    assert.equal(contract.preimage, '0x0000000000000000000000000000000000000000000000000000000000000000');
+    assert.equal(
+      contract.preimage,
+      '0x0000000000000000000000000000000000000000000000000000000000000000'
+    );
   });
 
 
@@ -81,7 +83,7 @@ describe('HashedTimelock', () => {
     const receiver = accounts[1].address;
     try {
       // Execute the transaction that should revert with the custom error
-      await htlc.createHTLC(receiver, hashPair.hash, timeLock1Hour, { value: 0 });
+      await htlc.createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: 0 });
       // If no error is thrown, fail the test
       assert.fail("Transaction did not revert as expected");
     } catch (error) {
@@ -96,7 +98,7 @@ describe('HashedTimelock', () => {
     const pastTimelock = (await ethers.provider.getBlock("latest")).timestamp - 1;
     try {
       // Execute the transaction that should revert with the custom error
-      await htlc.createHTLC(receiver, hashPair.hash, pastTimelock, { value: oneFinney });
+      await htlc.createHTLC(receiver, hashPair.hash, pastTimelock, chainId, _address, { value: oneFinney });
       // If no error is thrown, fail the test
       assert.fail("Transaction did not revert as expected");
     } catch (error) {
@@ -107,9 +109,9 @@ describe('HashedTimelock', () => {
   it("newContract() should reject a duplicate contract request", async function () {
     const hashPair = newSecretHashPair();
     const receiver = accounts[1].address;
-    await htlc.createHTLC(receiver, hashPair.hash, timeLock1Hour, { value: oneFinney });
+    await htlc.createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     try {
-      await htlc.createHTLC(receiver, hashPair.hash, timeLock1Hour, { value: oneFinney });
+      await htlc.createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
       assert.fail("Transaction did not revert as expected");
     } catch (error) {
       assert.include(error.message, "ContractAlreadyExist");
@@ -119,11 +121,11 @@ describe('HashedTimelock', () => {
   it("withdraw() should send receiver funds when given the correct secret preimage", async function () {
 
     //BigNumber.from(`${txReceipt.receipt.gasUsed * gasPrice}`);
-    
+
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver, hashPair.hash, timeLock1Hour, { value: oneFinney });
+    const txReceipt = await htlc.connect(sender).createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
@@ -144,7 +146,7 @@ describe('HashedTimelock', () => {
 
     //expect(await getBalance(receiver)).to.equal(expectedBal);
     expect(receiverBalAfter.eq(expectedBal)).to.be.true;
-    
+
     const contractArr = await htlc.getHTLCDetails(contractId);
     const contract = htlcArrayToObj(contractArr);
     expect(contract.withdrawn).to.be.true;
@@ -156,7 +158,7 @@ describe('HashedTimelock', () => {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, { value: oneFinney });
+    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
@@ -173,7 +175,7 @@ describe('HashedTimelock', () => {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, { value: oneFinney });
+    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
@@ -192,7 +194,7 @@ describe('HashedTimelock', () => {
     const receiver = accounts[1];
     const timelock1Second = (await ethers.provider.getBlock("latest")).timestamp + 10;
 
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timelock1Second, { value: oneFinney });
+    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timelock1Second, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
@@ -212,11 +214,11 @@ describe('HashedTimelock', () => {
     const sender = accounts[0];
     const receiver = accounts[1];
 
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, { value: oneFinney });
+    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
-    
+
     //await expect(hashedTimelock.connect(sender).refund(contractId)).to.be.revertedWith("VM Exception while processing transaction: revert");
 
     try {
@@ -232,5 +234,5 @@ describe('HashedTimelock', () => {
     const nonExistentContractId = '0x0000000000000000000000000000000000000000000000000000000000000000';
     const contract = await htlc.getHTLCDetails(nonExistentContractId);
     expect(Number(contract[0])).to.equal(0);
-});
+  });
 });
