@@ -2,7 +2,7 @@ import axios from 'axios';
 import mempoolJS from '@mempool/mempool.js';
 import varuint from 'varuint-bitcoin';
 import { MempoolReturn } from '@mempool/mempool.js/lib/interfaces/index';
-import { crypto, networks, Psbt, script } from 'bitcoinjs-lib';
+import { crypto, networks, Psbt, payments, script } from 'bitcoinjs-lib';
 import { randomBytes, createHash } from 'crypto';
 import { HashPair, Utxo } from './Core';
 import ECPairFactory, { ECPairInterface } from 'ecpair';
@@ -91,7 +91,8 @@ export default abstract class Bitcoin {
     recipient: string,
     sendingSat: number,
     feeSat: number,
-    utxos: Utxo[]
+    utxos: Utxo[],
+    opReturnData?: string
   ): string {
     const psbt = new Psbt({ network: this.network });
     let total = 0;
@@ -112,6 +113,10 @@ export default abstract class Bitcoin {
       address: recipient,
       value: sendingSat,
     });
+
+    if (opReturnData) {
+      psbt.addOutput(this.createOpReturnOutput(opReturnData));
+    }
 
     const changeSat = total - sendingSat - feeSat;
     if (changeSat < 0) {
@@ -190,5 +195,21 @@ export default abstract class Bitcoin {
         .trim()
         .replace(/\s+/g, ' ')
     );
+  }
+
+  protected createOpReturnOutput(data: string) {
+    const opReturnBuffer = Buffer.from(data, 'utf8');
+
+    if (opReturnBuffer.length > 80) {
+      throw new Error('OP_RETURN data exceeds 80 bytes');
+    }
+
+    const opReturnOutput = payments.embed({ data: [opReturnBuffer] }).output;
+
+    return {
+      script: opReturnOutput!,
+      // OP_RETURN outputs have a value of 0
+      value: 0,
+    };
   }
 }

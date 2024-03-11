@@ -23,6 +23,7 @@ async function lock() {
     const lock = await htlc.lock(Alice, Bob, hashPair.secret, TRANSACTION_DEFAULTS.AMOUNT, {
       fee: FEE,
       lockHeight: TRANSACTION_DEFAULTS.LOCK_HEIGHT,
+      data: TRANSACTION_DEFAULTS.OP_RETURN_DATA,
     });
     console.log('Data:', lock);
   } catch (error) {

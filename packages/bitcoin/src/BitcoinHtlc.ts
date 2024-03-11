@@ -49,7 +49,7 @@ export class BitcoinHtlc extends Bitcoin {
     }
 
     // create transaction & announce
-    const txHex: string = this.buildAndSignTx(sender, senderAddress, p2wsh.address, amount, fee, utxos);
+    const txHex: string = this.buildAndSignTx(sender, senderAddress, p2wsh.address, amount, fee, utxos, options?.data);
     const hash: string = await this.postTransaction(txHex);
 
     return {
