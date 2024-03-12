@@ -36,5 +36,8 @@
     "test": "run-s test:*",
     "test:evm": "npm run pre-build -w packages/evm",
     "test:bitcoin": "npm run pre-build -w packages/bitcoin"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2"
   }
 }

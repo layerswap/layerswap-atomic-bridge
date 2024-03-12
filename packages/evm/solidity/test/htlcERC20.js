@@ -187,22 +187,28 @@ describe('HashedTimelockERC20', (accounts) => {
     }
   });
 
-  it('redeem() should fail if caller is not the receiver ', async () => {
+  it('redeem() should send receiver funds when caller is not the receiver', async () => {
     const hashPair = newSecretHashPair();
-    await token.approve(htlc.target, tokenAmount, { from: sender });
-    const txReceipt = await newContract({
-      hashlock: hashPair.hash,
-    });
+    receiver = accounts[1];
+
+    const txReceipt = await newContract({ hashlock: hashPair.hash });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
     const contractId = logArgs.contractId;
+
     const someGuy = accounts[4];
-    try {
-      await htlc.connect(someGuy).redeem(contractId, hashPair.secret);
-      assert.fail('expected failure due to wrong receiver');
-    } catch (error) {
-      assert.include(error.message, 'NotReceiver');
-    }
+    //receiver calls redeem with the secret to claim the tokens
+    await htlc.connect(someGuy).redeem(contractId, hashPair.secret);
+
+    // Check tokens now owned by the receiver
+    assertTokenBal(receiver.address, tokenAmount, `receiver doesn't own ${tokenAmount} tokens`);
+
+    const contractArr = await htlc.getHTLCDetails(contractId);
+    const contract = htlcERC20ArrayToObj(contractArr);
+    assert.isTrue(contract.withdrawn); // withdrawn set
+    assert.isFalse(contract.refunded); // refunded still false
+    assert.equal(contract.preimage, hashPair.secret);
+    
   });
 
   it('redeem() should fail after timelock expiry', async () => {
@@ -228,6 +234,48 @@ describe('HashedTimelockERC20', (accounts) => {
     }
 
   })
+
+  it('batchRedeem() should send receiver funds when given the correct secret preimage', async () => {
+    const hashPair1 = newSecretHashPair();
+    const hashPair2 = newSecretHashPair();
+    receiver = accounts[1];
+    const sender2 = accounts[2];
+
+    await token.connect(sender).approve(htlc.target, senderInitialBalance);
+
+    const txReceipt1 = await htlc.connect(sender).createHTLC(receiver.address, hashPair1.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
+    const txReceiptWithEvents1 = await txReceipt1.wait();
+    const logArgs1 = txLoggedArgsWithIndex(txReceiptWithEvents1, 1);
+    const contractId1 = logArgs1.contractId;
+
+    await token.mint(sender2.address, senderInitialBalance);
+    await token.connect(sender2).approve(htlc.target, senderInitialBalance);
+
+    const txReceipt2 = await htlc.connect(sender2).createHTLC(receiver.address, hashPair2.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
+    const txReceiptWithEvents2 = await txReceipt2.wait();
+    const logArgs2 = txLoggedArgsWithIndex(txReceiptWithEvents2, 1);
+    const contractId2 = logArgs2.contractId;
+
+    //receiver calls redeem with the secret to claim the tokens
+    await htlc.connect(receiver).batchRedeem(
+      [contractId1,contractId2],
+      [hashPair1.secret,hashPair2.secret]);
+
+    // Check tokens now owned by the receiver
+    assertTokenBal(receiver.address, tokenAmount * 2, `receiver doesn't own ${tokenAmount * 2} tokens`);
+
+    const contractArr1 = await htlc.getHTLCDetails(contractId1);
+    const contract1 = htlcERC20ArrayToObj(contractArr1);
+    assert.isTrue(contract1.withdrawn); // withdrawn set
+    assert.isFalse(contract1.refunded); // refunded still false
+    assert.equal(contract1.preimage, hashPair1.secret);
+
+    const contractArr2 = await htlc.getHTLCDetails(contractId2);
+    const contract2 = htlcERC20ArrayToObj(contractArr2);
+    assert.isTrue(contract2.withdrawn); // withdrawn set
+    assert.isFalse(contract2.refunded); // refunded still false
+    assert.equal(contract2.preimage, hashPair2.secret);
+  });
 
   it('refund() should pass after timelock expiry', async () => {
     const hashPair = newSecretHashPair();

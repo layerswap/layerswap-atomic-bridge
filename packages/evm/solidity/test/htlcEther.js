@@ -118,9 +118,7 @@ describe('HashedTimelock', () => {
     }
   });
 
-  it("withdraw() should send receiver funds when given the correct secret preimage", async function () {
-
-    //BigNumber.from(`${txReceipt.receipt.gasUsed * gasPrice}`);
+  it("redeem() should send receiver funds when given the correct secret preimage", async function () {
 
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
@@ -130,7 +128,7 @@ describe('HashedTimelock', () => {
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
 
-    const receiverBalBefore = await getBalance(receiver);
+    const receiver1BalBefore = await getBalance(receiver);
 
     const withdrawTx = await htlc.connect(receiver).redeem(contractId, hashPair.secret);
     const tx = await withdrawTx.wait();
@@ -140,7 +138,7 @@ describe('HashedTimelock', () => {
 
     const gasCost = gasUsed.mul(gasPrice);
 
-    const expectedBal = receiverBalBefore.add(oneFinney).sub(gasCost);
+    const expectedBal = receiver1BalBefore.add(oneFinney).sub(gasCost);
 
     const receiverBalAfter = await getBalance(receiver);
 
@@ -154,7 +152,7 @@ describe('HashedTimelock', () => {
     expect(contract.preimage).to.equal(hashPair.secret);
   });
 
-  it("withdraw() should fail if preimage does not hash to hashX", async function () {
+  it("redeem() should fail if preimage does not hash to hashX", async function () {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
@@ -171,24 +169,32 @@ describe('HashedTimelock', () => {
     }
   });
 
-  it("withdraw() should fail if caller is not the receiver", async function () {
+  it("redeem() should send receiver funds when caller is not the receiver", async function () {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceipt = await htlc.connect(sender).createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
+    
+    const receiver1BalBefore = await getBalance(receiver);
     const someGuy = accounts[4];
-    try {
-      await htlc.connect(someGuy).redeem(contractId, hashPair.secret);
-      assert.fail("Transaction did not revert as expected");
-    } catch (error) {
-      assert.include(error.message, "NotReceiver");
-    }
+    const withdrawTx = await htlc.connect(someGuy).redeem(contractId, hashPair.secret);
+
+    const expectedBal = receiver1BalBefore.add(oneFinney);
+    const receiverBalAfter = await getBalance(receiver);
+    expect(receiverBalAfter.eq(expectedBal)).to.be.true;
+
+    const contractArr = await htlc.getHTLCDetails(contractId);
+    const contract = htlcArrayToObj(contractArr);
+    expect(contract.withdrawn).to.be.true;
+    expect(contract.refunded).to.be.false;
+    expect(contract.preimage).to.equal(hashPair.secret);
   });
 
-  it("withdraw() should fail after timelock expiry", async function () {
+
+  it("redeem() should fail after timelock expiry", async function () {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
@@ -209,6 +215,82 @@ describe('HashedTimelock', () => {
     }
   });
 
+  it("batchRedeem() should send receiver funds when given the correct secret preimage", async function () {
+
+    const hashPair1 = newSecretHashPair();
+    const hashPair2 = newSecretHashPair();
+    const hashPair3 = newSecretHashPair();
+    const hashPair4 = newSecretHashPair();
+    const receiver = accounts[0];
+    const receiver2 = accounts[1];
+    const sender1 = accounts[2];
+    const sender2 = accounts[3];
+    const sender3 = accounts[4];
+    const sender4 = accounts[5];
+
+    const txReceipt1 = await htlc.connect(sender1).createHTLC(receiver, hashPair1.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceiptWithEvents1 = await txReceipt1.wait();
+    const logArgs1 = txLoggedArgs(txReceiptWithEvents1);
+    const contractId1 = logArgs1.contractId;
+
+    const txReceipt2 = await htlc.connect(sender2).createHTLC(receiver, hashPair2.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceiptWithEvents2 = await txReceipt2.wait();
+    const logArgs2 = txLoggedArgs(txReceiptWithEvents2);
+    const contractId2 = logArgs2.contractId;
+
+    const txReceipt3 = await htlc.connect(sender3).createHTLC(receiver, hashPair3.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceiptWithEvents3 = await txReceipt3.wait();
+    const logArgs3 = txLoggedArgs(txReceiptWithEvents3);
+    const contractId3 = logArgs3.contractId;
+
+    const txReceipt4 = await htlc.connect(sender4).createHTLC(receiver2, hashPair4.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceiptWithEvents4 = await txReceipt4.wait();
+    const logArgs4 = txLoggedArgs(txReceiptWithEvents4);
+    const contractId4 = logArgs4.contractId;
+
+    const receiver1BalBefore = await getBalance(receiver);
+    const receiver2BalBefore = await getBalance(receiver2);
+
+    const withdrawTx = await htlc.connect(receiver).batchRedeem(
+      [contractId1,contractId2,contractId3,contractId4],
+      [hashPair1.secret,hashPair2.secret,hashPair3.secret,hashPair4.secret]);
+    const tx = await withdrawTx.wait();
+
+    const gasUsed = BigNumber.from(tx.gasUsed);
+    const gasPrice = BigNumber.from(tx.gasPrice);
+
+    const gasCost = gasUsed.mul(gasPrice);
+
+    const oneFinneyBN = BigNumber.from(oneFinney);
+
+    const expectedBal1 = receiver1BalBefore.add(oneFinneyBN.mul(3)).sub(gasCost);
+    const expectedBal2 = receiver2BalBefore.add(oneFinney);
+
+    const receiver1BalAfter = await getBalance(receiver);
+    const receiver2BalAfter = await getBalance(receiver2);
+
+    expect(receiver1BalAfter.eq(expectedBal1)).to.be.true;
+    expect(receiver2BalAfter.eq(expectedBal2)).to.be.true;
+
+    const contractArr1 = await htlc.getHTLCDetails(contractId1);
+    const contract1 = htlcArrayToObj(contractArr1);
+    expect(contract1.withdrawn).to.be.true;
+    expect(contract1.refunded).to.be.false;
+    expect(contract1.preimage).to.equal(hashPair1.secret);
+
+    const contractArr2 = await htlc.getHTLCDetails(contractId2);
+    const contract2 = htlcArrayToObj(contractArr2);
+    expect(contract2.withdrawn).to.be.true;
+    expect(contract2.refunded).to.be.false;
+    expect(contract2.preimage).to.equal(hashPair2.secret);
+
+    const contractArr3 = await htlc.getHTLCDetails(contractId3);
+    const contract3 = htlcArrayToObj(contractArr3);
+    expect(contract3.withdrawn).to.be.true;
+    expect(contract3.refunded).to.be.false;
+    expect(contract3.preimage).to.equal(hashPair3.secret);
+  });
+
   it("refund() should fail before the timelock expiry", async function () {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
@@ -218,8 +300,6 @@ describe('HashedTimelock', () => {
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
-
-    //await expect(hashedTimelock.connect(sender).refund(contractId)).to.be.revertedWith("VM Exception while processing transaction: revert");
 
     try {
       await htlc.connect(sender).refund(contractId);

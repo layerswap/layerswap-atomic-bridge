@@ -29,8 +29,6 @@ contract HashedTimelockERC20 {
   error HashlockNotMatch();
   error AlreadyRedeemed();
   error AlreadyRefunded();
-  error NotReceiver();
-  error NotSender();
   error FundsNotSent();
   error IncorrectData();
 
@@ -136,7 +134,6 @@ contract HashedTimelockERC20 {
 
     bytes32 pre = sha256(abi.encodePacked(_secret));
     if(htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
-    if(htlc.receiver != msg.sender) revert NotReceiver();
     if(htlc.redeemed) revert AlreadyRedeemed();
     if(htlc.refunded) revert AlreadyRefunded();
     if(htlc.timelock <= block.timestamp) revert NotFutureTimelock();
@@ -171,7 +168,6 @@ contract HashedTimelockERC20 {
       HTLC storage htlc = contracts[_contractIds[i]];
       bytes32 pre = sha256(abi.encodePacked(_secrets[i]));
       if(htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
-      if(htlc.receiver != msg.sender) revert NotReceiver();
       if(htlc.redeemed) revert AlreadyRedeemed();
       if(htlc.refunded) revert AlreadyRefunded();
       if(htlc.timelock <= block.timestamp) revert NotFutureTimelock();
@@ -194,7 +190,6 @@ contract HashedTimelockERC20 {
   function refund(bytes32 _contractId) external contractExists(_contractId) returns (bool) {
     HTLC storage htlc = contracts[_contractId];
 
-    if(htlc.sender != msg.sender) revert NotSender();
     if(htlc.refunded) revert AlreadyRefunded();
     if(htlc.redeemed) revert AlreadyRedeemed();
     if(htlc.timelock > block.timestamp) revert NotPassedTimelock();
