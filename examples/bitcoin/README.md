@@ -1,5 +1,3 @@
-
-
 #  Interact with Bitcoin
 
 ## Introduction
@@ -9,6 +7,7 @@ At this section you can find an instruction for working with Bitcoin HTLC contra
 ### Prerequisites
 
 -   Node.js and npm installed on your machine.
+-   Basic understanding of Bitcoin transactions and HTLC
 -   `.env` file configured with Bitcoin WIF (Wallet Import Format) keys.
 
 ## Getting Started
@@ -24,9 +23,9 @@ $ cp .env.example .env
 Ensure you have the required environment variables set up in your `.env` file. These include:
 -   `FROM_WIF`: Sender's Wallet Import Format key.
 -   `TO_WIF`: Recipient's Wallet Import Format key.
--   `PLATFORM_WIF`: Platform's Wallet Import Format key (skip).
 -   `AMOUNT`: Default amount of Bitcoin to lock in the contract (fallback to 5000 if not specified).
 -   `LOCK_HEIGHT`: Default lock height for the contract (fallback to 2 if not specified).
+-   `OP_RETURN_DATA`:: To include data in your transaction (data is limited to 80 bytes).
 
 ## Running the script
 
