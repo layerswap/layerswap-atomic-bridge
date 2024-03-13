@@ -45,7 +45,7 @@ When both parties agree to the transaction, the secret and key are exchanged sep
 You can publish using this package with the following operations.
 The output hashPair contains a secret and a proof. The secret is shared in advance, and the proof is issued at a mutually agreed timing.
 
-[lock.ts](../../examples/bitcoin/src/create-htlc.ts)
+[create-htlc.ts](../../examples/bitcoin/src/create-htlc.ts)
 
 ## Issue a secret lock (aka hashlock)
 
