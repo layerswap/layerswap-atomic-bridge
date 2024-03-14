@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
 import { HashPair } from './Core';
+import { HTLCRefundResult } from './Contract';
 
 /**
  * HTLC operations on the Ethereum Test Net.
@@ -42,7 +43,7 @@ export class BaseHTLCService {
    * Called by the sender if there was no withdraw AND the time lock has
    * expired. This will refund the contract amount.
    */
-  public refund(contractId: string, senderAddress: string, gasLimit?: number) {
+  public refund(contractId: string, senderAddress: string, gasLimit?: number): Promise<HTLCRefundResult> {
     const gas = gasLimit ?? 1000000;
     return this.contract.methods.refund(contractId).send({ from: senderAddress, gas: gas.toString() });
   }
