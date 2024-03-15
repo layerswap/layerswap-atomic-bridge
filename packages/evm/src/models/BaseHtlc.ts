@@ -46,4 +46,26 @@ export class BaseHTLCService {
     const gas = gasLimit ?? 1000000;
     return this.contract.methods.refund(contractId).send({ from: senderAddress, gas: gas.toString() });
   }
+
+  /**
+   * Estimates the gas required for any contract method
+   */
+  public async estimateGas(senderAddress: string, methodName: string, ...args: any[]): Promise<any> {
+    try {
+      const method = this.contract.methods[methodName];
+
+      if (!method) {
+        throw new Error(`Method ${methodName} does not exist on the contract.`);
+      }
+
+      const estimatedGas = await method(...args).estimateGas({ from: senderAddress });
+
+      console.log('estimatedGas', estimatedGas);
+
+      return estimatedGas;
+    } catch (error) {
+      console.error(`Error estimating gas for ${methodName}:`, error);
+      throw error;
+    }
+  }
 }
