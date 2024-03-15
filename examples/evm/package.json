@@ -11,7 +11,9 @@
     "start:refund": "ts-node ./src/native/refund",
     "start:htlc-erc20": "ts-node ./src/erc20/create-htlc.ts",
     "start:lock-erc20": "ts-node ./src/erc20/lock.ts",
-    "start:withdraw-erc20": "ts-node ./src/erc20/withdraw.ts"
+    "start:withdraw-erc20": "ts-node ./src/erc20/withdraw.ts",
+    "start:refund-erc20": "ts-node ./src/erc20/refund.ts",
+    "start:batch-withdraw-erc20": "ts-node ./src/erc20/batch-withdraw.ts"
   },
   "license": "MIT",
   "dependencies": {

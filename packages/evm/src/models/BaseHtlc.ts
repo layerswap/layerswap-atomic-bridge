@@ -50,6 +50,25 @@ export class BaseHTLCService {
   }
 
   /**
+   * Withdraw multiple HTLCs in a batch using their contract IDs and corresponding secrets.
+   */
+  public async batchWithdraw(
+    senderAddress: string,
+    contractIds: string[],
+    secrets: string[],
+    gasLimit?: number
+  ): Promise<any> {
+    const estimateGasLimit =
+      gasLimit ?? (await this.estimateGas({ from: senderAddress }, 'batchRedeem', contractIds, secrets));
+
+    const result = await this.contract.methods
+      .batchRedeem(contractIds, secrets)
+      .send({ from: senderAddress, gas: estimateGasLimit.toString() });
+
+    return result;
+  }
+
+  /**
    * Estimates the gas required for any contract method
    */
   public async estimateGas(
