@@ -26,30 +26,45 @@ export class EvmErc20Htlc extends BaseHTLCService {
     secret: string,
     amount: number,
     tokenAddress: string,
+    chainId: number,
+    receiverChainAddress: string,
     options?: LockOptions
   ): Promise<HTLCERC20MintResult> {
     // Pre-register before issuing a transaction
     const erc20TokenContract = new this.web3.eth.Contract(ERC20Abi.abi as any, tokenAddress);
-    const gas = options?.gasLimit ?? 1000000;
+    const { lockSeconds = 3600, gasLimit = 1000000 } = options || {};
     const value = this.web3.utils.toWei(this.web3.utils.toBN(amount), 'finney');
+
+    // TODO:: Add a check for balance and allowance
+
+    // Approve the contract to transfer tokens
     await erc20TokenContract.methods
       .approve(this.contractAddress, value)
-      .send({ from: senderAddress, gas: gas.toString() });
+      .send({ from: senderAddress, gas: gasLimit.toString() });
+
     // Issue lock transaction
-    const lockPeriod = Math.floor(Date.now() / 1000) + (options?.lockSeconds ?? 3600);
+    const lockPeriod = Math.floor(Date.now() / 1000) + lockSeconds;
     return await this.contract.methods
-      .createHTLC(recipientAddress, secret, lockPeriod, tokenAddress, value)
-      .send({ from: senderAddress, gas: gas.toString() });
+      .createHTLC(recipientAddress, secret, lockPeriod, tokenAddress, value, chainId, receiverChainAddress)
+      .send({ from: senderAddress, gas: gasLimit.toString() });
   }
 
   /**
    * Receive tokens stored under the key at the time of HTLC generation
    */
-  public async withdraw(contractId: string, senderAddress: string, proof: string, gasLimit?: number) {
-    const gas = gasLimit ?? 1000000;
+  public async withdraw(
+    contractId: string,
+    senderAddress: string,
+    proof: string,
+    gasLimit?: number
+  ): Promise<HTLCERC20WithdrawResult> {
+    const estimatedGas =
+      gasLimit ?? Math.floor((await this.estimateGas({ from: senderAddress }, 'redeem', contractId, proof)) * 1.2);
+
     const res = await this.contract.methods
       .redeem(contractId, proof)
-      .send({ from: senderAddress, gas: gas.toString() });
-    return { result: res as HTLCERC20WithdrawResult };
+      .send({ from: senderAddress, gas: estimatedGas.toString() });
+
+    return res as HTLCERC20WithdrawResult;
   }
 }

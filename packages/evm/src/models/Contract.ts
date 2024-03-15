@@ -133,12 +133,14 @@ export interface HTLCERC20MintResult {
       id: string;
       returnValues: {
         contractId: string;
+        hashlock: string;
+        amount: string;
+        chainID: string;
+        timelock: string;
         sender: string;
         receiver: string;
         tokenContract: string;
-        amount: string;
-        hashlock: string;
-        timelock: string;
+        targetCurrencyReceiverAddress: string;
       };
       event: string;
       signature: string;
@@ -162,7 +164,7 @@ export interface HTLCERC20WithdrawResult {
   transactionIndex: number;
   type: string;
   events: {
-    HTLCERC20Withdraw: {
+    HTLCERC20Redeemed: {
       address: string;
       blockHash: string;
       blockNumber: number;
