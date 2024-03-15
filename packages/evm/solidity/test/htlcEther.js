@@ -1,8 +1,15 @@
 const { ethers } = require('hardhat');
 const { assert } = require('chai');
-const { parseUnits, formatEther } = require("@ethersproject/units");
-const { BigNumber, BigInt, FixedFormat, FixedNumber, formatFixed, parseFixed, BigNumberish } = require("@ethersproject/bignumber");
-
+const { parseUnits, formatEther } = require('@ethersproject/units');
+const {
+  BigNumber,
+  BigInt,
+  FixedFormat,
+  FixedNumber,
+  formatFixed,
+  parseFixed,
+  BigNumberish,
+} = require('@ethersproject/bignumber');
 
 const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
 const { expect } = require('chai');
@@ -20,13 +27,13 @@ const {
   txLoggedArgs,
 } = require('./helper/utils');
 
-//const REQUIRE_FAILED_MSG = 'Returned error: VM Exception while processing transaction: revert';
+// const REQUIRE_FAILED_MSG = 'Returned error: VM Exception while processing transaction: revert';
 
 const hourSeconds = 3600;
 const timeLock1Hour = nowSeconds() + hourSeconds;
 const oneFinney = parseUnits('1').toString();
 const chainId = 1;
-const _address = "0x0";
+const _address = '0x0';
 
 describe('HashedTimelock', () => {
   let HashedTimelock;
@@ -34,12 +41,11 @@ describe('HashedTimelock', () => {
   let accounts;
 
   before(async () => {
-    //Deploy the HashedTimelock contract
+    // Deploy the HashedTimelock contract
     HashedTimelock = await ethers.getContractFactory('HashedTimelockEther');
     htlc = await HashedTimelock.deploy();
 
     accounts = await ethers.getSigners();
-
   });
 
   it('newContract() should create new contract and store correct details', async () => {
@@ -47,9 +53,11 @@ describe('HashedTimelock', () => {
     const sender = accounts[0];
     const receiver = accounts[1];
 
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, {
-      value: oneFinney,
-    });
+    const txReceipt = await htlc
+      .connect(sender)
+      .createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, {
+        value: oneFinney,
+      });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
@@ -71,59 +79,56 @@ describe('HashedTimelock', () => {
     assert.equal(contract.timelock, timeLock1Hour);
     assert.isFalse(contract.withdrawn);
     assert.isFalse(contract.refunded);
-    assert.equal(
-      contract.preimage,
-      '0x0000000000000000000000000000000000000000000000000000000000000000'
-    );
+    assert.equal(contract.preimage, '0x0000000000000000000000000000000000000000000000000000000000000000');
   });
 
-
-  it("newContract() should fail when no ETH sent", async function () {
+  it('newContract() should fail when no ETH sent', async function () {
     const hashPair = newSecretHashPair();
     const receiver = accounts[1].address;
     try {
       // Execute the transaction that should revert with the custom error
       await htlc.createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: 0 });
       // If no error is thrown, fail the test
-      assert.fail("Transaction did not revert as expected");
+      assert.fail('Transaction did not revert as expected');
     } catch (error) {
       // Check if the error thrown is of type 'FundsNotSent'
-      assert.include(error.message, "FundsNotSent");
+      assert.include(error.message, 'FundsNotSent');
     }
   });
 
-  it("newContract() should fail with timelocks in the past", async function () {
+  it('newContract() should fail with timelocks in the past', async function () {
     const hashPair = newSecretHashPair();
     const receiver = accounts[1].address;
-    const pastTimelock = (await ethers.provider.getBlock("latest")).timestamp - 1;
+    const pastTimelock = (await ethers.provider.getBlock('latest')).timestamp - 1;
     try {
       // Execute the transaction that should revert with the custom error
       await htlc.createHTLC(receiver, hashPair.hash, pastTimelock, chainId, _address, { value: oneFinney });
       // If no error is thrown, fail the test
-      assert.fail("Transaction did not revert as expected");
+      assert.fail('Transaction did not revert as expected');
     } catch (error) {
-      assert.include(error.message, "NotFutureTimelock");
+      assert.include(error.message, 'NotFutureTimelock');
     }
   });
 
-  it("newContract() should reject a duplicate contract request", async function () {
+  it('newContract() should reject a duplicate contract request', async function () {
     const hashPair = newSecretHashPair();
     const receiver = accounts[1].address;
     await htlc.createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     try {
       await htlc.createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
-      assert.fail("Transaction did not revert as expected");
+      assert.fail('Transaction did not revert as expected');
     } catch (error) {
-      assert.include(error.message, "ContractAlreadyExist");
+      assert.include(error.message, 'ContractAlreadyExist');
     }
   });
 
-  it("redeem() should send receiver funds when given the correct secret preimage", async function () {
-
+  it('redeem() should send receiver funds when given the correct secret preimage', async function () {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceipt = await htlc
+      .connect(sender)
+      .createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
@@ -142,7 +147,7 @@ describe('HashedTimelock', () => {
 
     const receiverBalAfter = await getBalance(receiver);
 
-    //expect(await getBalance(receiver)).to.equal(expectedBal);
+    // expect(await getBalance(receiver)).to.equal(expectedBal);
     expect(receiverBalAfter.eq(expectedBal)).to.be.true;
 
     const contractArr = await htlc.getHTLCDetails(contractId);
@@ -152,32 +157,36 @@ describe('HashedTimelock', () => {
     expect(contract.preimage).to.equal(hashPair.secret);
   });
 
-  it("redeem() should fail if preimage does not hash to hashX", async function () {
+  it('redeem() should fail if preimage does not hash to hashX', async function () {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceipt = await htlc
+      .connect(sender)
+      .createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
     const wrongSecret = bufToStr(random32());
     try {
       await htlc.connect(receiver).redeem(contractId, wrongSecret);
-      assert.fail("Transaction did not revert as expected");
+      assert.fail('Transaction did not revert as expected');
     } catch (error) {
-      assert.include(error.message, "HashlockNotMatch");
+      assert.include(error.message, 'HashlockNotMatch');
     }
   });
 
-  it("redeem() should send receiver funds when caller is not the receiver", async function () {
+  it('redeem() should send receiver funds when caller is not the receiver', async function () {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceipt = await htlc
+      .connect(sender)
+      .createHTLC(receiver, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
-    
+
     const receiver1BalBefore = await getBalance(receiver);
     const someGuy = accounts[4];
     const withdrawTx = await htlc.connect(someGuy).redeem(contractId, hashPair.secret);
@@ -193,30 +202,30 @@ describe('HashedTimelock', () => {
     expect(contract.preimage).to.equal(hashPair.secret);
   });
 
-
-  it("redeem() should fail after timelock expiry", async function () {
+  it('redeem() should fail after timelock expiry', async function () {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
-    const timelock1Second = (await ethers.provider.getBlock("latest")).timestamp + 10;
+    const timelock1Second = (await ethers.provider.getBlock('latest')).timestamp + 10;
 
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timelock1Second, chainId, _address, { value: oneFinney });
+    const txReceipt = await htlc
+      .connect(sender)
+      .createHTLC(receiver.address, hashPair.hash, timelock1Second, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
 
-    await ethers.provider.send("evm_increaseTime", [20]); // Increase time by 20 seconds
+    await ethers.provider.send('evm_increaseTime', [20]); // Increase time by 20 seconds
 
     try {
       await htlc.connect(receiver).redeem(contractId, hashPair.secret);
-      assert.fail("Transaction did not revert as expected");
+      assert.fail('Transaction did not revert as expected');
     } catch (error) {
-      assert.include(error.message, "NotFutureTimelock");
+      assert.include(error.message, 'NotFutureTimelock');
     }
   });
 
-  it("batchRedeem() should send receiver funds when given the correct secret preimage", async function () {
-
+  it('batchRedeem() should send receiver funds when given the correct secret preimage', async function () {
     const hashPair1 = newSecretHashPair();
     const hashPair2 = newSecretHashPair();
     const hashPair3 = newSecretHashPair();
@@ -228,22 +237,30 @@ describe('HashedTimelock', () => {
     const sender3 = accounts[4];
     const sender4 = accounts[5];
 
-    const txReceipt1 = await htlc.connect(sender1).createHTLC(receiver, hashPair1.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceipt1 = await htlc
+      .connect(sender1)
+      .createHTLC(receiver, hashPair1.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents1 = await txReceipt1.wait();
     const logArgs1 = txLoggedArgs(txReceiptWithEvents1);
     const contractId1 = logArgs1.contractId;
 
-    const txReceipt2 = await htlc.connect(sender2).createHTLC(receiver, hashPair2.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceipt2 = await htlc
+      .connect(sender2)
+      .createHTLC(receiver, hashPair2.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents2 = await txReceipt2.wait();
     const logArgs2 = txLoggedArgs(txReceiptWithEvents2);
     const contractId2 = logArgs2.contractId;
 
-    const txReceipt3 = await htlc.connect(sender3).createHTLC(receiver, hashPair3.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceipt3 = await htlc
+      .connect(sender3)
+      .createHTLC(receiver, hashPair3.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents3 = await txReceipt3.wait();
     const logArgs3 = txLoggedArgs(txReceiptWithEvents3);
     const contractId3 = logArgs3.contractId;
 
-    const txReceipt4 = await htlc.connect(sender4).createHTLC(receiver2, hashPair4.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceipt4 = await htlc
+      .connect(sender4)
+      .createHTLC(receiver2, hashPair4.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents4 = await txReceipt4.wait();
     const logArgs4 = txLoggedArgs(txReceiptWithEvents4);
     const contractId4 = logArgs4.contractId;
@@ -251,9 +268,12 @@ describe('HashedTimelock', () => {
     const receiver1BalBefore = await getBalance(receiver);
     const receiver2BalBefore = await getBalance(receiver2);
 
-    const withdrawTx = await htlc.connect(receiver).batchRedeem(
-      [contractId1,contractId2,contractId3,contractId4],
-      [hashPair1.secret,hashPair2.secret,hashPair3.secret,hashPair4.secret]);
+    const withdrawTx = await htlc
+      .connect(receiver)
+      .batchRedeem(
+        [contractId1, contractId2, contractId3, contractId4],
+        [hashPair1.secret, hashPair2.secret, hashPair3.secret, hashPair4.secret]
+      );
     const tx = await withdrawTx.wait();
 
     const gasUsed = BigNumber.from(tx.gasUsed);
@@ -291,21 +311,23 @@ describe('HashedTimelock', () => {
     expect(contract3.preimage).to.equal(hashPair3.secret);
   });
 
-  it("refund() should fail before the timelock expiry", async function () {
+  it('refund() should fail before the timelock expiry', async function () {
     const hashPair = newSecretHashPair();
     const sender = accounts[0];
     const receiver = accounts[1];
 
-    const txReceipt = await htlc.connect(sender).createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
+    const txReceipt = await htlc
+      .connect(sender)
+      .createHTLC(receiver.address, hashPair.hash, timeLock1Hour, chainId, _address, { value: oneFinney });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgs(txReceiptWithEvents);
     const contractId = logArgs.contractId;
 
     try {
       await htlc.connect(sender).refund(contractId);
-      assert.fail("Transaction did not revert as expected");
+      assert.fail('Transaction did not revert as expected');
     } catch (error) {
-      assert.include(error.message, "NotPassedTimelock");
+      assert.include(error.message, 'NotPassedTimelock');
     }
   });
 
