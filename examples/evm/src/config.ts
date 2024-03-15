@@ -19,7 +19,5 @@ export const ETH = {
       },
     },
   },
-  TOKEN: {
-    ALICE: '0x396810E66B06686A4A10d50b13BA9056b3f73372',
-  },
+  ERC20_TOKEN_ADDRESS: '',
 };

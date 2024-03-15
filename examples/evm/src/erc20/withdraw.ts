@@ -9,14 +9,14 @@ async function withdraw(contractId: string, proof: string) {
   const toAddress = AccountService.wallet.add(PRIVATE_KEYS.TO).address;
   const res = await client.withdraw(contractId, toAddress, proof);
   console.log(
-    `----- Start withdraws https://sepolia.etherscan.io/tx/${res.result.transactionHash} -----`,
-    await client.getContractInfo(res.result.events.HTLCERC20Withdraw.returnValues.contractId)
+    `----- Start withdraws https://sepolia.etherscan.io/tx/${res.transactionHash} -----`,
+    await client.getContractInfo(res.events.HTLCERC20Redeemed.returnValues.contractId)
   );
 }
 
 async function start() {
-  const contractId = '************************';
-  const proof = '************************';
+  const contractId = ''; // Replace with the contract ID
+  const proof = ''; // Replace with the proof
   await withdraw(contractId, proof);
 }
 

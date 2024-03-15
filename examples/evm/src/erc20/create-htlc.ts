@@ -2,20 +2,21 @@ import 'dotenv/config';
 import { ETH } from '../config';
 import { EvmErc20Htlc } from '@layerswap/evm';
 
-async function lock(hashlock) {
+async function createHTLC() {
   // setup
   const { PRIVATE_KEYS, NETWORK, ERC20_TOKEN_ADDRESS } = ETH;
   const chainId = 1; // example chain ID
-  const receiverChainAddress = '0x60f8212132210acDB8E526f31fC84feaC6E9535B'; // example receiver chain address
+  const receiverChainAddress = '0xreceiverChainAddress'; // example receiver chain address
   const client = new EvmErc20Htlc(NETWORK.TEST.sepolia.erc20.endpoint, NETWORK.TEST.sepolia.erc20.contractAddress);
   const AccountService = client.web3.eth.accounts;
   const fromAddress = AccountService.wallet.add(PRIVATE_KEYS.FROM).address;
   const toAddress = AccountService.wallet.add(PRIVATE_KEYS.TO).address;
+  const hashPair = client.createHashPair();
   // lock
   const result = await client.lock(
     toAddress,
     fromAddress,
-    hashlock,
+    hashPair.secret,
     1,
     ERC20_TOKEN_ADDRESS,
     chainId,
@@ -26,15 +27,14 @@ async function lock(hashlock) {
     toAddress: toAddress,
     contractId: result.events.HTLCERC20Created.returnValues.contractId,
     transactionHash: result.transactionHash,
-    secret: hashlock,
+    proof: hashPair.proof,
+    secret: hashPair.secret,
     contractInfo: await client.getContractInfo(result.events.HTLCERC20Created.returnValues.contractId),
   });
 }
 
 async function start() {
-  const hashlock = ''; // Replace with the hashlock
-
-  await lock(hashlock);
+  await createHTLC();
 }
 
 start();
