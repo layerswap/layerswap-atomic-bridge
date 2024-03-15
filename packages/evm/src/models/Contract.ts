@@ -24,11 +24,13 @@ export interface HTLCMintResult {
       id: string;
       returnValues: {
         contractId: string;
+        hashlock: string;
+        amount: string;
+        chainID: string;
+        timelock: string;
         sender: string;
         receiver: string;
-        amount: string;
-        hashlock: string;
-        timelock: string;
+        targetCurrencyReceiverAddress: string;
       };
       event: string;
       signature: string;
