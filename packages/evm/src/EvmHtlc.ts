@@ -2,7 +2,7 @@ import { AbiItem } from 'web3-utils';
 import HashedTimelockEther from './abi/HashedTimelockEther.json';
 import { BaseHTLCService } from './models/BaseHtlc';
 import { LockOptions } from './models/Core';
-import { HTLCMintResult, HTLCWithdrawResult } from './models/Contract';
+import { HTLCBatchRedeemResult, HTLCMintResult, HTLCWithdrawResult } from './models/Contract';
 
 /**
  * HTLC operations on the Ethereum Test Net.
@@ -65,5 +65,24 @@ export class EvmHtlc extends BaseHTLCService {
       .send({ from: senderAddress, gas: estimatedGas.toString() });
 
     return result as HTLCWithdrawResult;
+  }
+
+  /**
+   * Withdraw multiple HTLCs in a batch using their contract IDs and corresponding secrets.
+   */
+  public async batchWithdraw(
+    senderAddress: string,
+    contractIds: string[],
+    secrets: string[],
+    gasLimit?: number
+  ): Promise<HTLCBatchRedeemResult> {
+    const estimateGasLimit =
+      gasLimit ?? (await this.estimateGas({ from: senderAddress }, 'batchRedeem', contractIds, secrets));
+
+    const result = await this.contract.methods
+      .batchRedeem(contractIds, secrets)
+      .send({ from: senderAddress, gas: estimateGasLimit.toString() });
+
+    return result as HTLCBatchRedeemResult;
   }
 }

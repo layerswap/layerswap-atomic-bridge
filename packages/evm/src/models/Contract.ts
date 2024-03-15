@@ -73,6 +73,40 @@ export interface HTLCWithdrawResult {
   };
 }
 
+export interface HTLCBatchRedeemResult {
+  blockHash: string;
+  blockNumber: number;
+  contractAddress: string | null;
+  cumulativeGasUsed: number;
+  effectiveGasPrice: number;
+  from: string;
+  gasUsed: number;
+  logsBloom: string;
+  status: boolean;
+  to: string;
+  transactionHash: string;
+  transactionIndex: number;
+  type: string;
+  events: {
+    HTLCEtherBatchRedeemed: {
+      address: string;
+      blockHash: string;
+      blockNumber: number;
+      logIndex: number;
+      removed: boolean;
+      transactionHash: string;
+      transactionIndex: number;
+      id: string;
+      returnValues: {
+        contractIds: object;
+      };
+      event: string;
+      signature: string;
+      raw: object;
+    };
+  };
+}
+
 export interface HTLCERC20MintResult {
   blockHash: string;
   blockNumber: number;
