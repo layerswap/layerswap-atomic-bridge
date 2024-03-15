@@ -50,7 +50,11 @@ export class BaseHTLCService {
   /**
    * Estimates the gas required for any contract method
    */
-  public async estimateGas(senderAddress: string, methodName: string, ...args: any[]): Promise<any> {
+  public async estimateGas(
+    options: { from: string; value?: any; gasPrice?: string | number; gas?: number },
+    methodName: string,
+    ...args: any[]
+  ): Promise<any> {
     try {
       const method = this.contract.methods[methodName];
 
@@ -58,7 +62,7 @@ export class BaseHTLCService {
         throw new Error(`Method ${methodName} does not exist on the contract.`);
       }
 
-      const estimatedGas = await method(...args).estimateGas({ from: senderAddress });
+      const estimatedGas = await method(...args).estimateGas(options);
 
       console.log('estimatedGas', estimatedGas);
 
