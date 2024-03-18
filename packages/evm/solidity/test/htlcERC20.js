@@ -1,17 +1,6 @@
 const { ethers } = require('hardhat');
 const { assert } = require('chai');
-const { parseUnits, formatEther } = require('@ethersproject/units');
-const {
-  BigNumber,
-  BigInt,
-  FixedFormat,
-  FixedNumber,
-  formatFixed,
-  parseFixed,
-  BigNumberish,
-} = require('@ethersproject/bignumber');
-
-const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
+const { BigNumber } = require('@ethersproject/bignumber');
 const { expect } = require('chai');
 
 const { assertEqualBN } = require('./helper/assert');
@@ -22,8 +11,6 @@ const {
   newSecretHashPair,
   nowSeconds,
   random32,
-  txContractId,
-  txLoggedArgs,
   txLoggedArgsWithIndex,
 } = require('./helper/utils');
 
@@ -31,7 +18,6 @@ const {
 const hourSeconds = 3600;
 const timeLock1Hour = nowSeconds() + hourSeconds;
 const tokenAmount = 10;
-const tokenSupply = 1000;
 const senderInitialBalance = 1000;
 const chainId = 1;
 const _address = '0x0';
@@ -58,7 +44,6 @@ describe('HashedTimelockERC20', (accounts) => {
     accounts = await ethers.getSigners();
     sender = accounts[0];
     receiver = accounts[1];
-    // hashPair = newSecretHashPair();
 
     await token.mint(sender.address, senderInitialBalance);
   });
@@ -109,8 +94,6 @@ describe('HashedTimelockERC20', (accounts) => {
   });
 
   it('newContract() should fail when token amount is 0', async () => {
-    // approve htlc for one token but send amount as 0
-    // await token.approve(htlc.address, 1, { from: sender });
     await newContractExpectFailure('FundsNotSent', {
       amount: 0,
     });

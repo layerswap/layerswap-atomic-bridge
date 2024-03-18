@@ -1,17 +1,7 @@
 const { ethers } = require('hardhat');
 const { assert } = require('chai');
-const { parseUnits, formatEther } = require('@ethersproject/units');
-const {
-  BigNumber,
-  BigInt,
-  FixedFormat,
-  FixedNumber,
-  formatFixed,
-  parseFixed,
-  BigNumberish,
-} = require('@ethersproject/bignumber');
-
-const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
+const { parseUnits } = require('@ethersproject/units');
+const { BigNumber } = require('@ethersproject/bignumber');
 const { expect } = require('chai');
 
 const {
@@ -22,12 +12,8 @@ const {
   newSecretHashPair,
   nowSeconds,
   random32,
-  txContractId,
-  txGas,
   txLoggedArgs,
 } = require('./helper/utils');
-
-// const REQUIRE_FAILED_MSG = 'Returned error: VM Exception while processing transaction: revert';
 
 const hourSeconds = 3600;
 const timeLock1Hour = nowSeconds() + hourSeconds;
@@ -44,7 +30,6 @@ describe('HashedTimelock', () => {
     // Deploy the HashedTimelock contract
     HashedTimelock = await ethers.getContractFactory('HashedTimelockEther');
     htlc = await HashedTimelock.deploy();
-
     accounts = await ethers.getSigners();
   });
 
@@ -147,7 +132,6 @@ describe('HashedTimelock', () => {
 
     const receiverBalAfter = await getBalance(receiver);
 
-    // expect(await getBalance(receiver)).to.equal(expectedBal);
     expect(receiverBalAfter.eq(expectedBal)).to.be.true;
 
     const contractArr = await htlc.getHTLCDetails(contractId);
