@@ -2,7 +2,7 @@ import { AbiItem } from 'web3-utils';
 import HashedTimelockEther from './abi/HashedTimelockEther.json';
 import { BaseHTLCService } from './models/BaseHtlc';
 import { LockOptions } from './models/Core';
-import { HTLCMintResult, HTLCWithdrawResult } from './models/Contract';
+import { EtherTransferInitiatedResult, EtherTransferClaimedResult } from './models/Contract';
 
 /**
  * HTLC operations on the Ethereum Test Net.
@@ -24,7 +24,7 @@ export class EvmHtlc extends BaseHTLCService {
     chainId: number,
     receiverChainAddress: string,
     options?: LockOptions
-  ): Promise<HTLCMintResult> {
+  ): Promise<EtherTransferInitiatedResult> {
     const value = this.web3.utils.toWei(this.web3.utils.toBN(amount), 'finney');
     const lockSeconds = options?.lockSeconds || 3600;
     const lockPeriod = Math.floor(Date.now() / 1000) + lockSeconds;
@@ -56,7 +56,7 @@ export class EvmHtlc extends BaseHTLCService {
     senderAddress: string,
     proof: string,
     gasLimit?: number
-  ): Promise<HTLCWithdrawResult> {
+  ): Promise<EtherTransferClaimedResult> {
     const estimatedGas =
       gasLimit ?? Math.floor((await this.estimateGas({ from: senderAddress }, 'redeem', contractId, proof)) * 1.2);
 
@@ -64,6 +64,6 @@ export class EvmHtlc extends BaseHTLCService {
       .redeem(contractId, proof)
       .send({ from: senderAddress, gas: estimatedGas.toString() });
 
-    return result as HTLCWithdrawResult;
+    return result as EtherTransferClaimedResult;
   }
 }

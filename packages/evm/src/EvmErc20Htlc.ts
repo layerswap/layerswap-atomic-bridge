@@ -3,7 +3,7 @@ import ERC20Abi from './abi/ERC20.json';
 import HashedTimelockERC20 from './abi/HashedTimelockERC20.json';
 import { BaseHTLCService } from './models/BaseHtlc';
 import { LockOptions } from './models/Core';
-import { HTLCERC20MintResult, HTLCERC20WithdrawResult } from './models/Contract';
+import { TokenTransferInitiatedResult, TokenTransferClaimedResult } from './models/Contract';
 
 /**
  * HTLC operations on the Ethereum Test Net.
@@ -29,7 +29,7 @@ export class EvmErc20Htlc extends BaseHTLCService {
     chainId: number,
     receiverChainAddress: string,
     options?: LockOptions
-  ): Promise<HTLCERC20MintResult> {
+  ): Promise<TokenTransferInitiatedResult> {
     // Pre-register before issuing a transaction
     const erc20TokenContract = new this.web3.eth.Contract(ERC20Abi.abi as any, tokenAddress);
     const { lockSeconds = 3600, gasLimit = 1000000 } = options || {};
@@ -57,7 +57,7 @@ export class EvmErc20Htlc extends BaseHTLCService {
     senderAddress: string,
     proof: string,
     gasLimit?: number
-  ): Promise<HTLCERC20WithdrawResult> {
+  ): Promise<TokenTransferClaimedResult> {
     const estimatedGas =
       gasLimit ?? Math.floor((await this.estimateGas({ from: senderAddress }, 'redeem', contractId, proof)) * 1.2);
 
@@ -65,6 +65,6 @@ export class EvmErc20Htlc extends BaseHTLCService {
       .redeem(contractId, proof)
       .send({ from: senderAddress, gas: estimatedGas.toString() });
 
-    return res as HTLCERC20WithdrawResult;
+    return res as TokenTransferClaimedResult;
   }
 }

@@ -17,11 +17,11 @@ async function lock() {
   console.log('----- Lock transaction enlistment completed -----', {
     fromAddress: fromAddress,
     toAddress: toAddress,
-    contractId: result.events.HTLCEtherCreated.returnValues.contractId,
+    contractId: result.events.EtherTransferInitiated.returnValues.contractId,
     transactionHash: result.transactionHash,
     proof: hashPair.proof,
     secret: hashPair.secret,
-    contractInfo: await client.getContractInfo(result.events.HTLCEtherCreated.returnValues.contractId),
+    contractInfo: await client.getContractInfo(result.events.EtherTransferInitiated.returnValues.contractId),
   });
 }
 

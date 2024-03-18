@@ -11,13 +11,14 @@ async function withdraw(contractId: string, proof: string) {
 
   console.log(
     `----- Start withdraw https://sepolia.etherscan.io/tx/${result.transactionHash} -----`,
-    await client.getContractInfo(result.events.HTLCEtherRedeemed.returnValues.contractId)
+    await client.getContractInfo(result.events.EtherTransferClaimed.returnValues.contractId)
   );
 }
 
 async function start() {
-  const contractId = '';
-  const proof = '';
+  const contractId = ''; // Replace with the contract ID
+  const proof = ''; // Replace with the proof
+
   await withdraw(contractId, proof);
 }
 

@@ -22,14 +22,15 @@ async function createHTLC() {
     chainId,
     receiverChainAddress
   );
+  const contractId = result.events.TokenTransferInitiated.returnValues.contractId;
   console.log('----- Lock transaction enlistment completed -----', {
     fromAddress: fromAddress,
     toAddress: toAddress,
-    contractId: result.events.HTLCERC20Created.returnValues.contractId,
+    contractId,
     transactionHash: result.transactionHash,
     proof: hashPair.proof,
     secret: hashPair.secret,
-    contractInfo: await client.getContractInfo(result.events.HTLCERC20Created.returnValues.contractId),
+    contractInfo: await client.getContractInfo(contractId),
   });
 }
 

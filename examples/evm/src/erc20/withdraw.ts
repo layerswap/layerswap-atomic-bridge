@@ -10,7 +10,7 @@ async function withdraw(contractId: string, proof: string) {
   const res = await client.withdraw(contractId, toAddress, proof);
   console.log(
     `----- Start withdraws https://sepolia.etherscan.io/tx/${res.transactionHash} -----`,
-    await client.getContractInfo(res.events.HTLCERC20Redeemed.returnValues.contractId)
+    await client.getContractInfo(res.events.TokenTransferClaimed.returnValues.contractId)
   );
 }
 
