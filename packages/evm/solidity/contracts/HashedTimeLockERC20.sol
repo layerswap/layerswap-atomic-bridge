@@ -47,7 +47,7 @@ contract HashedTimelockERC20 {
   using SafeERC20 for IERC20;
   mapping(bytes32 => HTLC) contracts;
 
-  event HTLCERC20Created(
+  event TokenTransferInitiated(
     bytes32 indexed contractId,
     bytes32 hashlock,
     uint256 amount,
@@ -58,9 +58,9 @@ contract HashedTimelockERC20 {
     address tokenContract,
     string targetCurrencyReceiverAddress
   );
-  event HTLCERC20Redeemed(bytes32 indexed contractId);
-  event HTLCERC20Refunded(bytes32 indexed contractId);
-  event HTLCERC20BatchRedeemed(bytes32[] indexed contractIds);
+  event TokenTransferClaimed(bytes32 indexed contractId);
+  event TokenTransferRefunded(bytes32 indexed contractId);
+  event BatchTokenTransfersCompleted(bytes32[] indexed contractIds);
 
 
   modifier contractExists(bytes32 _contractId) {
@@ -114,7 +114,7 @@ contract HashedTimelockERC20 {
       false
     );
 
-    emit HTLCERC20Created(contractId, _hashlock, _amount, _chainID, _timelock, msg.sender, _receiver, _tokenContract, _targetCurrencyReceiverAddress);
+    emit TokenTransferInitiated(contractId, _hashlock, _amount, _chainID, _timelock, msg.sender, _receiver, _tokenContract, _targetCurrencyReceiverAddress);
   }
 
   /**
@@ -141,7 +141,7 @@ contract HashedTimelockERC20 {
     htlc.secret = _secret;
     htlc.redeemed = true;
     IERC20(htlc.tokenContract).safeTransfer(htlc.receiver, htlc.amount);
-    emit HTLCERC20Redeemed(_contractId);
+    emit TokenTransferClaimed(_contractId);
     return true;
   }
 
@@ -151,7 +151,7 @@ contract HashedTimelockERC20 {
    * @param _contractIds An array containing the unique identifiers (IDs) of the HTLCs from which tokens are to be redeemed.
    * @param _secrets An array containing the secret values corresponding to each HTLC in _contractIds.
    * @return A boolean indicating whether the batch redemption was successful.
-   * @dev Emits an HTLCERC20BatchRedeemed event upon successful batch redemption.
+   * @dev Emits an BatchTokenTransfersCompleted event upon successful batch redemption.
    */
   function batchRedeem(bytes32[] memory _contractIds, bytes32[] memory _secrets)
     external
@@ -176,7 +176,7 @@ contract HashedTimelockERC20 {
       htlc.redeemed = true;
       IERC20(htlc.tokenContract).safeTransfer(htlc.receiver, htlc.amount);
     }
-    emit HTLCERC20BatchRedeemed(_contractIds);
+    emit BatchTokenTransfersCompleted(_contractIds);
     return true;
   }
 
@@ -196,7 +196,7 @@ contract HashedTimelockERC20 {
 
     htlc.refunded = true;
     IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
-    emit HTLCERC20Refunded(_contractId);
+    emit TokenTransferRefunded(_contractId);
     return true;
   }
 

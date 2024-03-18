@@ -41,7 +41,7 @@ contract HashedTimelockEther {
 
   mapping(bytes32 => HTLC) contracts;
 
-  event HTLCEtherCreated(
+  event EtherTransferInitiated(
     bytes32 indexed contractId,
     bytes32 hashlock,
     uint256 amount,
@@ -51,9 +51,9 @@ contract HashedTimelockEther {
     address indexed receiver,
     string targetCurrencyReceiverAddress
   );
-  event HTLCEtherRedeemed(bytes32 indexed contractId);
-  event HTLCEtherRefunded(bytes32 indexed contractId);
-  event HTLCEtherBatchRedeemed(bytes32[] indexed contractId);
+  event EtherTransferClaimed(bytes32 indexed contractId);
+  event EtherTransferRefunded(bytes32 indexed contractId);
+  event BatchEtherTransfersCompleted(bytes32[] indexed contractId);
 
   modifier contractExists(bytes32 _contractId) {
     if(!hasContract(_contractId)) revert ContractNotExist();
@@ -100,7 +100,7 @@ contract HashedTimelockEther {
       false
     );
 
-    emit HTLCEtherCreated(contractId, _hashlock, msg.value, _chainID, _timelock, msg.sender, _receiver, _targetCurrencyReceiverAddress);
+    emit EtherTransferInitiated(contractId, _hashlock, msg.value, _chainID, _timelock, msg.sender, _receiver, _targetCurrencyReceiverAddress);
   }
 
   /**
@@ -127,7 +127,7 @@ contract HashedTimelockEther {
     htlc.secret = _secret;
     htlc.redeemed = true;
     htlc.receiver.transfer(htlc.amount);
-    emit HTLCEtherRedeemed(_contractId);
+    emit EtherTransferClaimed(_contractId);
     return true;
   }
 
@@ -137,7 +137,7 @@ contract HashedTimelockEther {
   * @param _contractIds An array of HTLC contract IDs to be redeemed.
   * @param _secrets An array of secrets corresponding to the HTLCs.
   * @return A boolean indicating whether the batch redemption was successful.
-  * @dev Emits an `HTLCEtherBatchRedeemed` event upon successful redemption of all specified HTLCs.
+  * @dev Emits an `BatchEtherTransfersCompleted` event upon successful redemption of all specified HTLCs.
   */
   function batchRedeem(bytes32[] memory _contractIds, bytes32[] memory _secrets)
     external
@@ -170,7 +170,7 @@ contract HashedTimelockEther {
       }
     }
     _receiver.transfer(totalToRedeem);
-    emit HTLCEtherBatchRedeemed(_contractIds);
+    emit BatchEtherTransfersCompleted(_contractIds);
     return true;
   }
 
@@ -190,7 +190,7 @@ contract HashedTimelockEther {
 
     htlc.refunded = true;
     htlc.sender.transfer(htlc.amount);
-    emit HTLCEtherRefunded(_contractId);
+    emit EtherTransferRefunded(_contractId);
     return true;
   }
 
