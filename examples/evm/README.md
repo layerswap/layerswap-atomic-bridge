@@ -7,6 +7,7 @@ At this section you can find an instruction for working with Ethereum HTLC contr
 ### Prerequisites
 
 -   Node.js and npm installed on your machine.
+-   Basic understanding of Smart Contracts and HTLC
 -   `.env` file configured with private keys.
 
 ## Getting Started
@@ -20,8 +21,8 @@ $ cp .env.example .env
 ```
 
 Ensure you have the required environment variables set up in your `.env` file. These include:
--   `FROM_PRIVATE_KEY`: Sender's Wallet Import Format key.
--   `TO_PRIVATE_KEY`: Recipient's Wallet Import Format key.
+- `FROM_PRIVATE_KEY`: Sender's Wallet Import Format key.
+- `TO_PRIVATE_KEY`: Recipient's Wallet Import Format key.
 
 ## Running the script
 
@@ -51,15 +52,15 @@ Withdraws the funds locked in the HTLC contract. It requires the following param
 npm run start:withdraw
 ```
 
-#### Withdraw (receiver)
+#### Withdraw Batch (receiver)
 
-Withdraws the funds locked in the HTLC contract. It requires the following parameters (script located at `src/withdraw.ts`):
+Withdraws the funds locked in the HTLC contract. It requires the following parameters (script located at `src/batch-withdraw.ts`):
 
 - `contractIds`: An array of contract IDs to withdraw.
 - `proof`: An array of secrets corresponding to the contract IDs.
 
 ```bash
-npm run start:withdraw
+npm run start:batch-withdraw
 ```
 
 #### Refund (Sender)
