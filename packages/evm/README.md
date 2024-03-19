@@ -67,6 +67,13 @@ With a secret lock, locked assets are withdrawn through a secret proof transacti
 
 [erc20/withdraw.ts](../../examples/evm/src/erc20/withdraw.ts)<br>
 
+## Batch Withdraw
+
+To withdraw multiple HTLCs in a batch.
+
+[native/batc.ts](../../examples/evm/src/native/batch-withdraw.ts)<br>
+
+[erc20/withdraw.ts](../../examples/evm/src/erc20/batch-withdraw.ts)<br>
 
 For more detailed examples, please check the sample collection below
 

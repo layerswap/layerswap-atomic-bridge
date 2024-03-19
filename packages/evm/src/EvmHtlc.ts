@@ -2,7 +2,7 @@ import { AbiItem } from 'web3-utils';
 import HashedTimelockEther from './abi/HashedTimelockEther.json';
 import { BaseHTLCService } from './models/BaseHtlc';
 import { LockOptions } from './models/Core';
-import { HTLCMintResult, HTLCWithdrawResult } from './models/Contract';
+import { EtherTransferInitiatedResult, EtherTransferClaimedResult } from './models/Contract';
 
 /**
  * HTLC operations on the Ethereum Test Net.
@@ -21,25 +21,49 @@ export class EvmHtlc extends BaseHTLCService {
     senderAddress: string,
     secret: string,
     amount: number,
+    chainId: number,
+    receiverChainAddress: string,
     options?: LockOptions
-  ): Promise<HTLCMintResult> {
+  ): Promise<EtherTransferInitiatedResult> {
     const value = this.web3.utils.toWei(this.web3.utils.toBN(amount), 'finney');
-    const lockPeriod = Math.floor(Date.now() / 1000) + (options?.lockSeconds ?? 3600);
-    const gas = options?.gasLimit ?? 1000000;
+    const lockSeconds = options?.lockSeconds || 3600;
+    const lockPeriod = Math.floor(Date.now() / 1000) + lockSeconds;
+
+    const estimatedGas =
+      options?.gasLimit ??
+      Math.floor(
+        (await this.estimateGas(
+          { from: senderAddress, value },
+          'createHTLC',
+          recipientAddress,
+          secret,
+          lockPeriod,
+          chainId,
+          receiverChainAddress
+        )) * 1.2
+      );
+
     return await this.contract.methods
-      .createHTLC(recipientAddress, secret, lockPeriod)
-      .send({ from: senderAddress, gas: gas.toString(), value });
+      .createHTLC(recipientAddress, secret, lockPeriod, chainId, receiverChainAddress)
+      .send({ from: senderAddress, gas: estimatedGas.toString(), value });
   }
 
   /**
    * Receive tokens stored under the key at the time of HTLC generation
    */
-  public async withdraw(contractId: string, senderAddress: string, proof: string, gasLimit?: number) {
-    const gas = gasLimit ?? 1000000;
+  public async withdraw(
+    contractId: string,
+    senderAddress: string,
+    proof: string,
+    gasLimit?: number
+  ): Promise<EtherTransferClaimedResult> {
+    const estimatedGas =
+      gasLimit ?? Math.floor((await this.estimateGas({ from: senderAddress }, 'redeem', contractId, proof)) * 1.2);
+
     const result = await this.contract.methods
       .redeem(contractId, proof)
-      .send({ from: senderAddress, gas: gas.toString() });
+      .send({ from: senderAddress, gas: estimatedGas.toString() });
 
-    return { result: result as HTLCWithdrawResult };
+    return result as EtherTransferClaimedResult;
   }
 }

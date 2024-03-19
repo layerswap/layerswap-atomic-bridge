@@ -7,9 +7,13 @@
     "start:htlc": "ts-node ./src/native/create-htlc.ts",
     "start:lock": "ts-node ./src/native/lock.ts",
     "start:withdraw": "ts-node ./src/native/withdraw.ts",
-    "start:refund": "ts-node ./src/native/refund.ts",
-    "start:lock_ERC20": "ts-node ./src/erc20/lock.ts",
-    "start:withdraw_ERC20": "ts-node ./src/erc20/withdraw.ts"
+    "start:batch-withdraw": "ts-node ./src/native/batch-withdraw.ts",
+    "start:refund": "ts-node ./src/native/refund",
+    "start:htlc-erc20": "ts-node ./src/erc20/create-htlc.ts",
+    "start:lock-erc20": "ts-node ./src/erc20/lock.ts",
+    "start:withdraw-erc20": "ts-node ./src/erc20/withdraw.ts",
+    "start:refund-erc20": "ts-node ./src/erc20/refund.ts",
+    "start:batch-withdraw-erc20": "ts-node ./src/erc20/batch-withdraw.ts"
   },
   "license": "MIT",
   "dependencies": {

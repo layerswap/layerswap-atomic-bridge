@@ -1,5 +1,7 @@
 # Layerswap Atomic Bridge
 
+---
+
 ## Introduction
 
 This repository facilitate trustless Hash Time-Locked Contracts ([HTLCs](https://en.bitcoin.it/wiki/Hash_Time_Locked_Contracts)) transactions between different blockchain networks, currently supporting Bitcoin and Ethereum.
@@ -8,12 +10,12 @@ This project leverages the inherent security and trustless nature of blockchain 
 The whole idea is based on the well-known HTLC contracts, where HTLC means "Hashed Timelock Contract".
 
 Table of contents
-=================
+
+---
 
 <!--ts-->
 - [Layerswap Atomic Bridge](#layerswap-atomic-bridge)
   - [Introduction](#introduction)
-- [Table of contents](#table-of-contents)
   - [Supported Networks](#supported-networks)
   - [Problem](#problem)
   - [Atomic Swap](#atomic-swap)

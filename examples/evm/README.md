@@ -2,7 +2,7 @@
 
 ## Introduction
 
-At this section you can find an instruction for working with evm HTLC contracts
+At this section you can find an instruction for working with Ethereum HTLC contracts
 
 ### Prerequisites
 
@@ -13,7 +13,7 @@ At this section you can find an instruction for working with evm HTLC contracts
 ## Getting Started
 
 ```bash
-# navigate to the evm example directory
+# navigate to the emv example directory
 $ cd examples/evm
 
 # copy .env.example file to .env and configure
@@ -21,23 +21,21 @@ $ cp .env.example .env
 ```
 
 Ensure you have the required environment variables set up in your `.env` file. These include:
--   `FROM_PRIVATE_KEY`: Sender's Wallet private key.
--   `TO_PRIVATE_KEY`: Recipient's Wallet private key.
+- `FROM_PRIVATE_KEY`: Sender's Wallet Import Format key.
+- `TO_PRIVATE_KEY`: Recipient's Wallet Import Format key.
 
 ## Running the script
 
-#### Generate HTLC contract
+#### Generate HTLC contract and HashPair
 
-This script facilitates the creation of a HTLC contact, generates a secret and its hash, and sends funds to the created contract address.
+This script facilitates the creation of a HTLC contract, generates a secret and its hash, and sends funds to the created contract (for ERC20, please add the suffix "-erc20" to each command)
 
 ```bash
 npm run start:htlc
 ```
 
-#### Lock Ethereum funds
-
-To lock Ethereum funds by creating an HTLC on the Ethereum network using hashlock. It requires the following parameter (script located at `src/native/lock.ts`):
-- `hashlock`: The hashlock obtained from other network.
+#### Create HTLC contract via hashlock
+Create HTLC contract via hashlock and locks the specified amount of tokens in an HTLC contract.
 
 ```bash
 npm run start:lock
@@ -45,21 +43,32 @@ npm run start:lock
 
 #### Withdraw (receiver)
 
-This script facilitates the withdrawal process from a Ethereum HTLC. It requires the following parameters (script located at `src/native/withdraw.ts`):
+Withdraws the funds locked in the HTLC contract. It requires the following parameters (script located at `src/withdraw.ts`):
 
-- `contractId`: The HTLC contract ID created on Ethereum network.
+- `contractId`: The ID of the HTLC contract.
 - `proof`: The secret preimage that unlocks the funds.
 
 ```bash
 npm run start:withdraw
 ```
 
+#### Withdraw Batch (receiver)
+
+Withdraws the funds locked in the HTLC contract. It requires the following parameters (script located at `src/batch-withdraw.ts`):
+
+- `contractIds`: An array of contract IDs to withdraw.
+- `proof`: An array of secrets corresponding to the contract IDs.
+
+```bash
+npm run start:batch-withdraw
+```
+
 #### Refund (Sender)
 
-This script enables the sender to refund the locked funds from a Ethreum HTLC after the time lock has expired, assuming the receiver has not withdrawn the funds.
-It requires the following parameter (script located at `src/native/refund.ts`):
+This script enables the sender to refund the locked funds from a HTLC contract after the time lock has expired, assuming the receiver has not withdrawn the funds.
+It requires the following parameter (script located at `src/refund.ts`):
 
-- `contractId`: The HTLC contract ID created on Ethereum network.
+-   `contractId`: The ID of the HTLC contract.
 ```bash
 npm run start:refund
 ```

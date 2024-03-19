@@ -1,16 +1,5 @@
-const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const {
-  BigNumber,
-  BigInt,
-  FixedFormat,
-  FixedNumber,
-  formatFixed,
-  parseFixed,
-  BigNumberish,
-} = require('@ethersproject/bignumber');
-// const { bufToStr, getBalance, htlcArrayToObj, isSha256Hash, newSecretHashPair, nowSeconds, random32, sha256, txContractId, txGas, txLoggedArgs } = require('./helper/utils');
-
+const { BigNumber } = require('@ethersproject/bignumber');
 const crypto = require('crypto');
 
 // Format required for sending bytes through eth client:
@@ -35,10 +24,10 @@ const newSecretHashPair = () => {
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 
-const defaultGasPrice = 100000000000; // truffle fixed gas price
+const defaultGasPrice = 100000000000; //  fixed gas price
 const txGas = (txReceipt, gasPrice = defaultGasPrice) => BigNumber.from(`${txReceipt.receipt.gasUsed * gasPrice}`);
-// const txGas = (txReceipt, gasPrice = defaultGasPrice) => web3.utils.toBN(txReceipt.receipt.gasUsed * gasPrice);
 const txLoggedArgs = (txReceipt) => txReceipt.logs[0].args;
+const txLoggedArgsWithIndex = (txReceipt, index) => txReceipt.logs[index].args;
 const txContractId = (txReceipt) => txLoggedArgs(txReceipt).contractId;
 
 const htlcArrayToObj = (c) => {
@@ -69,7 +58,6 @@ const htlcERC20ArrayToObj = (c) => {
 };
 
 const getBalance = async (address) => BigNumber.from(`${await ethers.provider.getBalance(address)}`);
-// const getBalance = async (address) => web3.utils.toBN(await web3.eth.getBalance(address));
 
 module.exports = {
   bufToStr,
@@ -84,4 +72,5 @@ module.exports = {
   txContractId,
   txGas,
   txLoggedArgs,
+  txLoggedArgsWithIndex,
 };

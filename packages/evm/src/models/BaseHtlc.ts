@@ -3,7 +3,6 @@ import crypto from 'crypto';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
 import { HashPair } from './Core';
-import { HTLCRefundResult } from './Contract';
 
 /**
  * HTLC operations on the Ethereum Test Net.
@@ -43,8 +42,55 @@ export class BaseHTLCService {
    * Called by the sender if there was no withdraw AND the time lock has
    * expired. This will refund the contract amount.
    */
-  public refund(contractId: string, senderAddress: string, gasLimit?: number): Promise<HTLCRefundResult> {
-    const gas = gasLimit ?? 1000000;
-    return this.contract.methods.refund(contractId).send({ from: senderAddress, gas: gas.toString() });
+  public async refund(contractId: string, senderAddress: string, gasLimit?: number) {
+    const estimatedGas =
+      gasLimit ?? Math.floor((await this.estimateGas({ from: senderAddress }, 'refund', contractId)) * 1.2);
+
+    return this.contract.methods.refund(contractId).send({ from: senderAddress, gas: estimatedGas.toString() });
+  }
+
+  /**
+   * Withdraw multiple HTLCs in a batch using their contract IDs and corresponding secrets.
+   */
+  public async batchWithdraw(
+    senderAddress: string,
+    contractIds: string[],
+    secrets: string[],
+    gasLimit?: number
+  ): Promise<any> {
+    const estimateGasLimit =
+      gasLimit ?? (await this.estimateGas({ from: senderAddress }, 'batchRedeem', contractIds, secrets));
+
+    const result = await this.contract.methods
+      .batchRedeem(contractIds, secrets)
+      .send({ from: senderAddress, gas: estimateGasLimit.toString() });
+
+    return result;
+  }
+
+  /**
+   * Estimates the gas required for any contract method
+   */
+  public async estimateGas(
+    options: { from: string; value?: any; gasPrice?: string | number; gas?: number },
+    methodName: string,
+    ...args: any[]
+  ): Promise<any> {
+    try {
+      const method = this.contract.methods[methodName];
+
+      if (!method) {
+        throw new Error(`Method ${methodName} does not exist on the contract.`);
+      }
+
+      const estimatedGas = await method(...args).estimateGas(options);
+
+      console.log('estimatedGas', estimatedGas);
+
+      return estimatedGas;
+    } catch (error) {
+      console.error(`Error estimating gas for ${methodName}:`, error);
+      throw error;
+    }
   }
 }

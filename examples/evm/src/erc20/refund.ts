@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import { ETH } from '../config';
-import { EvmHtlc } from '@layerswap/evm';
+import { EvmErc20Htlc } from '@layerswap/evm';
 
 async function refund(contractId: string) {
   const { PRIVATE_KEYS, NETWORK } = ETH;
-  const client = new EvmHtlc(NETWORK.TEST.sepolia.native.endpoint, NETWORK.TEST.sepolia.native.contractAddress);
+  const client = new EvmErc20Htlc(NETWORK.TEST.sepolia.erc20.endpoint, NETWORK.TEST.sepolia.erc20.contractAddress);
   const AccountService = client.web3.eth.accounts;
   const senderAddress = AccountService.wallet.add(PRIVATE_KEYS.FROM).address;
 

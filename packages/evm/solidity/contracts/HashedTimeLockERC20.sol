@@ -21,7 +21,6 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
  *      back with this function.
  */
 contract HashedTimelockERC20 {
-
   error NotFutureTimelock();
   error NotPassedTimelock();
   error ContractAlreadyExist();
@@ -29,38 +28,41 @@ contract HashedTimelockERC20 {
   error HashlockNotMatch();
   error AlreadyRedeemed();
   error AlreadyRefunded();
-  error NotReceiver();
-  error NotSender();
+  error FundsNotSent();
+  error IncorrectData();
 
   struct HTLC {
+    bytes32 hashlock;
+    bytes32 secret;
+    uint256 amount;
+    uint256 timelock;
     address sender;
     address receiver;
     address tokenContract;
-    uint256 amount;
-    bytes32 hashlock;
-    uint256 timelock;
     bool redeemed;
     bool refunded;
-    bytes32 secret;
   }
 
   using SafeERC20 for IERC20;
   mapping(bytes32 => HTLC) contracts;
 
-  event HTLCERC20Created(
+  event TokenTransferInitiated(
     bytes32 indexed contractId,
+    bytes32 hashlock,
+    uint256 amount,
+    uint256 chainId,
+    uint256 timelock,
     address indexed sender,
     address indexed receiver,
     address tokenContract,
-    uint256 amount,
-    bytes32 hashlock,
-    uint256 timelock
+    string targetCurrencyReceiverAddress
   );
-  event HTLCERC20Redeemed(bytes32 indexed contractId);
-  event HTLCERC20Refunded(bytes32 indexed contractId);
+  event TokenTransferClaimed(bytes32 indexed contractId);
+  event TokenTransferRefunded(bytes32 indexed contractId);
+  event BatchTokenTransfersCompleted(bytes32[] indexed contractIds);
 
   modifier contractExists(bytes32 _contractId) {
-    if(!hasContract(_contractId)) revert ContractNotExist();
+    if (!hasContract(_contractId)) revert ContractNotExist();
     _;
   }
 
@@ -79,33 +81,45 @@ contract HashedTimelockERC20 {
     bytes32 _hashlock,
     uint256 _timelock,
     address _tokenContract,
-    uint256 _amount
-  )
-    external
-    returns (bytes32 contractId)
-  {
-    if(_timelock <= block.timestamp){
+    uint256 _amount,
+    uint256 _chainID,
+    string memory _targetCurrencyReceiverAddress
+  ) external returns (bytes32 contractId) {
+    if (_timelock <= block.timestamp) {
       revert NotFutureTimelock();
+    }
+    if (_amount == 0) {
+      revert FundsNotSent();
     }
     contractId = sha256(abi.encodePacked(msg.sender, _receiver, _tokenContract, _amount, _hashlock, _timelock));
 
-    if (hasContract(contractId)){
+    if (hasContract(contractId)) {
       revert ContractAlreadyExist();
     }
     IERC20(_tokenContract).safeTransferFrom(msg.sender, address(this), _amount);
     contracts[contractId] = HTLC(
+      _hashlock,
+      0x0,
+      _amount,
+      _timelock,
       msg.sender,
       _receiver,
       _tokenContract,
-      _amount,
-      _hashlock,
-      _timelock,
       false,
-      false,
-      0x0
+      false
     );
 
-    emit HTLCERC20Created(contractId, msg.sender, _receiver, _tokenContract, _amount, _hashlock, _timelock);
+    emit TokenTransferInitiated(
+      contractId,
+      _hashlock,
+      _amount,
+      _chainID,
+      _timelock,
+      msg.sender,
+      _receiver,
+      _tokenContract,
+      _targetCurrencyReceiverAddress
+    );
   }
 
   /**
@@ -116,24 +130,50 @@ contract HashedTimelockERC20 {
    * @param _secret sha256(_secret) should equal the contract hashlock.
    * @return bool true on success
    */
-  function redeem(bytes32 _contractId, bytes32 _secret)
-    external
-    contractExists(_contractId)
-    returns (bool)
-  {
+  function redeem(bytes32 _contractId, bytes32 _secret) external contractExists(_contractId) returns (bool) {
     HTLC storage htlc = contracts[_contractId];
 
     bytes32 pre = sha256(abi.encodePacked(_secret));
-    if(htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
-    if(htlc.receiver != msg.sender) revert NotReceiver();
-    if(htlc.redeemed) revert AlreadyRedeemed();
-    if(htlc.refunded) revert AlreadyRefunded();
-    if(htlc.timelock <= block.timestamp) revert NotFutureTimelock();
+    if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
+    if (htlc.redeemed) revert AlreadyRedeemed();
+    if (htlc.refunded) revert AlreadyRefunded();
+    if (htlc.timelock <= block.timestamp) revert NotFutureTimelock();
 
     htlc.secret = _secret;
     htlc.redeemed = true;
     IERC20(htlc.tokenContract).safeTransfer(htlc.receiver, htlc.amount);
-    emit HTLCERC20Redeemed(_contractId);
+    emit TokenTransferClaimed(_contractId);
+    return true;
+  }
+
+  /**
+   * @notice Allows the batch redemption of tokens locked in multiple Hashed Time-Lock Contracts (HTLCs).
+   * @dev This function is used to redeem tokens from multiple HTLCs simultaneously, providing the corresponding secrets for each HTLC.
+   * @param _contractIds An array containing the unique identifiers (IDs) of the HTLCs from which tokens are to be redeemed.
+   * @param _secrets An array containing the secret values corresponding to each HTLC in _contractIds.
+   * @return A boolean indicating whether the batch redemption was successful.
+   * @dev Emits an BatchTokenTransfersCompleted event upon successful batch redemption.
+   */
+  function batchRedeem(bytes32[] memory _contractIds, bytes32[] memory _secrets) external returns (bool) {
+    if (_contractIds.length != _secrets.length) {
+      revert IncorrectData();
+    }
+    for (uint256 i; i < _contractIds.length; i++) {
+      if (!hasContract(_contractIds[i])) revert ContractNotExist();
+    }
+    for (uint256 i; i < _contractIds.length; i++) {
+      HTLC storage htlc = contracts[_contractIds[i]];
+      bytes32 pre = sha256(abi.encodePacked(_secrets[i]));
+      if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
+      if (htlc.redeemed) revert AlreadyRedeemed();
+      if (htlc.refunded) revert AlreadyRefunded();
+      if (htlc.timelock <= block.timestamp) revert NotFutureTimelock();
+
+      htlc.secret = _secrets[i];
+      htlc.redeemed = true;
+      IERC20(htlc.tokenContract).safeTransfer(htlc.receiver, htlc.amount);
+    }
+    emit BatchTokenTransfersCompleted(_contractIds);
     return true;
   }
 
@@ -147,14 +187,13 @@ contract HashedTimelockERC20 {
   function refund(bytes32 _contractId) external contractExists(_contractId) returns (bool) {
     HTLC storage htlc = contracts[_contractId];
 
-    if(htlc.sender != msg.sender) revert NotSender();
-    if(htlc.refunded) revert AlreadyRefunded();
-    if(htlc.redeemed) revert AlreadyRedeemed();
-    if(htlc.timelock > block.timestamp) revert NotPassedTimelock();
+    if (htlc.refunded) revert AlreadyRefunded();
+    if (htlc.redeemed) revert AlreadyRedeemed();
+    if (htlc.timelock > block.timestamp) revert NotPassedTimelock();
 
     htlc.refunded = true;
     IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
-    emit HTLCERC20Refunded(_contractId);
+    emit TokenTransferRefunded(_contractId);
     return true;
   }
 
@@ -162,7 +201,9 @@ contract HashedTimelockERC20 {
    * @dev Get contract details.
    * @param _contractId HTLC contract id
    */
-  function getHTLCDetails(bytes32 _contractId)
+  function getHTLCDetails(
+    bytes32 _contractId
+  )
     external
     view
     returns (
@@ -177,7 +218,7 @@ contract HashedTimelockERC20 {
       bytes32 secret
     )
   {
-    if (hasContract(_contractId) == false){
+    if (hasContract(_contractId) == false) {
       return (address(0), address(0), address(0), 0, 0, 0, false, false, 0);
     }
     HTLC storage htlc = contracts[_contractId];
