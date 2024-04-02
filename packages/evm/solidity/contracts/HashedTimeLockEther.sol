@@ -8,11 +8,11 @@ pragma solidity 0.8.20;
  *
  * Protocol:
  *
- *  1) createHTLC(receiver, hashlock, timelock) - a sender calls this to create
+ *  1) createHTLC(receiver, hashlock, timelock, chainID, targetCurrencyReceiverAddress, depth) - a sender calls this to create
  *      a new HTLC and gets back a 32 byte contract id
  *  2) redeem(contractId, secret) - once the receiver knows the secret of
  *      the hashlock hash they can claim the Ether with this function
- *  3) refund() - after the timelock has expired and if the receiver did not
+ *  3) refund(contractId) - after the timelock has expired and if the receiver did not
  *      redeem funds, the sender/creator of the HTLC can get their Ether
  *      back with this function.
  */
@@ -26,12 +26,14 @@ contract HashedTimelockEther {
   error AlreadyRedeemed();
   error AlreadyRefunded();
   error IncorrectData();
+  error IncorrectDepth();
 
   struct HTLC {
     bytes32 hashlock;
     bytes32 secret;
     uint256 amount;
     uint256 timelock;
+    uint depth;
     address payable sender;
     address payable receiver;
     bool redeemed;
@@ -46,6 +48,7 @@ contract HashedTimelockEther {
     uint256 amount,
     uint256 chainID,
     uint256 timelock,
+    uint depth,
     address indexed sender,
     address indexed receiver,
     string targetCurrencyReceiverAddress
@@ -67,6 +70,9 @@ contract HashedTimelockEther {
    * @param _hashlock A sha-256 hash hashlock.
    * @param _timelock UNIX epoch seconds time that the lock expires at.
    *                  Refunds can be made after this time.
+   * @param _chainID The chain ID where the contract operates
+   * @param _targetCurrencyReceiverAddress The address to receive the target currency upon successful operation.
+   * @param _depth The number of times the secret is hashed in iterations.
    * @return contractId Id of the new HTLC. This is needed for subsequent
    *                    calls.
    */
@@ -75,7 +81,8 @@ contract HashedTimelockEther {
     bytes32 _hashlock,
     uint256 _timelock,
     uint256 _chainID,
-    string memory _targetCurrencyReceiverAddress
+    string memory _targetCurrencyReceiverAddress,
+    uint _depth
   ) external payable returns (bytes32 contractId) {
     if (msg.value == 0) {
       revert FundsNotSent();
@@ -83,12 +90,27 @@ contract HashedTimelockEther {
     if (_timelock <= block.timestamp) {
       revert NotFutureTimelock();
     }
-    contractId = sha256(abi.encodePacked(msg.sender, _receiver, msg.value, _hashlock, _timelock));
+    contractId = sha256(abi.encodePacked(msg.sender, _receiver, msg.value, _hashlock, _timelock, _depth));
 
     if (hasContract(contractId)) {
       revert ContractAlreadyExist();
     }
-    contracts[contractId] = HTLC(_hashlock, 0x0, msg.value, _timelock, payable(msg.sender), _receiver, false, false);
+
+    if (_depth < 1) {
+      revert IncorrectDepth();
+    }
+
+    contracts[contractId] = HTLC(
+      _hashlock,
+      0x0,
+      msg.value,
+      _timelock,
+      _depth,
+      payable(msg.sender),
+      _receiver,
+      false,
+      false
+    );
 
     emit EtherTransferInitiated(
       contractId,
@@ -96,6 +118,7 @@ contract HashedTimelockEther {
       msg.value,
       _chainID,
       _timelock,
+      _depth,
       msg.sender,
       _receiver,
       _targetCurrencyReceiverAddress
@@ -107,14 +130,22 @@ contract HashedTimelockEther {
    * This will transfer the locked funds to their address.
    *
    * @param _contractId Id of the HTLC.
-   * @param _secret sha256(_secret) should equal the contract hashlock.
+   * @param _secret The secret, hashed 'depth' times, must equal the hashlock.
    * @return bool true on success
    */
-  function redeem(bytes32 _contractId, bytes32 _secret) external contractExists(_contractId) returns (bool) {
+
+  function redeem(
+    bytes32 _contractId,
+    bytes32 _secret
+  ) external contractExists(_contractId) returns (bool) {
     HTLC storage htlc = contracts[_contractId];
 
-    bytes32 pre = sha256(abi.encodePacked(_secret));
-    if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
+    bytes32 result = _secret;
+    for (uint i = 0; i < htlc.depth; i++) {
+      result = sha256(abi.encodePacked(result));
+    }
+
+    if (htlc.hashlock != result) revert HashlockNotMatch();
     if (htlc.refunded) revert AlreadyRefunded();
     if (htlc.redeemed) revert AlreadyRedeemed();
     if (htlc.timelock <= block.timestamp) revert NotFutureTimelock();
@@ -145,8 +176,14 @@ contract HashedTimelockEther {
     address payable _receiver = contracts[_contractIds[0]].receiver;
     for (uint256 i; i < _contractIds.length; i++) {
       HTLC storage htlc = contracts[_contractIds[i]];
-      bytes32 pre = sha256(abi.encodePacked(_secrets[i]));
-      if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
+
+      bytes32 result = _secrets[i];
+
+    for (uint j = 0; j < htlc.depth; j++) {
+      result = sha256(abi.encodePacked(result));
+    }
+
+      if (htlc.hashlock != result) revert HashlockNotMatch();
       if (htlc.refunded) revert AlreadyRefunded();
       if (htlc.redeemed) revert AlreadyRedeemed();
       if (htlc.timelock <= block.timestamp) revert NotFutureTimelock();
@@ -199,13 +236,14 @@ contract HashedTimelockEther {
       uint256 amount,
       bytes32 hashlock,
       uint256 timelock,
+      uint depth,
       bool redeemed,
       bool refunded,
       bytes32 secret
     )
   {
     if (!hasContract(_contractId)) {
-      return (address(0), address(0), 0, 0, 0, false, false, 0);
+      return (address(0), address(0), 0, 0, 0, 0, false, false, 0);
     }
     HTLC storage htlc = contracts[_contractId];
     return (
@@ -214,6 +252,7 @@ contract HashedTimelockEther {
       htlc.amount,
       htlc.hashlock,
       htlc.timelock,
+      htlc.depth,
       htlc.redeemed,
       htlc.refunded,
       htlc.secret

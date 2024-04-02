@@ -12,6 +12,7 @@ const {
   nowSeconds,
   random32,
   txLoggedArgsWithIndex,
+  sha256
 } = require('./helper/utils');
 
 // some testing data
@@ -21,6 +22,7 @@ const tokenAmount = 10;
 const senderInitialBalance = 1000;
 const chainId = 1;
 const _address = '0x0';
+const depth = 2;
 
 describe('HashedTimelockERC20', (accounts) => {
   let HashedTimelock;
@@ -53,7 +55,7 @@ describe('HashedTimelockERC20', (accounts) => {
     await token.connect(sender).approve(htlc, senderInitialBalance);
     const txReceipt = await htlc
       .connect(sender)
-      .createHTLC(receiver.address, hashPair.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
+      .createHTLC(receiver.address, hashPair.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address,depth);
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
 
@@ -73,6 +75,8 @@ describe('HashedTimelockERC20', (accounts) => {
     assert.equal(logArgs.amount.toString(), tokenAmount);
     assert.equal(logArgs.hashlock, hashPair.hash);
     assert.equal(logArgs.timelock, timeLock1Hour);
+    assert.equal(logArgs.depth, depth);
+
 
     // // check htlc record
     const contractArr = await htlc.getHTLCDetails(contractId);
@@ -226,7 +230,7 @@ describe('HashedTimelockERC20', (accounts) => {
 
     const txReceipt1 = await htlc
       .connect(sender)
-      .createHTLC(receiver.address, hashPair1.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
+      .createHTLC(receiver.address, hashPair1.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address,depth);
     const txReceiptWithEvents1 = await txReceipt1.wait();
     const logArgs1 = txLoggedArgsWithIndex(txReceiptWithEvents1, 1);
     const contractId1 = logArgs1.contractId;
@@ -236,7 +240,7 @@ describe('HashedTimelockERC20', (accounts) => {
 
     const txReceipt2 = await htlc
       .connect(sender2)
-      .createHTLC(receiver.address, hashPair2.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
+      .createHTLC(receiver.address, hashPair2.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address,depth);
     const txReceiptWithEvents2 = await txReceipt2.wait();
     const logArgs2 = txLoggedArgsWithIndex(txReceiptWithEvents2, 1);
     const contractId2 = logArgs2.contractId;
@@ -342,7 +346,7 @@ describe('HashedTimelockERC20', (accounts) => {
    */
   const newContract = async ({ timelock = timeLock1Hour, hashlock = newSecretHashPair().hash } = {}) => {
     // await token.approve(htlc.address, tokenAmount, { from: sender });
-    return htlc.createHTLC(receiver.address, hashlock, timelock, token.target, tokenAmount, chainId, _address, {
+    return htlc.createHTLC(receiver.address, hashlock, timelock, token.target, tokenAmount, chainId, _address,depth, {
       from: sender,
     });
   };
@@ -357,7 +361,7 @@ describe('HashedTimelockERC20', (accounts) => {
     } = {}
   ) => {
     try {
-      await htlc.createHTLC(receiverAddr, hashlock, timelock, token.target, amount, chainId, _address, {
+      await htlc.createHTLC(receiverAddr, hashlock, timelock, token.target, amount, chainId, _address,depth, {
         from: sender,
       });
       assert.fail('Transaction did not revert as expected');
@@ -365,4 +369,125 @@ describe('HashedTimelockERC20', (accounts) => {
       assert.include(error.message, shouldFailMsg);
     }
   };
+
+
+  it('redeem() should send receiver funds when given the correct secret preimage', async () => {
+    const secret = (random32());
+    receiver = accounts[3];
+    const newDepth = 5;
+    let result = secret; 
+
+    for (let i = 0; i < newDepth; i++) {
+      result = (sha256(result)); 
+    }
+
+    const newHashlock = (result); 
+
+    const txReceipt = await htlc
+    .connect(accounts[2])
+    .createHTLC(receiver, newHashlock, timeLock1Hour, token.target, tokenAmount, chainId, _address, newDepth);
+    const txReceiptWithEvents = await txReceipt.wait();
+    const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
+    const contractId = logArgs.contractId;
+
+    // receiver calls redeem with the secret to claim the tokens
+    await htlc.connect(receiver).redeem(contractId, secret);
+
+    // Check tokens now owned by the receiver
+    assertTokenBal(receiver, tokenAmount, `receiver doesn't own ${tokenAmount} tokens`);
+
+    const contractArr = await htlc.getHTLCDetails(contractId);
+    const contract = htlcERC20ArrayToObj(contractArr);
+    assert.isTrue(contract.withdrawn); // withdrawn set
+    assert.isFalse(contract.refunded); // refunded still false
+    assert.equal(contract.preimage, bufToStr(secret));
+  });
+
+
+
+  it('should not allow redeeming if depth is incorrect', async () => {
+    const secret = (random32());
+    receiver = accounts[3];
+    const newDepth = 5;
+    let result = secret; 
+
+    for (let i = 0; i < newDepth; i++) {
+      result = (sha256(result)); 
+    }
+
+    const newHashlock = (result); 
+
+    const txReceipt = await htlc
+    .connect(accounts[2])
+    .createHTLC(receiver, newHashlock, timeLock1Hour, token.target, tokenAmount, chainId, _address, newDepth + 3);
+    const txReceiptWithEvents = await txReceipt.wait();
+    const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
+    const contractId = logArgs.contractId;
+
+    await expect(htlc.connect(receiver).redeem(contractId, secret)).to.be.reverted;
+  });
+
+  it('batchRedeem() should send receiver funds when given the correct secret preimage.Varying depths case', async () => {
+    const secret = random32();
+    receiver = accounts[1];
+    const sender1 = accounts[3];
+    const sender2 = accounts[2];
+
+    let hashlock1 ,hashlock2;
+
+    result = secret;
+
+    for (let i = 0; i < 7; i++) {
+
+      result = (sha256(result)); 
+
+      if( i == 4 ){
+        hashlock1 = result;
+      }
+
+      if( i == 6 ){
+        hashlock2 = result;
+      }
+    }
+
+    await token.connect(sender1).approve(htlc.target, senderInitialBalance);
+
+    const txReceipt1 = await htlc
+      .connect(sender1)
+      .createHTLC(receiver, hashlock1, timeLock1Hour, token.target, tokenAmount, chainId, _address, 5);
+    const txReceiptWithEvents1 = await txReceipt1.wait();
+    const logArgs1 = txLoggedArgsWithIndex(txReceiptWithEvents1, 1);
+    const contractId1 = logArgs1.contractId;
+
+    await token.mint(sender2, senderInitialBalance);
+    await token.connect(sender2).approve(htlc.target, senderInitialBalance);
+
+    const txReceipt2 = await htlc
+      .connect(sender2)
+      .createHTLC(receiver, hashlock2, timeLock1Hour, token.target, tokenAmount, chainId, _address, 7);
+    const txReceiptWithEvents2 = await txReceipt2.wait();
+    const logArgs2 = txLoggedArgsWithIndex(txReceiptWithEvents2, 1);
+    const contractId2 = logArgs2.contractId;
+
+    // receiver calls redeem with the secret to claim the tokens
+    await htlc.connect(receiver).batchRedeem([contractId1, contractId2], [secret, secret]);
+
+    // Check tokens now owned by the receiver
+    assertTokenBal(receiver, tokenAmount * 2, `receiver doesn't own ${tokenAmount * 2} tokens`);
+
+    const contractArr1 = await htlc.getHTLCDetails(contractId1);
+    const contract1 = htlcERC20ArrayToObj(contractArr1);
+    assert.isTrue(contract1.withdrawn); // withdrawn set
+    assert.isFalse(contract1.refunded); // refunded still false
+    assert.equal(contract1.preimage, bufToStr(secret));
+
+    const contractArr2 = await htlc.getHTLCDetails(contractId2);
+    const contract2 = htlcERC20ArrayToObj(contractArr2);
+    assert.isTrue(contract2.withdrawn); // withdrawn set
+    assert.isFalse(contract2.refunded); // refunded still false
+    assert.equal(contract2.preimage, bufToStr(secret));
+  });
+
+  
+
 });

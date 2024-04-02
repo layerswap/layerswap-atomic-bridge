@@ -28,7 +28,7 @@ module.exports = {
     },
     bscMain: {
       url: process.env.BSC_TESTNET_RPC_URL || 'https://bsc-dataseed.binance.org/',
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
       chainId: 56,
       gas: 2000000,
       gasPrice: 10000000000, // 10 gwei

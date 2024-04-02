@@ -37,9 +37,10 @@ const htlcArrayToObj = (c) => {
     amount: c[2],
     hashlock: c[3],
     timelock: c[4],
-    withdrawn: c[5],
-    refunded: c[6],
-    preimage: c[7],
+    depth: c[5],
+    withdrawn: c[6],
+    refunded: c[7],
+    preimage: c[8],
   };
 };
 
@@ -51,9 +52,10 @@ const htlcERC20ArrayToObj = (c) => {
     amount: c[3],
     hashlock: c[4],
     timelock: c[5],
-    withdrawn: c[6],
-    refunded: c[7],
-    preimage: c[8],
+    depth: c[6],
+    withdrawn: c[7],
+    refunded: c[8],
+    preimage: c[9],
   };
 };
 
@@ -73,4 +75,5 @@ module.exports = {
   txGas,
   txLoggedArgs,
   txLoggedArgsWithIndex,
+  txContractId
 };
