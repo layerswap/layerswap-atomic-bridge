@@ -18,6 +18,7 @@ const {
 const hourSeconds = 3600;
 const timeLock1Hour = nowSeconds() + hourSeconds;
 const oneFinney = parseUnits('1').toString();
+const twoFinney = parseUnits('2').toString();
 const chainId = 1;
 const _address = '0x0';
 
@@ -322,3 +323,67 @@ describe('HashedTimelock', () => {
     expect(Number(contract[0])).to.equal(0);
   });
 });
+
+
+it("should create batch HTLCs successfully", async function () {
+  const _receivers = [accounts[1], accounts[2]];
+  const _hashlocks = [newSecretHashPair().hash, newSecretHashPair().hash]; 
+  const _timelocks = [(await ethers.provider.getBlock('latest')).timestamp + 300, (await ethers.provider.getBlock('latest')).timestamp + 600];
+  const _chainIDs = [1, 1];
+  const _targetCurrencyReceiversAddresses = ["currencyAddress1", "currencyAddress2"];
+  const _depths = [1, 1];
+  const _amounts = [oneFinney,oneFinney];
+  const totalValue = twoFinney;
+
+  const tx = await htlc.connect(accounts[0]).createBatchHTLC(
+    _receivers,
+    _hashlocks,
+    _timelocks,
+    _chainIDs,
+    _targetCurrencyReceiversAddresses,
+    _depths,
+    _amounts,
+    { value: totalValue }
+  );
+
+  await expect(tx)
+    .to.emit(htlc, "EtherTransferInitiated");
+
+    const receipt = await tx.wait();
+
+    expect(receipt.logs.length).to.equal(2);
+
+
+    const contractId1 = receipt.logs[0].args.contractId;
+    const contract1Details = await htlc.getHTLCDetails(contractId1);
+    const contract1Obj = htlcArrayToObj(contract1Details);
+
+    expect(contractId1.length).to.equal(66);
+    expect(contract1Obj.amount).to.equal(_amounts[0]);
+    expect(contract1Obj.hashlock).to.equal(_hashlocks[0]);
+    expect(contract1Obj.timelock).to.equal(_timelocks[0]);
+    expect(contract1Obj.depth).to.equal(_depths[0]);
+    expect(contract1Obj.sender).to.equal(accounts[0]);
+    expect(contract1Obj.receiver).to.equal(accounts[1]);
+    expect(contract1Obj.withdrawn).to.be.false;
+    expect(contract1Obj.refunded).to.be.false;
+    expect(contract1Obj.preimage).to.equal('0x0000000000000000000000000000000000000000000000000000000000000000');
+
+
+
+    const contractId2 = receipt.logs[1].args.contractId;
+    const contract2Details = await htlc.getHTLCDetails(contractId2);
+    const contract2Obj = htlcArrayToObj(contract2Details);
+
+    expect(contract2Obj.amount).to.equal(_amounts[1]);
+    expect(contractId2.length).to.equal(66);
+    expect(contract2Obj.hashlock).to.equal(_hashlocks[1]);
+    expect(contract2Obj.timelock).to.equal(_timelocks[1]);
+    expect(contract2Obj.depth).to.equal(_depths[1]);
+    expect(contract2Obj.sender).to.equal(accounts[0]);
+    expect(contract2Obj.receiver).to.equal(accounts[2]);
+    expect(contract2Obj.withdrawn).to.be.false;
+    expect(contract2Obj.refunded).to.be.false;
+    expect(contract2Obj.preimage).to.equal('0x0000000000000000000000000000000000000000000000000000000000000000');
+});
+
