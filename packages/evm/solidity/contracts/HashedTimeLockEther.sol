@@ -164,6 +164,84 @@ contract HashedTimelockEther {
     return true;
   }
 
+  function createBatchHTLC(
+    address payable[] memory _receivers,
+    bytes32[] memory _hashlocks,
+    uint256[] memory _timelocks,
+    uint256[] memory _chainIDs,
+    string[] memory _targetCurrencyReceiversAddresses,
+    uint[] memory _depths,
+    uint[] memory _amounts
+  ) external payable returns (bytes32[] memory contractIds) {
+    
+    contractIds = new bytes32[](_receivers.length);
+    if (msg.value == 0) {
+      revert FundsNotSent();
+    }
+
+    uint result = 0;
+
+    for (uint i = 0; i < _amounts.length; i++) {
+      if (_amounts[i] == 0) {
+        revert FundsNotSent();
+      }
+      result += _amounts[i];
+    }
+
+    if (
+      _receivers.length == 0 ||
+      _receivers.length != _hashlocks.length ||
+      _receivers.length != _timelocks.length ||
+      _receivers.length != _chainIDs.length ||
+      _receivers.length != _targetCurrencyReceiversAddresses.length ||
+      _receivers.length != _depths.length ||
+      result != msg.value
+    ) {
+      revert IncorrectData();
+    }
+
+    for (uint i = 0; i < _depths.length; i++) {
+      if (_timelocks[i] <= block.timestamp) {
+        revert NotFutureTimelock();
+      }
+      contractIds[i] = (sha256(
+        abi.encodePacked(msg.sender, _receivers[i], _amounts[i], _hashlocks[i], _timelocks[i], _depths[i])
+      ));
+
+      if (hasContract(contractIds[i])) {
+        revert ContractAlreadyExist();
+      }
+
+      if (_depths[i] < 1) {
+        revert IncorrectDepth();
+      }
+
+      contracts[contractIds[i]] = HTLC(
+        _hashlocks[i],
+        0x0,
+        _amounts[i],
+        _timelocks[i],
+        _depths[i],
+        payable(msg.sender),
+        _receivers[i],
+        false,
+        false
+      );
+
+      emit EtherTransferInitiated(
+        contractIds[i],
+        _hashlocks[i],
+        _amounts[i],
+        _chainIDs[i],
+        _timelocks[i],
+        _depths[i],
+        msg.sender,
+        _receivers[i],
+        _targetCurrencyReceiversAddresses[i]
+      );
+    }
+  }
+
   /**
    * @dev Called by the sender if there was no redeem AND the time lock has
    * expired. This will refund the contract amount.
