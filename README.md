@@ -1,10 +1,15 @@
 # Layerswap Atomic Bridge
 
+# Disclaimer: Development in Progress
+
+Please note that this project is actively under development. It is not ready for deployment on any mainnet environments.
+As we continue to experiment and test new ideas, expect significant changes to the interface. Please be prepared for ongoing modifications.
+
 ---
 
 ## Introduction
 
-This repository facilitate trustless Hash Time-Locked Contracts ([HTLCs](https://en.bitcoin.it/wiki/Hash_Time_Locked_Contracts)) transactions between different blockchain networks, currently supporting Bitcoin and Ethereum.
+This repository facilitate trustless Hash Time-Locked Contracts ([HTLCs](https://en.bitcoin.it/wiki/Hash_Time_Locked_Contracts)) transactions between different blockchain networks, currently supporting Bitcoin, Ethereum and Starknet.
 This project leverages the inherent security and trustless nature of blockchain technology to enable direct, secure exchanges.
 
 The whole idea is based on the well-known HTLC contracts, where HTLC means "Hashed Timelock Contract".
@@ -15,6 +20,7 @@ Table of contents
 
 <!--ts-->
 - [Layerswap Atomic Bridge](#layerswap-atomic-bridge)
+- [Disclaimer: Development in Progress](#disclaimer-development-in-progress)
   - [Introduction](#introduction)
   - [Supported Networks](#supported-networks)
   - [Problem](#problem)
@@ -42,6 +48,9 @@ Table of contents
 - Ethereum
   - [Learn more about Ethereum](https://ethereum.org/)
   - Ethereum HTLC package can be found [here](./packages/evm/README.md)
+- Starknet
+  - [Learn more about Starknet](https://www.starknet.io/en/)
+  - Starknet HTLC package can be found [here](./packages/starknet/README.md)
 
 ## Problem
 Suppose there are two different blockchain networks, Bitcoin and Ethereum. Alice has a certain amount of Bitcoin (X BTC), and Bob has a certain amount of Ethereum (Y ETH). They want to exchange their assets directly without involving a third party.
