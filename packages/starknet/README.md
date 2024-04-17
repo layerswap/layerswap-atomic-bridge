@@ -1,191 +1,85 @@
-# Layerswap Atomic Bridge
+# Disclaimer: Development in Progress
 
----
+Please note that this project is actively under development. It is not ready for deployment on any mainnet environments.
+As we continue to experiment and test new ideas, expect significant changes to the interface. Please be prepared for ongoing modifications.
 
+# Hashed Timelock Contracts (HTLCs)
 
-This repository facilitate trustless Hash Time-Locked Contracts ([HTLCs](https://en.bitcoin.it/wiki/Hash_Time_Locked_Contracts)) transactions between different blockchain networks, currently supporting Bitcoin and Ethereum.
-This project leverages the inherent security and trustless nature of blockchain technology to enable direct, secure exchanges.
+This part of the repository contains a cairo1.0 smart contract for implementing Hashed Timelock Contracts (HTLCs) on Starknet. This contracts enables users to create, manage, and interact with HTLCs, facilitating secure and trustless transactions. The contracts include functions such as creating new HTLCs, redeeming funds locked in HTLCs with a secret hash, and refunding funds in case of expiration or non-redeem. Users can refer to the contract source code and documentation for detailed information on each function's usage and parameters.
 
-The whole idea is based on the well-known HTLC contracts, where HTLC means "Hashed Timelock Contract".
+## Contract Overview
 
-Table of contents
+### HashedTimelockERC20.cairo
 
----
+**Description**: This contract allows users to create HTLCs for Starknet. It follows a protocol where a sender can create a new HTLC for a specific ERC20 token, a receiver can claim the ERC20 after revealing the secret, and the sender can refund the ERC20 if the time lock expires.
 
-<!--ts-->
-- [Layerswap Atomic Bridge](#layerswap-atomic-bridge)
-  - [Introduction](#introduction)
-  - [Supported Networks](#supported-networks)
-  - [Problem](#problem)
-  - [Atomic Swap](#atomic-swap)
-      - [Step-by-Step Process:](#step-by-step-process)
-      - [Corner Cases:](#corner-cases)
-  - [Bitcoin Script](#bitcoin-script)
-  - [Prerequisites](#prerequisites)
-  - [Getting Started](#getting-started)
-      - [Building the project](#building-the-project)
-  - [Tutorial](#tutorial)
-      - [Executing the Bitcoin HTLC](#executing-the-bitcoin-htlc)
-      - [Setting Up the Ethereum HTLC](#setting-up-the-ethereum-htlc)
-      - [Withdrawing from Ethereum HTLC](#withdrawing-from-ethereum-htlc)
-      - [Claiming Bitcoin from the HTLC](#claiming-bitcoin-from-the-htlc)
-  - [Diagram](#diagram)
+#### Functions
 
-<!--te-->
+- **createHTLC**: Allows a sender to create a new HTLC for ERC20 tokens by specifying the receiver, hashlock, timelock, token contract, and amount.
+- **batchCreateHTLC**: Allows a sender to create multiple new HTLCs for ERC20 tokens by specifying the receivers, hashlocks, timelocks, token contracts, and amounts.
+- **redeem**: Allows the receiver to claim the ERC20 tokens locked in the HTLC by providing the secret hash.
+- **batchRedeem**: Allows the receiver to claim the ERC20 tokens locked in multiple HTLCs by providing the secret hashes.
+- **refund**: Allows the sender to refund the ERC20 tokens if the timelock expires and the receiver has not redeemed the funds.
+- **getHTLCDetails**: Retrieves details of a specific HTLC by its contract ID.
 
 
-- Bitcoin
-  - [Learn more about Bitcoin](https://bitcoin.org/)
-  - Bitcoin HTLC package can be found [here](./packages/bitcoin/README.md)
-- Ethereum
-  - [Learn more about Ethereum](https://ethereum.org/)
-  - Ethereum HTLC package can be found [here](./packages/evm/README.md)
+## Deployment
 
-## Problem
-Suppose there are two different blockchain networks, Bitcoin and Ethereum. Alice has a certain amount of Bitcoin (X BTC), and Bob has a certain amount of Ethereum (Y ETH). They want to exchange their assets directly without involving a third party.
+### Prerequisites
 
-How can they do this? How can they ensure that this transaction is secure, which means neither party is at risk of losing their assets?
+- starkli and scarb installed
+- Starknet network connection (e.g., localhost, sepolia, etc.)
+- Ether or test tokens for deployment gas fees
 
-## Atomic Swap
+### Steps
 
-The Hashed Timelock Contract (HTLC) contract can solve this problem. An HTLC is a smart contract that locks the transaction and requires that the receiver of a payment either acknowledge receiving the payment before a deadline by revealing secret key of payment or forfeit the ability to claim the payment, returning it to the sender. This mechanism ensures that the swap can only occur if both parties fulfill their obligations.
+1. Clone this repository:
 
-#### Step-by-Step Process:
+   ```bash
+   git clone <repository_url>
 
-**Agreement:**
-Alice and Bob agree that Alice will send X BTC to Bob in exchange for Y ETH (and vice versa for Bob). Alice provides an address to receive ETH, and Bob does the same for BTC.
+2. Navigate to the project directory:
 
-**HTLC Creation by Alice for BTC:**
-Alice generates a secret key and creates an HTLC on the Bitcoin network. This contract locks her X BTC and specifies:
-- The receiver's address (provided by Bob) where the BTC will be sent if the swap is successful.
-- A SHA256 hashed version of the secret key (aka hashlock).
-- A timelock (e.g., 48 hours), after which Alice can reclaim her BTC if the contract conditions are not met.
+    ```bash
+    cd <project_directory>
 
-**HTLC Verification and Creation by Bob for ETH:**
-Bob, after verifying Alice's HTLC, creates a similar HTLC on the Ethereum network using the same hashed secret provided by Alice. This contract locks his Y ETH with a shorter timelock (e.g., 24 hours) to ensure Alice has to act first to complete the swap.
+3. Create a signer:
 
-**Alice Claims ETH:**
-Alice uses her secret key (preimage) to claim Y ETH from Bob's HTLC on the Ethereum network. In doing so, the secret key is revealed on the network.
+    ```bash
+    mkdir -p ~/.starkli-wallets/deployer
 
-**Bob Claims BTC:**
-Bob uses the revealed secret key to claim X BTC from Alice's HTLC on the Bitcoin network
+4. Set up your wallet:
 
-#### Corner Cases:
-- If Bob doesn't create the ETH HTLC: Alice waits until her BTC HTLC's timelock expires, then refunds her X BTC.
-- If Alice doesn't reveal the secret key: Bob waits until his ETH HTLC's timelock expires, then refunds his Y ETH.
-- If Alice tries to claim the ETH and then refund her BTC: Not possible, as Alice's HTLC has a longer timelock, ensuring she acts in good faith to complete the swap.
+    ```bash
+    starkli signer keystore from-key ~/.starkli-wallets/deployer/my_keystore_1.json
+    starkli account fetch <SMART_WALLET_ADDRESS> --output ~/.starkli-wallets/deployer/my_account_1.json --rpc <Alchemy_Startknet_URL>
 
-## Bitcoin Script
+5. Set Env Variables:
 
-Bitcoin script for implementing HTLC contract. The implementation is written in script as an array of [opcodes](https://en.bitcoin.it/wiki/Script#Opcodes):
+    ```bash
+    export STARKNET_ACCOUNT=~/.starkli-wallets/deployer/my_account_1.json
+    export STARKNET_KEYSTORE=~/.starkli-wallets/deployer/my_keystore_1.json
+    export STARKNET_RPC=<Alchemy_Startknet_URL>
 
-```bash
-OP_IF
-  OP_HASH256
-  <hash of secret>
-  OP_EQUAL
-  <pubKey of swap>
-  OP_CHECKSIG
-OP_ELSE
-  <locktime>
-  OP_CHECKLOCKTIMEVERIFY
-  OP_DROP
-  <pubKey of refund>
-  OP_CHECKSIG
-OP_ENDIF
-```
-The [Hashlock](https://en.bitcoin.it/wiki/Hashlock) is the first component of the script, executed when  `OP_IF`  reads a  `true`. It hashes the secret and checks that it matches a given hash, then it checks the signature against the given `<pubKey of swap>` (public key is provided in the script itself). If they match, the script execution continues; otherwise, the script fails here.
+6. Build Contract:
 
-The [Timelock ](https://en.bitcoin.it/wiki/Timelock) is the second component of the script, activated when `OP_IF` evaluates to `false`. Here, `OP_CHECKLOCKTIMEVERIFY` (CLTV) examines whether the current block's timestamp or height meets or exceeds a predefined `<locktime>` value encoded in the script, ensuring the transaction can only proceed after this moment.
-The script then presents a specified public key (`<pubKey of refund>`), associated with the party eligible to reclaim the funds (typically the original sender). If the signature is valid, the script execution proceeds, allowing for the secure refund of the funds.
+   ```bash
+   scarb build
+   
+7. Declarse class hash
+    ```bash
+    starkli declare ./target/dev/<YOUR_FILE_NAME>.contract_class.json
 
-[Interact with Bitcoin HTLC smart contract](https://github.com/layerswap/layerswap-atomic-bridge/tree/main/examples/bitcoin#interact-with-bitcoin)
+8. Deploy the contracts:
 
-## Prerequisites
+    ```bash
+    starkli deploy <YOUR_CLASS_HASH>
 
-- Node.js and npm installed on your machine.
-- Basic understanding of Bitcoin transactions, Smart Contracts, HTLC
+Usage
+Once deployed, users can interact with the contracts using Starknet wallets or through contract function calls programmatically.
 
-## Getting Started
+For HashedTimelockERC20.cairo: Users can create HTLCs for ERC20 tokens, redeem tokens, and request refunds.
+Refer to the contract source code for function details and usage instructions.
 
-Clone the repository to your local machine:
-
-```bash
-git clone git@github.com:layerswap/layerswap-atomic-bridge.git
-
-# navigate to the project directory
-cd layerswap-atomic-bridge
-
-# install dependencies
-npm install
-```
-
-#### Building the project
-
-Once you have cloned the repository and installed all dependencies, you can build the project by running the build command. This command will compile the TypeScript files and make sure everything is set up correctly.
-
-```bash
-npm run build
-```
-
-This command executes the build scripts defined in the `package.json` file. It sequentially builds each package defined within the monorepo, ensuring that all necessary components are compiled and ready for use.
-
-```bash
-cd examples/bitcoin
-```
-
-In the second terminal, navigate to the Ethereum example directory:
-```bash
-cd examples/evm
-```
-
-```bash
-npm run start:htlc
-```
-Upon successful execution, you'll receive a hashlock (hashed version of the secret), contract address, and witness script (redeem script). *Note these down as they will be used in the Ethereum HTLC.
-
-#### Setting Up the Ethereum HTLC
-In the second terminal, open the `src/native/lock.ts` file and configure it with the `hashlock` obtained from the Bitcoin HTLC step.
-Still in the Ethereum example directory, create the HTLC on the Ethereum network by running:
-```bash
-npm run start:lock
-```
-
-#### Withdrawing from Ethereum HTLC
-After the Ethereum HTLC is created, open the `src/native/withdraw.ts` file and configure `contractId` and `proof`(secret key), execute the withdrawal by running:
-```bash
-npm run start:withdraw
-```
-This step reveals the secret key.
-
-```bash
-npm run start:withdraw
-```
-
-You just executed an atomic swap between the Bitcoin and Ethereum networks using HTLC.
-
-## Diagram
-An example of a flow is shown below.
-
-```mermaid
-sequenceDiagram
-    actor Alice
-    participant Chain A
-    participant Chain B
-    actor Bob
-    Note over Alice,Bob: Start trading
-    Note over Alice: Create Secret&Proof
-    Alice ->>  Chain A: Create Lock Tx(A) from Secret
-    Note over Chain A: Tx Alice to Bob(is Lock)
-    Alice -->> Bob:  Secret used is shared separately
-    Bob -->> Chain A: Check if lock Tx(A) has block
-    Bob ->> Chain B: Create Lock Tx(B) from Secret
-    Note over Chain B: Tx Bob to Alice(is Lock)
-    Alice -->> Chain B: Check if lock Tx(B) has block
-    Alice ->> Chain B: Unlock Tx(B) using owned Proof
-    Note over Chain B: Tx Bob to Alice(is unlock)
-    Bob -->> Chain B: Get proof by Tx(B)
-    Bob ->> Chain A: Unlock Tx(A) using acquired Proof
-    Note over Chain A: Tx Alice to Bob(is unlock)
-    Note over Alice,Bob: Transaction Completed
-```
+License
+This project is licensed under the MIT License. See the LICENSE file for details.
