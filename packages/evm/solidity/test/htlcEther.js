@@ -331,7 +331,6 @@ it("should create batch HTLCs successfully", async function () {
   const _timelocks = [(await ethers.provider.getBlock('latest')).timestamp + 300, (await ethers.provider.getBlock('latest')).timestamp + 600];
   const _chainIDs = [1, 1];
   const _targetCurrencyReceiversAddresses = ["currencyAddress1", "currencyAddress2"];
-  const _depths = [1, 1];
   const _amounts = [oneFinney,oneFinney];
   const totalValue = twoFinney;
 
@@ -341,7 +340,6 @@ it("should create batch HTLCs successfully", async function () {
     _timelocks,
     _chainIDs,
     _targetCurrencyReceiversAddresses,
-    _depths,
     _amounts,
     { value: totalValue }
   );
@@ -362,7 +360,6 @@ it("should create batch HTLCs successfully", async function () {
     expect(contract1Obj.amount).to.equal(_amounts[0]);
     expect(contract1Obj.hashlock).to.equal(_hashlocks[0]);
     expect(contract1Obj.timelock).to.equal(_timelocks[0]);
-    expect(contract1Obj.depth).to.equal(_depths[0]);
     expect(contract1Obj.sender).to.equal(accounts[0]);
     expect(contract1Obj.receiver).to.equal(accounts[1]);
     expect(contract1Obj.withdrawn).to.be.false;
@@ -379,7 +376,6 @@ it("should create batch HTLCs successfully", async function () {
     expect(contractId2.length).to.equal(66);
     expect(contract2Obj.hashlock).to.equal(_hashlocks[1]);
     expect(contract2Obj.timelock).to.equal(_timelocks[1]);
-    expect(contract2Obj.depth).to.equal(_depths[1]);
     expect(contract2Obj.sender).to.equal(accounts[0]);
     expect(contract2Obj.receiver).to.equal(accounts[2]);
     expect(contract2Obj.withdrawn).to.be.false;
