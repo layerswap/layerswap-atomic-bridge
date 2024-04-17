@@ -2,7 +2,6 @@
 
 ---
 
-## Introduction
 
 This repository facilitate trustless Hash Time-Locked Contracts ([HTLCs](https://en.bitcoin.it/wiki/Hash_Time_Locked_Contracts)) transactions between different blockchain networks, currently supporting Bitcoin and Ethereum.
 This project leverages the inherent security and trustless nature of blockchain technology to enable direct, secure exchanges.
@@ -34,7 +33,6 @@ Table of contents
 
 <!--te-->
 
-## Supported Networks
 
 - Bitcoin
   - [Learn more about Bitcoin](https://bitcoin.org/)
@@ -132,22 +130,6 @@ npm run build
 
 This command executes the build scripts defined in the `package.json` file. It sequentially builds each package defined within the monorepo, ensuring that all necessary components are compiled and ready for use.
 
-> If you are working on a specific package, such as the `bitcoin` package, and wish to only build that package, you can do so by running:
-> ```bash
-> npm run build:bitcoin
-> ```
-
----
-
-## Tutorial
-
-Atomic Swap Between Bitcoin and Ethereum Networks.
-
-> Before attempting the atomic swap, ensure you've followed the Getting Started and Building the Project sections.
-
-You will need two terminals to interact with Bitcoin and Ethereum networks.
-
-Open two terminal windows. In the first terminal, navigate to the Bitcoin example directory:
 ```bash
 cd examples/bitcoin
 ```
@@ -157,8 +139,6 @@ In the second terminal, navigate to the Ethereum example directory:
 cd examples/evm
 ```
 
-#### Executing the Bitcoin HTLC
-In the first terminal, initiate the Bitcoin HTLC process which generates the proof, hashed version of it, and creates the contract by running:
 ```bash
 npm run start:htlc
 ```
@@ -178,8 +158,6 @@ npm run start:withdraw
 ```
 This step reveals the secret key.
 
-#### Claiming Bitcoin from the HTLC
-Switch back to the first terminal. Now that the secret key is revealed, open the `src/withdraw.ts` file and configure arguments `hash` (btc transaction hash), `contractAddress` (btc contract address), `witnessScript` (reedem script) and `proof` (secret key), then execute the command to claim the BTC by running:
 ```bash
 npm run start:withdraw
 ```
