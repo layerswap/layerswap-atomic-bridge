@@ -13,7 +13,7 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: '0.8.20',
+    version: '0.8.23',
     settings: {
       optimizer: {
         enabled: true,
@@ -79,15 +79,15 @@ module.exports = {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: 'USD',
   },
-  // etherscan: {
-  //   apiKey: process.env.MUMBAI_API_KEY,
-  // },
-  // etherscan: {
-  //   apiKey: process.env.ARBITRUM_API_KEY,
-  // },
-  // etherscan: {
-  //   apiKey: process.env.BSC_API_KEY,
-  // },
+  etherscan: {
+    apiKey: process.env.MUMBAI_API_KEY,
+  },
+  etherscan: {
+    apiKey: process.env.ARBITRUM_API_KEY,
+  },
+  etherscan: {
+    apiKey: process.env.BSC_API_KEY,
+  },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
