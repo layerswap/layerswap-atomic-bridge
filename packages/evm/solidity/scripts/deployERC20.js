@@ -9,7 +9,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
 
-  const HashedTimelockERC20 = await hre.ethers.deployContract("HashedTimelockERC20",[]);
+  const HashedTimelockERC20 = await hre.ethers.deployContract("HashedTimeLockERC20",[]);
 
   await HashedTimelockERC20.waitForDeployment();
 
@@ -20,7 +20,7 @@ async function main() {
   await hre.run("verify:verify", {
     address: HashedTimelockERC20.target,
     constructorArguments: [],
-    contract: "contracts/HashedTimelockERC20.sol:HashedTimelockERC20"
+    contract: "contracts/HashedTimeLockERC20.sol:HashedTimeLockERC20"
   });
 }
 

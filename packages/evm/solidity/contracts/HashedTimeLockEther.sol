@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.23;
 
 /**
  * @title Hashed Timelock Contracts (HTLCs) for Ethereum.
@@ -8,20 +8,20 @@ pragma solidity 0.8.20;
  *
  * Protocol:
  *
- *  1) createHTLC(receiver, hashlock, timelock) - a sender calls this to create
+ *  1) create(receiver, hashlock, timelock) - a sender calls this to create
  *      a new HTLC and gets back a 32 byte contract id
- *  2) redeem(contractId, secret) - once the receiver knows the secret of
+ *  2) redeem(htlcId, secret) - once the receiver knows the secret of
  *      the hashlock hash they can claim the Ether with this function
  *  3) refund() - after the timelock has expired and if the receiver did not
  *      redeem funds, the sender/creator of the HTLC can get their Ether
  *      back with this function.
  */
-contract HashedTimelockEther {
+contract HashedTimeLockEther {
   error FundsNotSent();
   error NotFutureTimelock();
   error NotPassedTimelock();
   error ContractAlreadyExist();
-  error ContractNotExist();
+  error HTLCNotExists();
   error HashlockNotMatch();
   error AlreadyRedeemed();
   error AlreadyRefunded();
@@ -41,8 +41,7 @@ contract HashedTimelockEther {
   mapping(bytes32 => HTLC) contracts;
 
   event EtherTransferInitiated(
-    bytes32 indexed contractId,
-    bytes32 hashlock,
+    bytes32 indexed hashlock,
     uint256 amount,
     uint256 chainID,
     uint256 timelock,
@@ -50,12 +49,12 @@ contract HashedTimelockEther {
     address indexed receiver,
     string targetCurrencyReceiverAddress
   );
-  event EtherTransferClaimed(bytes32 indexed contractId);
-  event EtherTransferRefunded(bytes32 indexed contractId);
-  event BatchEtherTransfersCompleted(bytes32[] indexed contractId);
+  event EtherTransferClaimed(bytes32 indexed htlcId);
+  event EtherTransferRefunded(bytes32 indexed htlcId);
+  event BatchEtherTransfersCompleted(bytes32[] indexed htlcId);
 
-  modifier contractExists(bytes32 _contractId) {
-    if (!hasContract(_contractId)) revert ContractNotExist();
+  modifier htlcExists(bytes32 _htlcId) {
+    if (!hasHTLC(_htlcId)) revert HTLCNotExists();
     _;
   }
 
@@ -67,31 +66,30 @@ contract HashedTimelockEther {
    * @param _hashlock A sha-256 hash hashlock.
    * @param _timelock UNIX epoch seconds time that the lock expires at.
    *                  Refunds can be made after this time.
-   * @return contractId Id of the new HTLC. This is needed for subsequent
-   *                    calls.
-   */
-  function createHTLC(
+   * @return htlcId Id of the new HTLC. This is needed for subsequent
+   *                    calls
+   **/
+  function create(
     address payable _receiver,
     bytes32 _hashlock,
     uint256 _timelock,
     uint256 _chainID,
     string memory _targetCurrencyReceiverAddress
-  ) external payable returns (bytes32 contractId) {
+  ) external payable returns (bytes32 htlcId) {
     if (msg.value == 0) {
       revert FundsNotSent();
     }
     if (_timelock <= block.timestamp) {
       revert NotFutureTimelock();
     }
-    contractId = sha256(abi.encodePacked(msg.sender, _receiver, msg.value, _hashlock, _timelock));
 
-    if (hasContract(contractId)) {
+    if (hasHTLC(_hashlock)) {
       revert ContractAlreadyExist();
     }
-    contracts[contractId] = HTLC(_hashlock, 0x0, msg.value, _timelock, payable(msg.sender), _receiver, false, false);
+    htlcId = _hashlock;
+    contracts[_hashlock] = HTLC(_hashlock, 0x0, msg.value, _timelock, payable(msg.sender), _receiver, false, false);
 
     emit EtherTransferInitiated(
-      contractId,
       _hashlock,
       msg.value,
       _chainID,
@@ -235,14 +233,78 @@ contract HashedTimelockEther {
   }
 
   /**
+   * @dev Called by the receiver once they know the secret of the hashlock.
+   * This will transfer the locked funds to their address.
+   *
+   * @param _htlcId Id of the HTLC.
+   * @param _secret sha256(_secret) should equal the contract hashlock.
+   * @return bool true on success
+   */
+  function redeem(bytes32 _htlcId, bytes32 _secret) external htlcExists(_htlcId) returns (bool) {
+    HTLC storage htlc = contracts[_htlcId];
+
+    bytes32 pre = sha256(abi.encodePacked(_secret));
+    if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
+    if (htlc.refunded) revert AlreadyRefunded();
+    if (htlc.redeemed) revert AlreadyRedeemed();
+    if (htlc.timelock <= block.timestamp) revert NotFutureTimelock();
+
+    htlc.secret = _secret;
+    htlc.redeemed = true;
+    htlc.receiver.transfer(htlc.amount);
+    emit EtherTransferClaimed(_htlcId);
+    return true;
+  }
+
+  /**
+   * @notice Allows multiple HTLCs to be redeemed in a batch.
+   * @dev This function is used to redeem funds from multiple HTLCs simultaneously, providing the corresponding secrets for each HTLC.
+   * @param _htlcIds An array of HTLC contract IDs to be redeemed.
+   * @param _secrets An array of secrets corresponding to the HTLCs.
+   * @return A boolean indicating whether the batch redemption was successful.
+   * @dev Emits an `BatchEtherTransfersCompleted` event upon successful redemption of all specified HTLCs.
+   */
+  function batchRedeem(bytes32[] memory _htlcIds, bytes32[] memory _secrets) external returns (bool) {
+    if (_htlcIds.length != _secrets.length) {
+      revert IncorrectData();
+    }
+    for (uint256 i; i < _htlcIds.length; i++) {
+      if (!hasHTLC(_htlcIds[i])) revert HTLCNotExists();
+    }
+    uint256 totalToRedeem;
+    address payable _receiver = contracts[_htlcIds[0]].receiver;
+    for (uint256 i; i < _htlcIds.length; i++) {
+      HTLC storage htlc = contracts[_htlcIds[i]];
+      bytes32 pre = sha256(abi.encodePacked(_secrets[i]));
+      if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
+      if (htlc.refunded) revert AlreadyRefunded();
+      if (htlc.redeemed) revert AlreadyRedeemed();
+      if (htlc.timelock <= block.timestamp) revert NotFutureTimelock();
+
+      htlc.secret = _secrets[i];
+      htlc.redeemed = true;
+      if (_receiver == htlc.receiver) {
+        totalToRedeem += htlc.amount;
+      } else {
+        htlc.receiver.transfer(htlc.amount);
+      }
+    }
+    _receiver.transfer(totalToRedeem);
+    emit BatchEtherTransfersCompleted(_htlcIds);
+    return true;
+  }
+
+ 
+
+  /**
    * @dev Called by the sender if there was no redeem AND the time lock has
    * expired. This will refund the contract amount.
    *
-   * @param _contractId Id of HTLC to refund from.
+   * @param _htlcId Id of HTLC to refund from.
    * @return bool true on success
    */
-  function refund(bytes32 _contractId) external contractExists(_contractId) returns (bool) {
-    HTLC storage htlc = contracts[_contractId];
+  function refund(bytes32 _htlcId) external htlcExists(_htlcId) returns (bool) {
+    HTLC storage htlc = contracts[_htlcId];
 
     if (htlc.refunded) revert AlreadyRefunded();
     if (htlc.redeemed) revert AlreadyRedeemed();
@@ -250,16 +312,16 @@ contract HashedTimelockEther {
 
     htlc.refunded = true;
     htlc.sender.transfer(htlc.amount);
-    emit EtherTransferRefunded(_contractId);
+    emit EtherTransferRefunded(_htlcId);
     return true;
   }
 
   /**
    * @dev Get contract details.
-   * @param _contractId HTLC contract id
-   */
+   * @param _htlcId HTLC contract id
+   **/
   function getHTLCDetails(
-    bytes32 _contractId
+    bytes32 _htlcId
   )
     public
     view
@@ -274,10 +336,10 @@ contract HashedTimelockEther {
       bytes32 secret
     )
   {
-    if (!hasContract(_contractId)) {
+    if (!hasHTLC(_htlcId)) {
       return (address(0), address(0), 0, 0, 0, false, false, 0);
     }
-    HTLC storage htlc = contracts[_contractId];
+    HTLC storage htlc = contracts[_htlcId];
     return (
       htlc.sender,
       htlc.receiver,
@@ -292,9 +354,9 @@ contract HashedTimelockEther {
 
   /**
    * @dev Check if there is a contract with a given id.
-   * @param _contractId Id into contracts mapping.
-   */
-  function hasContract(bytes32 _contractId) internal view returns (bool exists) {
-    exists = (contracts[_contractId].sender != address(0));
+   * @param _htlcId Id into contracts mapping.
+   **/
+  function hasHTLC(bytes32 _htlcId) internal view returns (bool exists) {
+    exists = (contracts[_htlcId].sender != address(0));
   }
 }
