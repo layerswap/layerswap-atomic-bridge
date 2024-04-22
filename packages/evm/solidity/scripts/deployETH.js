@@ -8,7 +8,7 @@ const hre = require('hardhat');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-  const HashedTimelockEther = await hre.ethers.deployContract('HashedTimelockEther', []);
+  const HashedTimelockEther = await hre.ethers.deployContract('HashedTimeLockEther', []);
 
   await HashedTimelockEther.waitForDeployment();
 
@@ -19,7 +19,7 @@ async function main() {
   await hre.run('verify:verify', {
     address: HashedTimelockEther.target,
     constructorArguments: [],
-    contract: 'contracts/HashedTimelockEther.sol:HashedTimelockEther',
+    contract: 'contracts/HashedTimeLockEther.sol:HashedTimeLockEther',
   });
 }
 

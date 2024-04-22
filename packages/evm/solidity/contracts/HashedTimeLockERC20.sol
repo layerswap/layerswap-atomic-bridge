@@ -31,7 +31,7 @@ contract HashedTimeLockERC20 {
   error FundsNotSent();
   error IncorrectData();
   error InsufficientBalance();
-  error NotAllowed();
+  error NoAllowance();
 
   struct HTLC {
     bytes32 hashlock;
@@ -60,7 +60,6 @@ contract HashedTimeLockERC20 {
   );
   event TokenTransferClaimed(bytes32 indexed htlcId);
   event TokenTransferRefunded(bytes32 indexed htlcId);
-  event BatchTokenTransfersCompleted(bytes32[] indexed htlcIds);
 
   modifier htlcExists(bytes32 _htlcId) {
     if (!hasHTLC(_htlcId)) revert HTLCNotExist();
@@ -98,19 +97,15 @@ contract HashedTimeLockERC20 {
     if (hasHTLC(htlcId)) {
       revert HTLCAlreadyExist();
     }
-    
     IERC20 token = IERC20(_tokenContract);
-        
-     
+
     if (token.balanceOf(msg.sender) < _amount) {
       revert InsufficientBalance();
     }
-          
 
     if (token.allowance(msg.sender, address(this)) < _amount) {
-      revert NotAllowed();
+      revert NoAllowance();
     }
-        
 
     IERC20(_tokenContract).safeTransferFrom(msg.sender, address(this), _amount);
     contracts[htlcId] = HTLC(_hashlock, 0x0, _amount, _timelock, msg.sender, _receiver, _tokenContract, false, false);
@@ -136,7 +131,6 @@ contract HashedTimeLockERC20 {
     uint256[] memory _chainIDs,
     string[] memory _targetCurrencyReceiversAddresses
   ) external payable returns (bytes32[] memory htlcIds) {
-    
     if (
       _receivers.length == 0 ||
       _receivers.length != _hashlocks.length ||
@@ -167,17 +161,14 @@ contract HashedTimeLockERC20 {
     }
 
     for (uint256 i = 0; i < _receivers.length; i++) {
-
       IERC20 token = IERC20(_tokenContracts[i]);
-        
-     
+
       if (token.balanceOf(msg.sender) < _amounts[i]) {
         revert InsufficientBalance();
       }
-            
-
+      
       if (token.allowance(msg.sender, address(this)) < _amounts[i]) {
-        revert NotAllowed();
+        revert NoAllowance();
       }
 
       IERC20(_tokenContracts[i]).safeTransferFrom(msg.sender, _receivers[i], _amounts[i]);
@@ -256,15 +247,14 @@ contract HashedTimeLockERC20 {
       htlc.secret = _secrets[i];
       htlc.redeemed = true;
       IERC20(htlc.tokenContract).safeTransfer(htlc.receiver, htlc.amount);
+      emit TokenTransferClaimed(_htlcIds[i]);
     }
-    emit BatchTokenTransfersCompleted(_htlcIds);
     return true;
   }
 
   /**
    * @dev Called by the sender if there was no redeem AND the time lock has
    * expired. This will refund the contract amount.
-   *
    * @param _htlcId Id of HTLC to refund from.
    * @return bool true on success
    */

@@ -86,7 +86,7 @@ describe('HashedTimeLockERC20', (accounts) => {
 
   it('newContract() should fail when no token transfer approved', async () => {
     await token.approve(htlc.target, 0, { from: sender }); // ensure 0
-    await newContractExpectFailure('NotAllowed');
+    await newContractExpectFailure('NoAllowance');
   });
 
   it('newContract() should fail when token amount is 0', async () => {
@@ -99,7 +99,7 @@ describe('HashedTimeLockERC20', (accounts) => {
     // approve htlc for different account to the htlc contract
     await token.approve(htlc.target, 0, { from: sender }); // ensure 0
     await token.approve(accounts[9].address, tokenAmount, { from: sender });
-    await newContractExpectFailure('NotAllowed');
+    await newContractExpectFailure('NoAllowance');
   });
 
   it('newContract() should fail when the timelock is in the past', async () => {

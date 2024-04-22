@@ -51,7 +51,6 @@ contract HashedTimeLockEther {
   );
   event EtherTransferClaimed(bytes32 indexed htlcId);
   event EtherTransferRefunded(bytes32 indexed htlcId);
-  event BatchEtherTransfersCompleted(bytes32[] indexed htlcId);
 
   modifier htlcExists(bytes32 _htlcId) {
     if (!hasHTLC(_htlcId)) revert HTLCNotExists();
@@ -100,16 +99,16 @@ contract HashedTimeLockEther {
     );
   }
 
-  function createBatchHTLC(
+  function createBatch(
     address payable[] memory _receivers,
     bytes32[] memory _hashlocks,
     uint256[] memory _timelocks,
     uint256[] memory _chainIDs,
     string[] memory _targetCurrencyReceiversAddresses,
     uint[] memory _amounts
-  ) external payable returns (bytes32[] memory contractIds) {
+  ) external payable returns (bytes32[] memory htlcIds) {
     
-    contractIds = new bytes32[](_receivers.length);
+    htlcIds = new bytes32[](_receivers.length);
     if (msg.value == 0) {
       revert FundsNotSent();
     }
@@ -138,15 +137,13 @@ contract HashedTimeLockEther {
       if (_timelocks[i] <= block.timestamp) {
         revert NotFutureTimelock();
       }
-      contractIds[i] = (sha256(
-        abi.encodePacked(msg.sender, _receivers[i], _amounts[i], _hashlocks[i], _timelocks[i])
-      ));
+      htlcIds[i] = _hashlocks[i];
 
-      if (hasContract(contractIds[i])) {
+      if (hasHTLC(htlcIds[i])) {
         revert ContractAlreadyExist();
       }
 
-      contracts[contractIds[i]] = HTLC(
+      contracts[htlcIds[i]] = HTLC(
         _hashlocks[i],
         0x0,
         _amounts[i],
@@ -158,7 +155,6 @@ contract HashedTimeLockEther {
       );
 
       emit EtherTransferInitiated(
-        contractIds[i],
         _hashlocks[i],
         _amounts[i],
         _chainIDs[i],
@@ -174,12 +170,12 @@ contract HashedTimeLockEther {
    * @dev Called by the receiver once they know the secret of the hashlock.
    * This will transfer the locked funds to their address.
    *
-   * @param _contractId Id of the HTLC.
+   * @param _htlcId Id of the HTLC.
    * @param _secret sha256(_secret) should equal the contract hashlock.
    * @return bool true on success
    */
-  function redeem(bytes32 _contractId, bytes32 _secret) external contractExists(_contractId) returns (bool) {
-    HTLC storage htlc = contracts[_contractId];
+  function redeem(bytes32 _htlcId, bytes32 _secret) external htlcExists(_htlcId) returns (bool) {
+    HTLC storage htlc = contracts[_htlcId];
 
     bytes32 pre = sha256(abi.encodePacked(_secret));
     if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
@@ -190,29 +186,29 @@ contract HashedTimeLockEther {
     htlc.secret = _secret;
     htlc.redeemed = true;
     htlc.receiver.transfer(htlc.amount);
-    emit EtherTransferClaimed(_contractId);
+    emit EtherTransferClaimed(_htlcId);
     return true;
   }
 
   /**
    * @notice Allows multiple HTLCs to be redeemed in a batch.
    * @dev This function is used to redeem funds from multiple HTLCs simultaneously, providing the corresponding secrets for each HTLC.
-   * @param _contractIds An array of HTLC contract IDs to be redeemed.
+   * @param _htlcIds An array of HTLC contract IDs to be redeemed.
    * @param _secrets An array of secrets corresponding to the HTLCs.
    * @return A boolean indicating whether the batch redemption was successful.
    * @dev Emits an `BatchEtherTransfersCompleted` event upon successful redemption of all specified HTLCs.
    */
-  function batchRedeem(bytes32[] memory _contractIds, bytes32[] memory _secrets) external returns (bool) {
-    if (_contractIds.length != _secrets.length) {
+  function batchRedeem(bytes32[] memory _htlcIds, bytes32[] memory _secrets) external returns (bool) {
+    if (_htlcIds.length != _secrets.length) {
       revert IncorrectData();
     }
-    for (uint256 i; i < _contractIds.length; i++) {
-      if (!hasContract(_contractIds[i])) revert ContractNotExist();
+    for (uint256 i; i < _htlcIds.length; i++) {
+      if (!hasHTLC(_htlcIds[i])) revert HTLCNotExists();
     }
     uint256 totalToRedeem;
-    address payable _receiver = contracts[_contractIds[0]].receiver;
-    for (uint256 i; i < _contractIds.length; i++) {
-      HTLC storage htlc = contracts[_contractIds[i]];
+    address payable _receiver = contracts[_htlcIds[0]].receiver;
+    for (uint256 i; i < _htlcIds.length; i++) {
+      HTLC storage htlc = contracts[_htlcIds[i]];
       bytes32 pre = sha256(abi.encodePacked(_secrets[i]));
       if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
       if (htlc.refunded) revert AlreadyRefunded();
@@ -226,88 +222,10 @@ contract HashedTimeLockEther {
       } else {
         htlc.receiver.transfer(htlc.amount);
       }
+      emit EtherTransferClaimed(_htlcIds[i]);
     }
     _receiver.transfer(totalToRedeem);
-    emit BatchEtherTransfersCompleted(_contractIds);
     return true;
-  }
-
-  function createBatchHTLC(
-    address payable[] memory _receivers,
-    bytes32[] memory _hashlocks,
-    uint256[] memory _timelocks,
-    uint256[] memory _chainIDs,
-    string[] memory _targetCurrencyReceiversAddresses,
-    uint[] memory _depths,
-    uint[] memory _amounts
-  ) external payable returns (bytes32[] memory contractIds) {
-    
-    contractIds = new bytes32[](_receivers.length);
-    if (msg.value == 0) {
-      revert FundsNotSent();
-    }
-
-    uint result = 0;
-
-    for (uint i = 0; i < _amounts.length; i++) {
-      if (_amounts[i] == 0) {
-        revert FundsNotSent();
-      }
-      result += _amounts[i];
-    }
-
-    if (
-      _receivers.length == 0 ||
-      _receivers.length != _hashlocks.length ||
-      _receivers.length != _timelocks.length ||
-      _receivers.length != _chainIDs.length ||
-      _receivers.length != _targetCurrencyReceiversAddresses.length ||
-      _receivers.length != _depths.length ||
-      result != msg.value
-    ) {
-      revert IncorrectData();
-    }
-
-    for (uint i = 0; i < _depths.length; i++) {
-      if (_timelocks[i] <= block.timestamp) {
-        revert NotFutureTimelock();
-      }
-      contractIds[i] = (sha256(
-        abi.encodePacked(msg.sender, _receivers[i], _amounts[i], _hashlocks[i], _timelocks[i], _depths[i])
-      ));
-
-      if (hasContract(contractIds[i])) {
-        revert ContractAlreadyExist();
-      }
-
-      if (_depths[i] < 1) {
-        revert IncorrectDepth();
-      }
-
-      contracts[contractIds[i]] = HTLC(
-        _hashlocks[i],
-        0x0,
-        _amounts[i],
-        _timelocks[i],
-        _depths[i],
-        payable(msg.sender),
-        _receivers[i],
-        false,
-        false
-      );
-
-      emit EtherTransferInitiated(
-        contractIds[i],
-        _hashlocks[i],
-        _amounts[i],
-        _chainIDs[i],
-        _timelocks[i],
-        _depths[i],
-        msg.sender,
-        _receivers[i],
-        _targetCurrencyReceiversAddresses[i]
-      );
-    }
   }
 
   /**
