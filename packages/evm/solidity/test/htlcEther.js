@@ -379,6 +379,7 @@ describe('HashedTimelock', () => {
 });
 
 
+<<<<<<< HEAD
 it("should create batch HTLCs successfully", async function () {
   const _receivers = [accounts[1], accounts[2]];
   const _hashlocks = [newSecretHashPair().hash, newSecretHashPair().hash]; 
@@ -437,3 +438,7 @@ it("should create batch HTLCs successfully", async function () {
     expect(contract2Obj.preimage).to.equal('0x0000000000000000000000000000000000000000000000000000000000000000');
 });
 
+=======
+
+
+>>>>>>> 2d00ff8b72d89848e520ad0d354dc0596499c5c9
