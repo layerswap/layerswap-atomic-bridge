@@ -22,7 +22,7 @@ const senderInitialBalance = 1000;
 const chainId = 1;
 const _address = '0x0';
 
-describe('HashedTimelockERC20', (accounts) => {
+describe('HashedTimeLockERC20', (accounts) => {
   let HashedTimelock;
   let TestToken;
   let htlc;
@@ -35,7 +35,7 @@ describe('HashedTimelockERC20', (accounts) => {
     assertEqualBN(await token.balanceOf.call(addr), tokenAmount, msg ? msg : 'wrong token balance');
 
   before(async () => {
-    HashedTimelock = await ethers.getContractFactory('HashedTimelockERC20');
+    HashedTimelock = await ethers.getContractFactory('HashedTimeLockERC20');
     htlc = await HashedTimelock.deploy();
 
     TestToken = await ethers.getContractFactory('TestToken');
@@ -53,19 +53,15 @@ describe('HashedTimelockERC20', (accounts) => {
     await token.connect(sender).approve(htlc, senderInitialBalance);
     const txReceipt = await htlc
       .connect(sender)
-      .createHTLC(receiver.address, hashPair.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
+      .create(receiver.address, hashPair.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
 
-    const contractId = logArgs.contractId;
-
-    assert(isSha256Hash(contractId));
+    const htlcId = logArgs.hashlock;
 
     // check token balances
     assertTokenBal(sender.address, senderInitialBalance - tokenAmount);
     assertTokenBal(htlc.address, tokenAmount);
-
-    assert(isSha256Hash(contractId));
 
     assert.equal(logArgs.sender, sender.address);
     assert.equal(logArgs.receiver, receiver.address);
@@ -75,7 +71,7 @@ describe('HashedTimelockERC20', (accounts) => {
     assert.equal(logArgs.timelock, timeLock1Hour);
 
     // // check htlc record
-    const contractArr = await htlc.getHTLCDetails(contractId);
+    const contractArr = await htlc.getHTLCDetails(htlcId);
     const contract = htlcERC20ArrayToObj(contractArr);
     assert.equal(contract.sender, sender.address);
     assert.equal(contract.receiver, receiver.address);
@@ -90,7 +86,7 @@ describe('HashedTimelockERC20', (accounts) => {
 
   it('newContract() should fail when no token transfer approved', async () => {
     await token.approve(htlc.target, 0, { from: sender }); // ensure 0
-    await newContractExpectFailure('ERC20InsufficientAllowance');
+    await newContractExpectFailure('NoAllowance');
   });
 
   it('newContract() should fail when token amount is 0', async () => {
@@ -103,7 +99,7 @@ describe('HashedTimelockERC20', (accounts) => {
     // approve htlc for different account to the htlc contract
     await token.approve(htlc.target, 0, { from: sender }); // ensure 0
     await token.approve(accounts[9].address, tokenAmount, { from: sender });
-    await newContractExpectFailure('ERC20InsufficientAllowance');
+    await newContractExpectFailure('NoAllowance');
   });
 
   it('newContract() should fail when the timelock is in the past', async () => {
@@ -126,7 +122,7 @@ describe('HashedTimelockERC20', (accounts) => {
 
     await token.approve(htlc.target, tokenAmount + 100, { from: sender });
     // now attempt to create another with the exact same parameters
-    await newContractExpectFailure('ContractAlreadyExist', {
+    await newContractExpectFailure('HTLCAlreadyExist', {
       timelock: timelock,
       hashlock: hashlock,
     });
@@ -139,15 +135,15 @@ describe('HashedTimelockERC20', (accounts) => {
     const txReceipt = await newContract({ hashlock: hashPair.hash });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
-    const contractId = logArgs.contractId;
+    const htlcId = logArgs.hashlock;
 
     // receiver calls redeem with the secret to claim the tokens
-    await htlc.connect(receiver).redeem(contractId, hashPair.secret);
+    await htlc.connect(receiver).redeem(htlcId, hashPair.secret);
 
     // Check tokens now owned by the receiver
     assertTokenBal(receiver.address, tokenAmount, `receiver doesn't own ${tokenAmount} tokens`);
 
-    const contractArr = await htlc.getHTLCDetails(contractId);
+    const contractArr = await htlc.getHTLCDetails(htlcId);
     const contract = htlcERC20ArrayToObj(contractArr);
     assert.isTrue(contract.withdrawn); // withdrawn set
     assert.isFalse(contract.refunded); // refunded still false
@@ -158,12 +154,12 @@ describe('HashedTimelockERC20', (accounts) => {
     const txReceipt = await newContract({});
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
-    const contractId = logArgs.contractId;
+    const htlcId = logArgs.hashlock;
 
     // receiver calls redeem with an invalid secret
     const wrongSecret = bufToStr(random32());
     try {
-      await htlc.connect(receiver).redeem(contractId, wrongSecret);
+      await htlc.connect(receiver).redeem(htlcId, wrongSecret);
       assert.fail('expected failure due to 0 value transferred');
     } catch (error) {
       assert.include(error.message, 'HashlockNotMatch');
@@ -177,16 +173,16 @@ describe('HashedTimelockERC20', (accounts) => {
     const txReceipt = await newContract({ hashlock: hashPair.hash });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
-    const contractId = logArgs.contractId;
+    const htlcId = logArgs.hashlock;
 
     const someGuy = accounts[4];
     // receiver calls redeem with the secret to claim the tokens
-    await htlc.connect(someGuy).redeem(contractId, hashPair.secret);
+    await htlc.connect(someGuy).redeem(htlcId, hashPair.secret);
 
     // Check tokens now owned by the receiver
     assertTokenBal(receiver.address, tokenAmount, `receiver doesn't own ${tokenAmount} tokens`);
 
-    const contractArr = await htlc.getHTLCDetails(contractId);
+    const contractArr = await htlc.getHTLCDetails(htlcId);
     const contract = htlcERC20ArrayToObj(contractArr);
     assert.isTrue(contract.withdrawn); // withdrawn set
     assert.isFalse(contract.refunded); // refunded still false
@@ -204,12 +200,12 @@ describe('HashedTimelockERC20', (accounts) => {
     });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
-    const contractId = logArgs.contractId;
+    const htlcId = logArgs.hashlock;
 
     await ethers.provider.send('evm_increaseTime', [21]); // Increase time by 21 seconds
 
     try {
-      await htlc.connect(receiver).redeem(contractId, hashPair.secret);
+      await htlc.connect(receiver).redeem(htlcId, hashPair.secret);
       assert.fail('Transaction did not revert as expected');
     } catch (error) {
       assert.include(error.message, 'NotFutureTimelock');
@@ -226,34 +222,34 @@ describe('HashedTimelockERC20', (accounts) => {
 
     const txReceipt1 = await htlc
       .connect(sender)
-      .createHTLC(receiver.address, hashPair1.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
+      .create(receiver.address, hashPair1.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
     const txReceiptWithEvents1 = await txReceipt1.wait();
     const logArgs1 = txLoggedArgsWithIndex(txReceiptWithEvents1, 1);
-    const contractId1 = logArgs1.contractId;
+    const htlcId1 = logArgs1.hashlock;
 
     await token.mint(sender2.address, senderInitialBalance);
     await token.connect(sender2).approve(htlc.target, senderInitialBalance);
 
     const txReceipt2 = await htlc
       .connect(sender2)
-      .createHTLC(receiver.address, hashPair2.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
+      .create(receiver.address, hashPair2.hash, timeLock1Hour, token.target, tokenAmount, chainId, _address);
     const txReceiptWithEvents2 = await txReceipt2.wait();
     const logArgs2 = txLoggedArgsWithIndex(txReceiptWithEvents2, 1);
-    const contractId2 = logArgs2.contractId;
+    const htlcId2 = logArgs2.hashlock;
 
     // receiver calls redeem with the secret to claim the tokens
-    await htlc.connect(receiver).batchRedeem([contractId1, contractId2], [hashPair1.secret, hashPair2.secret]);
+    await htlc.connect(receiver).batchRedeem([htlcId1, htlcId2], [hashPair1.secret, hashPair2.secret]);
 
     // Check tokens now owned by the receiver
     assertTokenBal(receiver.address, tokenAmount * 2, `receiver doesn't own ${tokenAmount * 2} tokens`);
 
-    const contractArr1 = await htlc.getHTLCDetails(contractId1);
+    const contractArr1 = await htlc.getHTLCDetails(htlcId1);
     const contract1 = htlcERC20ArrayToObj(contractArr1);
     assert.isTrue(contract1.withdrawn); // withdrawn set
     assert.isFalse(contract1.refunded); // refunded still false
     assert.equal(contract1.preimage, hashPair1.secret);
 
-    const contractArr2 = await htlc.getHTLCDetails(contractId2);
+    const contractArr2 = await htlc.getHTLCDetails(htlcId2);
     const contract2 = htlcERC20ArrayToObj(contractArr2);
     assert.isTrue(contract2.withdrawn); // withdrawn set
     assert.isFalse(contract2.refunded); // refunded still false
@@ -271,16 +267,16 @@ describe('HashedTimelockERC20', (accounts) => {
     });
     const txReceiptWithEvents = await txReceipt.wait();
     const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
-    const contractId = logArgs.contractId;
+    const htlcId = logArgs.hashlock;
 
     await ethers.provider.send('evm_increaseTime', [30]); // Increase time by 30 seconds
     // const balBefore = await token.balanceOf(sender);
     const balBefore = BigNumber.from(await token.balanceOf(sender.address));
-    await htlc.connect(sender).refund(contractId);
+    await htlc.connect(sender).refund(htlcId);
 
     // Check tokens returned to the sender
     assertTokenBal((sender.address, balBefore.add(tokenAmount)), `sender balance unexpected`);
-    const contractArr = await htlc.getHTLCDetails(contractId);
+    const contractArr = await htlc.getHTLCDetails(htlcId);
     const contract = htlcERC20ArrayToObj(contractArr);
     assert.isTrue(contract.refunded);
     assert.isFalse(contract.withdrawn);
@@ -291,10 +287,10 @@ describe('HashedTimelockERC20', (accounts) => {
     const newContractTx = await newContract();
     const txReceiptWithEvents = await newContractTx.wait();
     const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
-    const contractId = logArgs.contractId;
+    const htlcId = logArgs.hashlock;
 
     try {
-      await htlc.refund(contractId, { from: sender });
+      await htlc.refund(htlcId, { from: sender });
       assert.fail('expected failure due to timelock');
     } catch (err) {
       assert.include(err.message, 'NotPassedTimelock');
@@ -313,7 +309,7 @@ describe('HashedTimelockERC20', (accounts) => {
     });
     const txReceiptWithEvents = await newContractTx1.wait();
     const logArgs = txLoggedArgsWithIndex(txReceiptWithEvents, 1);
-    const contractId1 = logArgs.contractId;
+    const htlcId1 = logArgs.hashlock;
     // create a second contract so there is double the tokens held by the HTLC
     await newContract({
       timelock: timelock20Seconds,
@@ -321,9 +317,9 @@ describe('HashedTimelockERC20', (accounts) => {
     });
     await ethers.provider.send('evm_increaseTime', [30]); // Increase time by 30 seconds
 
-    await htlc.refund(contractId1, { from: sender });
+    await htlc.refund(htlcId1, { from: sender });
     try {
-      await htlc.connect(receiver).redeem(contractId1, hashPair1.secret);
+      await htlc.connect(receiver).redeem(htlcId1, hashPair1.secret);
       assert.fail('expected failure as already refunded');
     } catch (err) {
       assert.include(err.message, 'AlreadyRefunded');
@@ -332,9 +328,37 @@ describe('HashedTimelockERC20', (accounts) => {
 
   it("getHTLCDetails() returns empty record when contract doesn't exist", async function () {
     // Use a placeholder address for a non-existent contract
-    const nonExistentContractId = '0x0000000000000000000000000000000000000000000000000000000000000000';
-    const contract = await htlc.getHTLCDetails(nonExistentContractId);
+    const nonExistentContractIdnonExistentHTLCId = '0x0000000000000000000000000000000000000000000000000000000000000000';
+    const contract = await htlc.getHTLCDetails(nonExistentContractIdnonExistentHTLCId);
     expect(Number(contract[0])).to.equal(0);
+  });
+
+  it("should create multiple HTLCs successfully", async () => {
+    const hashPairs = [newSecretHashPair(), newSecretHashPair(), newSecretHashPair()];
+    const receivers = [accounts[1].address, accounts[2].address, accounts[3].address];
+    const hashlocks = hashPairs.map(pair => pair.hash);
+    const timelocks = [timeLock1Hour, timeLock1Hour + 100, timeLock1Hour + 200];
+    const amounts = [10, 20, 30];
+
+    await token.connect(accounts[0]).approve(htlc.target, 60);
+
+    // Create multiple HTLCs
+    await htlc.connect(accounts[0]).batchCreate(
+      receivers, hashlocks, timelocks, Array(3).fill(token.target), amounts, Array(3).fill(1), Array(3).fill('0x0')
+    );
+
+    // Assertions for each HTLC
+    for (let i = 0; i < hashlocks.length; i++) {
+      const htlcId = await htlc.getHTLCDetails(hashlocks[i]);
+      const details = htlcERC20ArrayToObj(htlcId)
+      expect(details.receiver).to.equal(receivers[i]);
+      expect(details.amount.toString()).to.equal(amounts[i].toString());
+      expect(details.timelock).to.equal(timelocks[i]);
+      expect(details.token).to.equal(token.target);
+      expect(details.hashlock).to.equal(hashlocks[i]);
+      expect(details.refunded).false;
+      expect(details.refunded).false;
+    }
   });
 
   /*
@@ -342,7 +366,7 @@ describe('HashedTimelockERC20', (accounts) => {
    */
   const newContract = async ({ timelock = timeLock1Hour, hashlock = newSecretHashPair().hash } = {}) => {
     // await token.approve(htlc.address, tokenAmount, { from: sender });
-    return htlc.createHTLC(receiver.address, hashlock, timelock, token.target, tokenAmount, chainId, _address, {
+    return htlc.create(receiver.address, hashlock, timelock, token.target, tokenAmount, chainId, _address, {
       from: sender,
     });
   };
@@ -357,7 +381,7 @@ describe('HashedTimelockERC20', (accounts) => {
     } = {}
   ) => {
     try {
-      await htlc.createHTLC(receiverAddr, hashlock, timelock, token.target, amount, chainId, _address, {
+      await htlc.create(receiverAddr, hashlock, timelock, token.target, amount, chainId, _address, {
         from: sender,
       });
       assert.fail('Transaction did not revert as expected');
