@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 #[starknet::interface]
 pub trait IHashedTimelockERC20<TContractState> {
-    fn createHTLC(
+    fn create(
         ref self: TContractState,
         _receiver: ContractAddress,
         _hashlock: u256,
@@ -11,7 +11,7 @@ pub trait IHashedTimelockERC20<TContractState> {
         _chainId: u256,
         _targetCurrencyReceiverAddress: felt252
     ) -> u256;
-    fn batchCreateHTLC(
+    fn batchCreate(
         ref self: TContractState,
         _receivers: Span<ContractAddress>,
         _hashlocks: Span<u256>,
@@ -21,13 +21,11 @@ pub trait IHashedTimelockERC20<TContractState> {
         _chainIds: Span<u256>,
         _targetCurrencyReceiverAddresses: Span<felt252>
     ) -> Span<u256>;
-    fn redeem(ref self: TContractState, _contractId: u256, _secret: felt252) -> bool;
-    fn batchRedeem(
-        ref self: TContractState, _contractIds: Span<u256>, _secrets: Span<felt252>
-    ) -> bool;
-    fn refund(ref self: TContractState, _contractId: u256) -> bool;
+    fn redeem(ref self: TContractState, htlcId: u256, _secret: felt252) -> bool;
+    fn batchRedeem(ref self: TContractState, htlcIds: Span<u256>, _secrets: Span<felt252>) -> bool;
+    fn refund(ref self: TContractState, htlcId: u256) -> bool;
     fn getHTLCDetails(
-        self: @TContractState, _contractId: u256
+        self: @TContractState, htlcId: u256
     ) -> (
         (ContractAddress, ContractAddress, ContractAddress),
         (u256, u256, u256),
@@ -42,10 +40,10 @@ pub trait IHashedTimelockERC20<TContractState> {
 ///
 /// Protocol:
 ///
-///  1) createHTLC(receiver, hashlock, timelock, tokenContract, amount) - a
+///  1) create(receiver, hashlock, timelock, tokenContract, amount) - a
 ///      sender calls this to create a new HTLC on a given token (tokenContract)
-///       for a given amount. A uint256 contract id is returned
-///  2) redeem(contractId, secret) - once the receiver knows the secret of
+///       for a given amount. A uint256 hashlock is returned
+///  2) redeem(hashlock, secret) - once the receiver knows the secret of
 ///      the hashlock hash they can claim the tokens with this function
 ///  3) refund() - after timelock has expired and if the receiver did not
 ///      redeem the tokens the sender / creator of the HTLC can get their tokens
@@ -92,12 +90,10 @@ mod HashedTimelockERC20 {
         TokenTransferInitiated: TokenTransferInitiated,
         TokenTransferClaimed: TokenTransferClaimed,
         TokenTransferRefunded: TokenTransferRefunded,
-        BatchTokenTransfersCompleted: BatchTokenTransfersCompleted,
     }
     #[derive(Drop, starknet::Event)]
     struct TokenTransferInitiated {
         #[key]
-        contractId: u256,
         hashlock: u256,
         amount: u256,
         chainId: u256,
@@ -112,17 +108,12 @@ mod HashedTimelockERC20 {
     #[derive(Drop, starknet::Event)]
     struct TokenTransferClaimed {
         #[key]
-        contractId: u256
+        hashlock: u256
     }
     #[derive(Drop, starknet::Event)]
     struct TokenTransferRefunded {
         #[key]
-        contractId: u256
-    }
-    #[derive(Drop, starknet::Event)]
-    struct BatchTokenTransfersCompleted {
-        #[key]
-        contractIds: Span<u256>
+        hashlock: u256
     }
     #[abi(embed_v0)]
     impl HashedTimelockERC20 of super::IHashedTimelockERC20<ContractState> {
@@ -132,9 +123,9 @@ mod HashedTimelockERC20 {
         /// @param _hashlock A sha-256 hash hashlock.
         /// @param _timelock UNIX epoch seconds time that the lock expires at.
         ///                  Refunds can be made after this time.
-        /// @return contractId Id of the new HTLC. This is needed for subsequent
+        /// @return Id of the new HTLC. This is needed for subsequent
         ///                    calls.
-        fn createHTLC(
+        fn create(
             ref self: ContractState,
             _receiver: ContractAddress,
             _hashlock: u256,
@@ -145,23 +136,23 @@ mod HashedTimelockERC20 {
             _targetCurrencyReceiverAddress: felt252
         ) -> u256 {
             assert!(_timelock > get_block_timestamp().into(), "Not Future TimeLock");
-            assert!(_amount != 0, "Funds can not be zero");
+            assert!(_amount != 0, "Funds Can Not Be Zero");
 
-            let mut bytes: Bytes = BytesTrait::new(0, array![]);
-            bytes.append_address(get_caller_address());
-            bytes.append_address(_receiver);
-            bytes.append_address(_tokenContract);
-            bytes.append_u256(_amount);
-            bytes.append_u256(_hashlock);
-            bytes.append_u256(_timelock);
-            let contractId = bytes.sha256();
-            assert!(!self.hasContract(contractId), "Contract already exists");
-            IERC20Dispatcher { contract_address: _tokenContract }
-                .transfer_from(get_caller_address(), get_contract_address(), _amount);
+            let htlcId = _hashlock;
+            assert!(!self.hasHTLC(htlcId), "HTLC Already Exists");
+
+            let token: IERC20Dispatcher = IERC20Dispatcher { contract_address: _tokenContract };
+            assert!(token.balance_of(get_caller_address()) >= _amount, "Insufficient Balance");
+            assert!(
+                token.allowance(get_caller_address(), get_contract_address()) >= _amount,
+                "No Enough Allowence"
+            );
+
+            token.transfer_from(get_caller_address(), get_contract_address(), _amount);
             self
                 .contracts
                 .write(
-                    contractId,
+                    htlcId,
                     HTLC {
                         hashlock: _hashlock,
                         secret: 0,
@@ -177,7 +168,6 @@ mod HashedTimelockERC20 {
             self
                 .emit(
                     TokenTransferInitiated {
-                        contractId: contractId,
                         hashlock: _hashlock,
                         amount: _amount,
                         chainId: _chainId,
@@ -188,7 +178,7 @@ mod HashedTimelockERC20 {
                         targetCurrencyReceiverAddress: _targetCurrencyReceiverAddress
                     }
                 );
-            contractId
+            htlcId
         }
 
         /// @notice Allows the batch creation of multiple Hashed Time-Lock Contracts (HTLCs).
@@ -196,8 +186,8 @@ mod HashedTimelockERC20 {
         /// @param _receivers An array containing receivers of the corresponding funds.
         /// @param _hashlocks An array containing the sha-256 hash hashlocks.
         /// @param _timelocks An array containing the UNIX epoch seconds time that the locks expire at.
-        /// @return contractId Ids of the new HTLCs.
-        fn batchCreateHTLC(
+        /// @return hashlock Ids of the new HTLCs.
+        fn batchCreate(
             ref self: ContractState,
             _receivers: Span<ContractAddress>,
             _hashlocks: Span<u256>,
@@ -213,31 +203,40 @@ mod HashedTimelockERC20 {
                     && _receivers.len() == _timelocks.len()
                     && _receivers.len() == _chainIds.len()
                     && _receivers.len() == _targetCurrencyReceiverAddresses.len()
-                    && _receivers.len() == _amounts.len(),
-                "incorrect data"
+                    && _receivers.len() == _amounts.len()
+                    && _receivers.len() == _tokenContracts.len(),
+                "Incorrect Data"
             );
-            let mut contractIds: Array<u256> = ArrayTrait::new();
+            let mut htlcIds: Span<u256> = _hashlocks.clone();
             let mut i: usize = 0;
             while i < _amounts
                 .len() {
-                    assert!(*_timelocks[i] > get_block_timestamp().into(), "Not Future TimeLock");
-                    assert!(*_amounts[i] != 0, "Funds can not be Zero");
-                    let mut bytes: Bytes = BytesTrait::new(0, array![]);
-                    bytes.append_address(get_caller_address());
-                    bytes.append_address(*_receivers[i]);
-                    bytes.append_address(*_tokenContracts[i]);
-                    bytes.append_u256(*_amounts[i]);
-                    bytes.append_u256(*_hashlocks[i]);
-                    bytes.append_u256(*_timelocks[i]);
-                    contractIds.append(bytes.sha256());
-                    assert!(!self.hasContract(*contractIds[i]), "Contract already exists");
+                    assert!(
+                        *_timelocks[i] > get_block_timestamp().into(), "Not {i}-th Future TimeLock"
+                    );
+                    assert!(*_amounts[i] != 0, "{i}-th Funds Can Not Be Zero");
+                    assert!(!self.hasHTLC(*htlcIds[i]), "{i}-th HTLC Already Exists");
 
-                    IERC20Dispatcher { contract_address: *_tokenContracts[i] }
-                        .transfer_from(get_caller_address(), get_contract_address(), *_amounts[i]);
+                    let token: IERC20Dispatcher = IERC20Dispatcher {
+                        contract_address: *_tokenContracts[i]
+                    };
+                    assert!(
+                        token.balance_of(get_caller_address()) >= *_amounts[i],
+                        "Insufficient {i}-th Balance"
+                    );
+                    assert!(
+                        token
+                            .allowance(
+                                get_caller_address(), get_contract_address()
+                            ) >= *_amounts[i],
+                        "No Enough Allowence"
+                    );
+
+                    token.transfer_from(get_caller_address(), get_contract_address(), *_amounts[i]);
                     self
                         .contracts
                         .write(
-                            *contractIds[i],
+                            *htlcIds[i],
                             HTLC {
                                 hashlock: *_hashlocks[i],
                                 secret: 0,
@@ -253,7 +252,6 @@ mod HashedTimelockERC20 {
                     self
                         .emit(
                             TokenTransferInitiated {
-                                contractId: *contractIds[i],
                                 hashlock: *_hashlocks[i],
                                 amount: *_amounts[i],
                                 chainId: *_chainIds[i],
@@ -265,18 +263,18 @@ mod HashedTimelockERC20 {
                             }
                         );
                 };
-            contractIds.span()
+            htlcIds
         }
 
         /// @dev Called by the receiver once they know the secret of the hashlock.
         /// This will transfer the locked funds to their address.
         ///
-        /// @param _contractId Id of the HTLC.
+        /// @param htlcId of the HTLC.
         /// @param _secret sha256(_secret) should equal the contract hashlock.
         /// @return bool true on success
-        fn redeem(ref self: ContractState, _contractId: u256, _secret: felt252) -> bool {
-            assert!(self.hasContract(_contractId), "Contract does not exist");
-            let htlc: HTLC = self.contracts.read(_contractId);
+        fn redeem(ref self: ContractState, htlcId: u256, _secret: felt252) -> bool {
+            assert!(self.hasHTLC(htlcId), "HTLC Does Not Exist");
+            let htlc: HTLC = self.contracts.read(htlcId);
 
             let mut bytes: Bytes = BytesTrait::new(0, array![]);
             bytes.append_felt252(_secret);
@@ -284,15 +282,13 @@ mod HashedTimelockERC20 {
             let mut bytes: Bytes = BytesTrait::new(0, array![]);
             bytes.append_u256(pre);
             let hash_pre = bytes.sha256();
-            assert!(htlc.hashlock == hash_pre, "Does not match the hashlock");
-            assert!(!htlc.redeemed, "Funds are alredy redeemed");
-            assert!(!htlc.refunded, "Funds are alredy refunded");
-            //Todo make this error comment more understandable
-            assert!(htlc.timelock > get_block_timestamp().into(), "Not future time lock?");
+            assert!(htlc.hashlock == hash_pre, "Does Not Match the Hashlock");
+            assert!(!htlc.redeemed, "Funds Are Alredy Redeemed");
+            assert!(!htlc.refunded, "Funds Are Alredy Refunded");
             self
                 .contracts
                 .write(
-                    _contractId,
+                    htlcId,
                     HTLC {
                         hashlock: htlc.hashlock,
                         secret: _secret,
@@ -307,42 +303,37 @@ mod HashedTimelockERC20 {
                 );
             IERC20Dispatcher { contract_address: htlc.tokenContract }
                 .transfer(htlc.receiver, htlc.amount);
-            self.emit(TokenTransferClaimed { contractId: _contractId });
+            self.emit(TokenTransferClaimed { hashlock: htlcId });
             true
         }
 
         /// @notice Allows the batch redemption of tokens locked in multiple Hashed Time-Lock Contracts (HTLCs).
         /// @dev This function is used to redeem tokens from multiple HTLCs simultaneously, providing the corresponding secrets for each HTLC.
-        /// @param _contractIds An array containing the unique identifiers (IDs) of the HTLCs from which tokens are to be redeemed.
-        /// @param _secrets An array containing the secret values corresponding to each HTLC in _contractIds.
+        /// @param htlcIds An array containing the unique identifiers (IDs) of the HTLCs from which tokens are to be redeemed.
+        /// @param _secrets An array containing the secret values corresponding to each HTLC in _hashlocks.
         /// @return A boolean indicating whether the batch redemption was successful.
-        /// @dev Emits an BatchTokenTransfersCompleted event upon successful batch redemption.
         fn batchRedeem(
-            ref self: ContractState, _contractIds: Span<u256>, _secrets: Span<felt252>
+            ref self: ContractState, htlcIds: Span<u256>, _secrets: Span<felt252>
         ) -> bool {
-            assert!(_contractIds.len() == _secrets.len(), "incorrect data");
-            let contractIds_clone = _contractIds.clone();
-            let ContractIds_event = _contractIds.clone();
-            assert!(self.hasContracts(_contractIds), "Contract does not exist");
+            assert!(htlcIds.len() == _secrets.len(), "Incorrect Number Of Secrets");
+            assert!(self.hasHTLCs(htlcIds), "HTLCs Do Not Exist");
             let mut i: usize = 0;
-            while i < contractIds_clone
+            while i < htlcIds
                 .len() {
-                    let htlc: HTLC = self.contracts.read(*contractIds_clone[i]);
+                    let htlc: HTLC = self.contracts.read(*htlcIds[i]);
                     let mut bytes: Bytes = BytesTrait::new(0, array![]);
                     bytes.append_felt252(*_secrets[i]);
                     let pre = bytes.sha256();
                     let mut bytes: Bytes = BytesTrait::new(0, array![]);
                     bytes.append_u256(pre);
                     let hash_pre = bytes.sha256();
-                    assert!(htlc.hashlock == hash_pre, "Does not match the hashlock");
-                    assert!(!htlc.redeemed, "Funds are alredy redeemed");
-                    assert!(!htlc.refunded, "Funds are alredy refunded");
-                    //Todo make this error comment more understandable
-                    assert!(htlc.timelock > get_block_timestamp().into(), "Not future time lock?");
+                    assert!(htlc.hashlock == hash_pre, "Does Not Match the {i}-th Hashlock");
+                    assert!(!htlc.redeemed, "{i}-th Funds Are Alredy Redeemed");
+                    assert!(!htlc.refunded, "{i}-th Funds Are Alredy Refunded");
                     self
                         .contracts
                         .write(
-                            *contractIds_clone[i],
+                            *htlcIds[i],
                             HTLC {
                                 hashlock: htlc.hashlock,
                                 secret: *_secrets[i],
@@ -357,29 +348,29 @@ mod HashedTimelockERC20 {
                         );
                     IERC20Dispatcher { contract_address: htlc.tokenContract }
                         .transfer(htlc.receiver, htlc.amount);
+                    self.emit(TokenTransferClaimed { hashlock: *htlcIds[i] });
                     i += 1;
                 };
-            self.emit(BatchTokenTransfersCompleted { contractIds: ContractIds_event });
             true
         }
 
         /// @dev Called by the sender if there was no redeem AND the time lock has
         /// expired. This will refund the contract amount.
         ///
-        /// @param _contractId Id of HTLC to refund from.
+        /// @param _htlcId of the HTLC to refund from.
         /// @return bool true on success
-        fn refund(ref self: ContractState, _contractId: u256) -> bool {
-            assert!(self.hasContract(_contractId), "Contract does not exist");
-            let htlc: HTLC = self.contracts.read(_contractId);
+        fn refund(ref self: ContractState, htlcId: u256) -> bool {
+            assert!(self.hasHTLC(htlcId), "HTLC Does Not Exist");
+            let htlc: HTLC = self.contracts.read(htlcId);
 
-            assert!(!htlc.refunded, "Funds are already refunded");
-            assert!(!htlc.redeemed, "Funds are already redeemed");
-            assert!(htlc.timelock <= get_block_timestamp().into(), "Not passed time lock");
+            assert!(!htlc.refunded, "Funds Are Already Refunded");
+            assert!(!htlc.redeemed, "Funds Are Already Redeemed");
+            assert!(htlc.timelock <= get_block_timestamp().into(), "Not Passed Time Lock");
 
             self
                 .contracts
                 .write(
-                    _contractId,
+                    htlcId,
                     HTLC {
                         hashlock: htlc.hashlock,
                         secret: htlc.secret,
@@ -394,21 +385,21 @@ mod HashedTimelockERC20 {
                 );
             IERC20Dispatcher { contract_address: htlc.tokenContract }
                 .transfer(htlc.sender, htlc.amount);
-            self.emit(TokenTransferRefunded { contractId: _contractId });
+            self.emit(TokenTransferRefunded { hashlock: htlcId });
             true
         }
 
-        /// @dev Get contract details.
-        /// @param _contractId HTLC contract id
+        /// @dev Get HTLC details.
+        /// @param htlcId of the HTLC.
         fn getHTLCDetails(
-            self: @ContractState, _contractId: u256
+            self: @ContractState, htlcId: u256
         ) -> (
             (ContractAddress, ContractAddress, ContractAddress),
             (u256, u256, u256),
             (bool, bool),
             felt252
         ) {
-            if !self.hasContract(_contractId) {
+            if !self.hasHTLC(htlcId) {
                 return (
                     (Zero::zero(), Zero::zero(), Zero::zero()),
                     (0_u256, 0_u256, 0_u256),
@@ -416,7 +407,7 @@ mod HashedTimelockERC20 {
                     0
                 );
             }
-            let htlc: HTLC = self.contracts.read(_contractId);
+            let htlc: HTLC = self.contracts.read(htlcId);
             (
                 (htlc.sender, htlc.receiver, htlc.tokenContract),
                 (htlc.amount, htlc.hashlock, htlc.timelock),
@@ -429,21 +420,21 @@ mod HashedTimelockERC20 {
     #[generate_trait]
     //TODO: Check if this functions be inline?
     impl InternalFunctions of InternalFunctionsTrait {
-        /// @dev Check if there is a contract with a given id.
-        /// @param _contractId Id into contracts mapping.
-        fn hasContract(self: @ContractState, _contractId: u256) -> bool {
-            let exists: bool = (!self.contracts.read(_contractId).sender.is_zero());
+        /// @dev Check if there is a HTLC with a given id.
+        /// @param htlcId into HTLCs mapping.
+        fn hasHTLC(self: @ContractState, htlcId: u256) -> bool {
+            let exists: bool = (!self.contracts.read(htlcId).sender.is_zero());
             exists
         }
 
-        /// @dev Check if all the contracts with the given ids exist.
-        /// @param _contractId Id into contracts mapping.
-        fn hasContracts(self: @ContractState, _contractIds: Span<u256>) -> bool {
+        /// @dev Check if all the HTLCs with the given ids exist.
+        /// @param _ htlcId into HTLCs mapping.
+        fn hasHTLCs(self: @ContractState, htlcIds: Span<u256>) -> bool {
             let mut i: usize = 0;
             let mut exists: bool = true;
-            while i < _contractIds
+            while i < htlcIds
                 .len() {
-                    if self.contracts.read(*_contractIds[i]).sender.is_zero() {
+                    if self.contracts.read(*htlcIds[i]).sender.is_zero() {
                         exists = false;
                         break;
                     }
