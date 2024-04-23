@@ -42,10 +42,10 @@ pub trait IHashedTimelockERC20<TContractState> {
 ///
 ///  1) create(receiver, hashlock, timelock, tokenContract, amount) - a
 ///      sender calls this to create a new HTLC on a given token (tokenContract)
-///       for a given amount. A uint256 hashlock is returned
-///  2) redeem(hashlock, secret) - once the receiver knows the secret of
+///       for a given amount. A uint256 htlcId is returned
+///  2) redeem(htlcId, secret) - once the receiver knows the secret of
 ///      the hashlock hash they can claim the tokens with this function
-///  3) refund() - after timelock has expired and if the receiver did not
+///  3) refund(htlcId) - after timelock has expired and if the receiver did not
 ///      redeem the tokens the sender / creator of the HTLC can get their tokens
 ///      back with this function.
 #[starknet::contract]
@@ -108,12 +108,12 @@ mod HashedTimelockERC20 {
     #[derive(Drop, starknet::Event)]
     struct TokenTransferClaimed {
         #[key]
-        hashlock: u256
+        htlcId: u256
     }
     #[derive(Drop, starknet::Event)]
     struct TokenTransferRefunded {
         #[key]
-        hashlock: u256
+        htlcId: u256
     }
     #[abi(embed_v0)]
     impl HashedTimelockERC20 of super::IHashedTimelockERC20<ContractState> {
@@ -186,7 +186,7 @@ mod HashedTimelockERC20 {
         /// @param _receivers An array containing receivers of the corresponding funds.
         /// @param _hashlocks An array containing the sha-256 hash hashlocks.
         /// @param _timelocks An array containing the UNIX epoch seconds time that the locks expire at.
-        /// @return hashlock Ids of the new HTLCs.
+        /// @return Ids of the new HTLCs.
         fn batchCreate(
             ref self: ContractState,
             _receivers: Span<ContractAddress>,
@@ -303,14 +303,14 @@ mod HashedTimelockERC20 {
                 );
             IERC20Dispatcher { contract_address: htlc.tokenContract }
                 .transfer(htlc.receiver, htlc.amount);
-            self.emit(TokenTransferClaimed { hashlock: htlcId });
+            self.emit(TokenTransferClaimed { htlcId: htlcId });
             true
         }
 
         /// @notice Allows the batch redemption of tokens locked in multiple Hashed Time-Lock Contracts (HTLCs).
         /// @dev This function is used to redeem tokens from multiple HTLCs simultaneously, providing the corresponding secrets for each HTLC.
         /// @param htlcIds An array containing the unique identifiers (IDs) of the HTLCs from which tokens are to be redeemed.
-        /// @param _secrets An array containing the secret values corresponding to each HTLC in _hashlocks.
+        /// @param _secrets An array containing the secret values corresponding to each HTLC in htlcIDs.
         /// @return A boolean indicating whether the batch redemption was successful.
         fn batchRedeem(
             ref self: ContractState, htlcIds: Span<u256>, _secrets: Span<felt252>
@@ -348,7 +348,7 @@ mod HashedTimelockERC20 {
                         );
                     IERC20Dispatcher { contract_address: htlc.tokenContract }
                         .transfer(htlc.receiver, htlc.amount);
-                    self.emit(TokenTransferClaimed { hashlock: *htlcIds[i] });
+                    self.emit(TokenTransferClaimed { htlcId: *htlcIds[i] });
                     i += 1;
                 };
             true
@@ -385,7 +385,7 @@ mod HashedTimelockERC20 {
                 );
             IERC20Dispatcher { contract_address: htlc.tokenContract }
                 .transfer(htlc.sender, htlc.amount);
-            self.emit(TokenTransferRefunded { hashlock: htlcId });
+            self.emit(TokenTransferRefunded { htlcId: htlcId });
             true
         }
 
@@ -421,7 +421,7 @@ mod HashedTimelockERC20 {
     //TODO: Check if this functions be inline?
     impl InternalFunctions of InternalFunctionsTrait {
         /// @dev Check if there is a HTLC with a given id.
-        /// @param htlcId into HTLCs mapping.
+        /// @param htlcId into HTLC mapping.
         fn hasHTLC(self: @ContractState, htlcId: u256) -> bool {
             let exists: bool = (!self.contracts.read(htlcId).sender.is_zero());
             exists
