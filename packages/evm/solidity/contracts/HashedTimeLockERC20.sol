@@ -107,7 +107,7 @@ contract HashedTimeLockERC20 {
       revert NoAllowance();
     }
 
-    IERC20(_tokenContract).safeTransferFrom(msg.sender, address(this), _amount);
+    token.safeTransferFrom(msg.sender, address(this), _amount);
     contracts[htlcId] = HTLC(_hashlock, 0x0, _amount, _timelock, msg.sender, _receiver, _tokenContract, false, false);
 
     emit TokenTransferInitiated(
@@ -166,12 +166,12 @@ contract HashedTimeLockERC20 {
       if (token.balanceOf(msg.sender) < _amounts[i]) {
         revert InsufficientBalance();
       }
-      
+
       if (token.allowance(msg.sender, address(this)) < _amounts[i]) {
         revert NoAllowance();
       }
 
-      IERC20(_tokenContracts[i]).safeTransferFrom(msg.sender, _receivers[i], _amounts[i]);
+      token.safeTransferFrom(msg.sender, _receivers[i], _amounts[i]);
       contracts[htlcIds[i]] = HTLC(
         _hashlocks[i],
         0x0,
@@ -212,7 +212,6 @@ contract HashedTimeLockERC20 {
     if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
     if (htlc.redeemed) revert AlreadyRedeemed();
     if (htlc.refunded) revert AlreadyRefunded();
-    if (htlc.timelock <= block.timestamp) revert NotFutureTimelock();
 
     htlc.secret = _secret;
     htlc.redeemed = true;
@@ -242,7 +241,6 @@ contract HashedTimeLockERC20 {
       if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
       if (htlc.redeemed) revert AlreadyRedeemed();
       if (htlc.refunded) revert AlreadyRefunded();
-      if (htlc.timelock <= block.timestamp) revert NotFutureTimelock();
 
       htlc.secret = _secrets[i];
       htlc.redeemed = true;
