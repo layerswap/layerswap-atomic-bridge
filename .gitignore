@@ -28,3 +28,7 @@ dist
 .DS_Store
 
 build/
+
+.etherscan
+.infura
+.secret
