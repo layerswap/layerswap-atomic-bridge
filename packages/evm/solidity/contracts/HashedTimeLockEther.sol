@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
-import '@openzeppelin/contracts/token/common/ERC2981.sol';
 
 interface IMessenger {
     function notifyHTLC(
@@ -29,6 +28,7 @@ contract HashedTimeLockEther {
   error IncorrectData();
   error PreHTLCNotExists();
   error AlreadyConvertedToHTLC();
+  error NoAllowance();
 
   struct HTLC {
     bytes32 hashlock;
@@ -54,6 +54,9 @@ contract HashedTimeLockEther {
   }
 
   event EtherTransferPreInitiated(
+    uint[] chainIds,
+    string[] dstAddresses,
+    uint phtlcID,
     uint dstChainId,
     uint dstAssetId,
     string dstAddress,
@@ -76,8 +79,9 @@ contract HashedTimeLockEther {
     uint phtlcID
   );
 
+  event LowLevelErrorOccurred(bytes lowLevelData);
   event EtherTransferRefunded(bytes32 indexed htlcId);
-  event EtherTransferRefunded(uint indexed phtlcId);
+  event EtherTransferRefundedP(uint indexed phtlcId);
   event EtherTransferClaimed(bytes32 indexed htlcId,address redeemAddress);
 
   modifier phtlcExists(uint _phtlcId) {
@@ -94,7 +98,7 @@ contract HashedTimeLockEther {
   mapping(uint => PHTLC) pContracts;
 
 
-function createP(uint dstChainId,uint dstAssetId, string memory dstAddress,uint srcAssetId,address srcAddress,uint timelock, address messenger) external payable  returns (uint phtlcID) {
+function createP(uint[] memory chainIds,string[] memory dstAddresses,uint dstChainId,uint dstAssetId, string memory dstAddress,uint srcAssetId,address srcAddress,uint timelock, address messenger) external payable  returns (uint phtlcID) {
     counter+=1;
     if (msg.value == 0) {
       revert FundsNotSent();
@@ -105,13 +109,9 @@ function createP(uint dstChainId,uint dstAssetId, string memory dstAddress,uint 
 
     phtlcID = counter;
 
-    if(hasPHTLC(phtlcID)){
-      revert ContractAlreadyExist();
-    }
-
     pContracts[phtlcID] = PHTLC(dstAddress,srcAssetId,payable(msg.sender),payable(srcAddress),timelock, messenger,msg.value,false,false);
 
-    emit EtherTransferPreInitiated(dstChainId,dstAssetId,dstAddress,srcAssetId,srcAddress,timelock, messenger,msg.value,false,false);
+    emit EtherTransferPreInitiated(chainIds,dstAddresses,counter,dstChainId,dstAssetId,dstAddress,srcAssetId,srcAddress,timelock, messenger,msg.value,false,false);
 }
 
 function refundP(uint _phtlcID) external phtlcExists(_phtlcID) returns (bool){
@@ -123,7 +123,7 @@ function refundP(uint _phtlcID) external phtlcExists(_phtlcID) returns (bool){
 
     phtlc.refunded = true;
     phtlc.sender.transfer(phtlc.amount);
-    emit EtherTransferRefunded(_phtlcID);
+    emit EtherTransferRefundedP(_phtlcID);
     return true;
 }
 
@@ -143,6 +143,8 @@ function convertP(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) 
       pContracts[phtlcID].dstAddress,
       phtlcID
     );
+    }else{
+      revert NoAllowance();
     }
 }
 
@@ -154,43 +156,55 @@ function create(
     string memory _targetCurrencyReceiverAddress,
     uint phtlcID,
     address messenger
-  ) external payable returns (bytes32 htlcId) {
+) external payable returns (bytes32 htlcId) {
     if (msg.value == 0) {
-      revert FundsNotSent();
+        revert FundsNotSent();
     }
     if (_timelock <= block.timestamp) {
-      revert NotFutureTimelock();
+        revert NotFutureTimelock();
+    }
+    if (hasHTLC(_hashlock)) {
+        revert ContractAlreadyExist();
     }
 
-    if (hasHTLC(_hashlock)) {
-      revert ContractAlreadyExist();
-    }
     htlcId = _hashlock;
     contracts[_hashlock] = HTLC(_hashlock, 0x0, msg.value, _timelock, payable(msg.sender), srcAddress, false, false);
 
-     IMessenger(messenger).notifyHTLC(
-            _hashlock,
-            payable(msg.sender),
-            srcAddress,
-            msg.value,
-            _timelock,
-            _hashlock,
-            _targetCurrencyReceiverAddress,
-            phtlcID
-        );
-
     emit EtherTransferInitiated(
-      _hashlock,
-      msg.value,
-      _chainID,
-      _timelock,
-      msg.sender,
-      srcAddress,
-      _targetCurrencyReceiverAddress,
-      phtlcID
+        _hashlock,
+        msg.value,
+        _chainID,
+        _timelock,
+        msg.sender,
+        srcAddress,
+        _targetCurrencyReceiverAddress,
+        phtlcID
     );
-  }
 
+    if (messenger != address(0)) {
+        uint256 codeSize;
+        assembly { codeSize := extcodesize(messenger) }
+        if (codeSize > 0) {
+            try IMessenger(messenger).notifyHTLC(
+                _hashlock,
+                payable(msg.sender),
+                srcAddress,
+                msg.value,
+                _timelock,
+                _hashlock,
+                _targetCurrencyReceiverAddress,
+                phtlcID
+            ) {
+                // Notify successful
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch (bytes memory lowLevelData ) {
+                emit LowLevelErrorOccurred(lowLevelData);
+                revert("IMessenger notifyHTLC failed");
+            }
+        }
+    }
+}
 
   function redeem(bytes32 _htlcId, bytes32 _secret) external htlcExists(_htlcId) returns (bool) {
     HTLC storage htlc = contracts[_htlcId];
@@ -199,7 +213,6 @@ function create(
     if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
     if (htlc.refunded) revert AlreadyRefunded();
     if (htlc.redeemed) revert AlreadyRedeemed();
-    if (htlc.timelock <= block.timestamp) revert NotFutureTimelock();
 
     htlc.secret = _secret;
     htlc.redeemed = true;
