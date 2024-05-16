@@ -9,6 +9,7 @@ describe("HashedTimeLockEther", function () {
   let pastTime;
   let oneFinney;
   let zeroFinney;
+  let twoFinney
   let accounts;
 
   beforeEach(async function () {
@@ -20,6 +21,7 @@ describe("HashedTimeLockEther", function () {
     provider = hre.ethers.provider;
     oneFinney = parseUnits('1').toString();
     zeroFinney = parseUnits('0').toString();
+    twoFinney = parseUnits('2').toString();
   });
 
   it('createP() should create a new PHTLC and store correct details', async () => {
@@ -176,6 +178,73 @@ describe("HashedTimeLockEther", function () {
     );
     await ethers.provider.send("evm_increaseTime", [-futureTime - 10]); 
     await ethers.provider.send("evm_mine");
+  });
+
+  it('refundP() should fail if already refunded', async function () {
+    const sender = accounts[0];
+    const receiver = accounts[1];
+    const chainIds = [1];
+    const dstAddresses = [receiver.address];
+
+    const txSend = await contract.connect(sender).createP(
+      chainIds,
+      dstAddresses,
+      1,
+      100,
+      receiver.address, 
+      1,
+      receiver.address,
+      futureTime,
+      accounts[2].address,
+      { value: oneFinney }
+    );
+
+    const receiptSend = await txSend.wait();
+    const eventArgs = txLoggedArgs(receiptSend);
+    const phtlcID = eventArgs[0][0];
+
+    await ethers.provider.send("evm_increaseTime", [futureTime + 10]);
+    await ethers.provider.send("evm_mine");
+
+    await contract.connect(sender).refundP(phtlcID);
+
+    await expect(
+      contract.connect(sender).refundP(phtlcID)
+    ).to.be.revertedWithCustomError(contract, 'AlreadyRefunded');
+
+    await ethers.provider.send("evm_increaseTime", [-futureTime - 10]); 
+    await ethers.provider.send("evm_mine");
+  });
+
+  it('refundP() should fail if already converted to HTLC', async function () {
+    const sender = accounts[0];
+    const receiver = accounts[1];
+    const chainIds = [1];
+    const dstAddresses = [receiver.address];
+    const hashlock = newSecretHashPair().hash;
+
+    const txSend = await contract.connect(sender).createP(
+      chainIds,
+      dstAddresses,
+      1,
+      100,
+      receiver.address, 
+      1,
+      receiver.address,
+      futureTime,
+      accounts[2].address,
+      { value: oneFinney }
+    );
+
+    const receiptSend = await txSend.wait();
+    const eventArgs = txLoggedArgs(receiptSend);
+    const phtlcID = eventArgs[0][0];
+
+    await contract.connect(sender).convertP(phtlcID, hashlock);
+
+    await expect(
+      contract.connect(sender).refundP(phtlcID)
+    ).to.be.revertedWithCustomError(contract, 'AlreadyConvertedToHTLC');
   });
 
   it('create() should successfully create a new HTLC with a valid messenger', async function () {
@@ -717,6 +786,409 @@ it('getPHTLCDetails() should return empty details for a non-existent PHTLC', asy
   expect(phtlcDetails.refunded).to.be.false;
   expect(phtlcDetails.converted).to.be.false;
 });
+
+it("should successfully create a batch of HTLCs", async function () {
+  const srcAddresses = [accounts[1].address, accounts[2].address];
+  const hashlocks = [newSecretHashPair().hash,newSecretHashPair().hash];
+  const timelocks = [futureTime, futureTime];
+  const chainIDs = [1, 1];
+  const targetCurrencyReceiversAddresses = ["address1", "address2"];
+  const amounts = [oneFinney, oneFinney];
+  const phtlcIds = [1, 2];
+  const messengers = [accounts[3].address, accounts[4].address];
+
+  const tx = await contract.createBatch(
+    srcAddresses,
+    hashlocks,
+    timelocks,
+    chainIDs,
+    targetCurrencyReceiversAddresses,
+    amounts,
+    phtlcIds,
+    messengers,
+    { value: twoFinney}
+  );
+
+  await expect(tx).to.emit(contract, "EtherTransferInitiated");
+});
+
+it("createBatch() should fail if array lengths do not match", async function () {
+  const srcAddresses = [accounts[1].address]; // Only 1 address
+  const hashlocks = [newSecretHashPair().hash,newSecretHashPair().hash]; // 2 hashlocks
+  const timelocks = [futureTime, futureTime];
+  const chainIDs = [1, 1];
+  const targetCurrencyReceiversAddresses = ["address1", "address2"];
+  const amounts = [oneFinney, oneFinney];
+  const phtlcIds = [1, 2];
+  const messengers = [accounts[3].address, accounts[4].address];
+
+  await expect(
+    contract.createBatch(
+      srcAddresses,
+      hashlocks,
+      timelocks,
+      chainIDs,
+      targetCurrencyReceiversAddresses,
+      amounts,
+      phtlcIds,
+      messengers,
+      { value: twoFinney }
+    )
+  ).to.be.revertedWithCustomError(contract,"IncorrectData");
+});
+
+it("createBatch() should fail if no funds sent", async function () {
+  const srcAddresses = [accounts[1].address, accounts[2].address];
+  const hashlocks = [newSecretHashPair().hash,newSecretHashPair().hash];
+  const timelocks = [futureTime, futureTime];
+  const chainIDs = [1, 1];
+  const targetCurrencyReceiversAddresses = ["address1", "address2"];
+  const amounts = [oneFinney, oneFinney];
+  const phtlcIds = [1, 2];
+  const messengers = [accounts[3].address, accounts[4].address];
+
+  await expect(
+    contract.createBatch(
+      srcAddresses,
+      hashlocks,
+      timelocks,
+      chainIDs,
+      targetCurrencyReceiversAddresses,
+      amounts,
+      phtlcIds,
+      messengers,
+      { value: zeroFinney }
+    )
+  ).to.be.revertedWithCustomError(contract,"FundsNotSent");
+});
+
+it("createBatch() should fail if any amount in the batch is zero", async function () {
+  const srcAddresses = [accounts[1].address, accounts[2].address];
+  const hashlocks = [newSecretHashPair().hash,newSecretHashPair().hash];
+  const timelocks = [futureTime, futureTime];
+  const chainIDs = [1, 1];
+  const targetCurrencyReceiversAddresses = ["address1", "address2"];
+  const amounts = [zeroFinney, oneFinney];
+  const phtlcIds = [1, 2];
+  const messengers = [accounts[3].address, accounts[4].address];
+
+  await expect(
+    contract.createBatch(
+      srcAddresses,
+      hashlocks,
+      timelocks,
+      chainIDs,
+      targetCurrencyReceiversAddresses,
+      amounts,
+      phtlcIds,
+      messengers,
+      { value: oneFinney }
+    )
+  ).to.be.revertedWithCustomError(contract,"FundsNotSent");
+});
+
+it("createBatch() should fail if any timelock is not in the future", async function () {
+  const srcAddresses = [accounts[1].address, accounts[2].address];
+  const hashlocks = [newSecretHashPair().hash,newSecretHashPair().hash];
+  const timelocks = [pastTime, futureTime];
+  const chainIDs = [1, 1];
+  const targetCurrencyReceiversAddresses = ["address1", "address2"];
+  const amounts = [oneFinney, oneFinney];
+  const phtlcIds = [1, 2];
+  const messengers = [accounts[3].address, accounts[4].address];
+
+  await expect(
+    contract.createBatch(
+      srcAddresses,
+      hashlocks,
+      timelocks,
+      chainIDs,
+      targetCurrencyReceiversAddresses,
+      amounts,
+      phtlcIds,
+      messengers,
+      { value: twoFinney }
+    )
+  ).to.be.revertedWithCustomError(contract,"NotFutureTimelock");
+});
+
+it("createBatch() should fail if any hashlock already exists", async function () {
+  const srcAddresses = [accounts[1].address, accounts[2].address];
+  const hashlock = newSecretHashPair().hash;
+  const hashlocks = [hashlock,hashlock]; // Duplicate hashlock
+  const timelocks = [futureTime, futureTime];
+  const chainIDs = [1, 1];
+  const targetCurrencyReceiversAddresses = ["address1", "address2"];
+  const amounts = [oneFinney, oneFinney];
+  const phtlcIds = [1, 2];
+  const messengers = [accounts[3].address, accounts[4].address];
+
+  await expect(
+    contract.createBatch(
+      srcAddresses,
+      hashlocks,
+      timelocks,
+      chainIDs,
+      targetCurrencyReceiversAddresses,
+      amounts,
+      phtlcIds,
+      messengers,
+      { value: twoFinney }
+    )
+  ).to.be.revertedWithCustomError(contract,"ContractAlreadyExist");
+});
+
+it("createBatch() should fail if the total value sent does not match the total amounts specified", async function () {
+  const srcAddresses = [accounts[1].address, accounts[2].address];
+  const hashlocks = [newSecretHashPair().hash,newSecretHashPair().hash];
+  const timelocks = [futureTime, futureTime];
+  const chainIDs = [1, 1];
+  const targetCurrencyReceiversAddresses = ["address1", "address2"];
+  const amounts = [oneFinney, oneFinney];
+  const phtlcIds = [1, 2];
+  const messengers = [accounts[3].address, accounts[4].address];
+
+  await expect(
+    contract.createBatch(
+      srcAddresses,
+      hashlocks,
+      timelocks,
+      chainIDs,
+      targetCurrencyReceiversAddresses,
+      amounts,
+      phtlcIds,
+      messengers,
+      { value: oneFinney } // Incorrect total value sent
+    )
+  ).to.be.revertedWithCustomError(contract,"IncorrectData");
+});
+
+
+
+
+
+
+it('batchRedeem() should successfully redeem multiple HTLCs', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+
+  const hashSecretPair1 = newSecretHashPair();
+  const hashSecretPair2 = newSecretHashPair();
+
+  await contract.connect(sender).create(
+    receiver.address,
+    hashSecretPair1.hash,
+    futureTime,
+    1,
+    "targetAddress1",
+    1,
+    "0x0000000000000000000000000000000000000000",
+    { value: oneFinney }
+  );
+
+  await contract.connect(sender).create(
+    receiver.address,
+    hashSecretPair2.hash,
+    futureTime,
+    1,
+    "targetAddress2",
+    1,
+    "0x0000000000000000000000000000000000000000",
+    { value: oneFinney }
+  );
+
+  const tx = await contract.connect(receiver).batchRedeem(
+    [hashSecretPair1.hash, hashSecretPair2.hash],
+    [hashSecretPair1.secret, hashSecretPair2.secret]
+  );
+
+  const receipt = await tx.wait();
+
+  expect(receipt.logs.length).to.equal(2, 'Number of events does not match');
+  expect(receipt.logs[0].args[0]).to.equal(hashSecretPair1.hash, 'First HTLC ID does not match');
+  expect(receipt.logs[1].args[0]).to.equal(hashSecretPair2.hash, 'Second HTLC ID does not match');
+  expect(receipt.logs[0].args[1]).to.equal(receiver.address, 'First HTLC redeemer address does not match');
+  expect(receipt.logs[1].args[1]).to.equal(receiver.address, 'Second HTLC redeemer address does not match');
+
+  const htlc1 = await contract.getHTLCDetails(hashSecretPair1.hash);
+  expect(htlc1.redeemed).to.be.true;
+
+  const htlc2 = await contract.getHTLCDetails(hashSecretPair2.hash);
+  expect(htlc2.redeemed).to.be.true;
+});
+
+it('batchRedeem() should fail if HTLC IDs and secrets array lengths do not match', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const hashSecretPair = newSecretHashPair();
+
+  await contract.connect(sender).create(
+    receiver.address,
+    hashSecretPair.hash,
+    futureTime,
+    1,
+    "targetAddress",
+    1,
+    "0x0000000000000000000000000000000000000000",
+    { value: oneFinney }
+  );
+
+  await expect(
+    contract.connect(receiver).batchRedeem(
+      [hashSecretPair.hash],
+      [hashSecretPair.secret, hashSecretPair.secret] // Extra secret
+    )
+  ).to.be.revertedWithCustomError(contract,"IncorrectData");
+});
+
+it('batchRedeem() should fail if any HTLC does not exist', async function () {
+  const receiver = accounts[1];
+  const hashSecretPair = newSecretHashPair();
+
+  await expect(
+    contract.connect(receiver).batchRedeem(
+      [hashSecretPair.hash],
+      [hashSecretPair.secret]
+    )
+  ).to.be.revertedWithCustomError(contract,"HTLCNotExists");
+});
+
+it('batchRedeem() should fail if any secret does not match the hashlock', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const hashSecretPair1 = newSecretHashPair();
+  const hashSecretPair2 = newSecretHashPair();
+  const incorrectSecret = newSecretHashPair().secret;
+
+  await contract.connect(sender).create(
+    receiver.address,
+    hashSecretPair1.hash,
+    futureTime,
+    1,
+    "targetAddress1",
+    1,
+    "0x0000000000000000000000000000000000000000",
+    { value: oneFinney }
+  );
+
+  await contract.connect(sender).create(
+    receiver.address,
+    hashSecretPair2.hash,
+    futureTime,
+    1,
+    "targetAddress2",
+    1,
+    "0x0000000000000000000000000000000000000000",
+    { value: oneFinney }
+  );
+
+  await expect(
+    contract.connect(receiver).batchRedeem(
+      [hashSecretPair1.hash, hashSecretPair2.hash],
+      [hashSecretPair1.secret, incorrectSecret]
+    )
+  ).to.be.revertedWithCustomError(contract,"HashlockNotMatch");
+});
+
+it('batchRedeem() should fail if any HTLC is already refunded', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const hashSecretPair = newSecretHashPair();
+
+  await contract.connect(sender).create(
+    receiver.address,
+    hashSecretPair.hash,
+    futureTime,
+    1,
+    "targetAddress",
+    1,
+    "0x0000000000000000000000000000000000000000",
+    { value: oneFinney }
+  );
+
+  await ethers.provider.send("evm_increaseTime", [futureTime + 10]);
+  await ethers.provider.send("evm_mine");
+
+  await contract.connect(sender).refund(hashSecretPair.hash);
+
+  await expect(
+    contract.connect(receiver).batchRedeem(
+      [hashSecretPair.hash],
+      [hashSecretPair.secret]
+    )
+  ).to.be.revertedWithCustomError(contract,"AlreadyRefunded");
+
+  await ethers.provider.send("evm_increaseTime", [-futureTime - 10]);
+  await ethers.provider.send("evm_mine");
+});
+
+it('batchRedeem() should fail if any HTLC is already redeemed', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const hashSecretPair1 = newSecretHashPair();
+  const hashSecretPair2 = newSecretHashPair();
+
+  await contract.connect(sender).create(
+    receiver.address,
+    hashSecretPair1.hash,
+    futureTime,
+    1,
+    "targetAddress1",
+    1,
+    "0x0000000000000000000000000000000000000000",
+    { value: oneFinney }
+  );
+
+  await contract.connect(sender).create(
+    receiver.address,
+    hashSecretPair2.hash,
+    futureTime,
+    1,
+    "targetAddress2",
+    1,
+    "0x0000000000000000000000000000000000000000",
+    { value: oneFinney }
+  );
+
+  await contract.connect(receiver).redeem(hashSecretPair1.hash, hashSecretPair1.secret);
+
+  await expect(
+    contract.connect(receiver).batchRedeem(
+      [hashSecretPair1.hash, hashSecretPair2.hash],
+      [hashSecretPair1.secret, hashSecretPair2.secret]
+    )
+  ).to.be.revertedWithCustomError(contract,"AlreadyRedeemed");
+});
+
+it('batchRedeem() should fail if any timelock has passed', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const hashSecretPair = newSecretHashPair();
+
+  await contract.connect(sender).create(
+    receiver.address,
+    hashSecretPair.hash,
+    futureTime,
+    1,
+    "targetAddress",
+    1,
+    "0x0000000000000000000000000000000000000000",
+    { value: oneFinney }
+  );
+
+  await ethers.provider.send("evm_increaseTime", [futureTime + 10]);
+  await ethers.provider.send("evm_mine");
+
+  await expect(
+    contract.connect(receiver).batchRedeem(
+      [hashSecretPair.hash],
+      [hashSecretPair.secret]
+    )
+  ).to.be.revertedWithCustomError(contract,"NotFutureTimelock");
+  await ethers.provider.send("evm_increaseTime", [-futureTime - 10]);
+  await ethers.provider.send("evm_mine");
+});
+
 
 });
 
