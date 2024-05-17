@@ -21,3 +21,23 @@ export const ETH = {
   },
   ERC20_TOKEN_ADDRESS: '',
 };
+
+export const CONFIRMATION_THRESHOLD = 12;
+
+export const USER_TIMELOCK_SECONDS = 3600;
+export const USER_ADDRESS = '';
+export const USER_PRIVATE_KEY = '';
+
+export const LP_ADDRESS = '';
+export const LP_PRIVATE_KEY = '';
+
+export const OPTIMISM_RPC_ENDPOINT = 'https://optimism-sepolia.infura.io/v3/e37c38b359d644da93d6e1234a75b49a';
+export const OPTIMISM_WSS_ENDPOINT = 'wss://optimism-sepolia.infura.io/ws/v3/e37c38b359d644da93d6e1234a75b49a';
+export const ARBITRUM_RPC_ENDPOINT = 'https://arbitrum-sepolia.infura.io/v3/e37c38b359d644da93d6e1234a75b49a';
+export const ARBITRUM_WSS_ENDPOINT = 'wss://arbitrum-sepolia.infura.io/ws/v3/e37c38b359d644da93d6e1234a75b49a';
+
+export const OPTIMISM_MESSANGER_ADDRESS = '0xAeacd4B823cf06a8d0CfF8dEbb57629e76fD4C4f';
+export const ARBITRUM_MESSANGER_ADDRESS = '0x2ad3140D1DB7569abD131CF0E84B44f488D9eE86';
+
+// Same contarct address for both Arbitrum and Optimism
+export const PRE_HTLC_CONTRACT_ADDRESS = '0x758ae3701B35230961E3b6545769AEb05c48118c';
