@@ -234,6 +234,133 @@ function create(
     return true;
   }
 
+   function createBatch(
+    address[] memory _srcAddresses,
+    bytes32[] memory _hashlocks,
+    uint256[] memory _timelocks,
+    uint256[] memory _chainIDs,
+    string[] memory _targetCurrencyReceiversAddresses,
+    uint[] memory _amounts,
+    uint[] memory _phtlcIds,
+    address[] memory messengers
+  ) external payable returns (bytes32[] memory htlcIds) {
+    
+    htlcIds = new bytes32[](_srcAddresses.length);
+    if (msg.value == 0) {
+      revert FundsNotSent();
+    }
+
+    uint result = 0;
+
+    for (uint i = 0; i < _amounts.length; i++) {
+      if (_amounts[i] == 0) {
+        revert FundsNotSent();
+      }
+      result += _amounts[i];
+    }
+
+    if (
+      _srcAddresses.length == 0 ||
+      _srcAddresses.length != _hashlocks.length ||
+      _srcAddresses.length != _timelocks.length ||
+      _srcAddresses.length != _chainIDs.length ||
+      _srcAddresses.length != _targetCurrencyReceiversAddresses.length ||
+      _srcAddresses.length != _phtlcIds.length ||
+      _srcAddresses.length != messengers.length ||
+      result != msg.value
+    ) {
+      revert IncorrectData();
+    }
+
+    for (uint i = 0; i < _srcAddresses.length; i++) {
+      if (_timelocks[i] <= block.timestamp) {
+        revert NotFutureTimelock();
+      }
+      htlcIds[i] = _hashlocks[i];
+
+      if (hasHTLC(htlcIds[i])) {
+        revert ContractAlreadyExist();
+      }
+
+      contracts[htlcIds[i]] = HTLC(
+        _hashlocks[i],
+        0x0,
+        _amounts[i],
+        _timelocks[i],
+        payable(msg.sender),
+        payable(_srcAddresses[i]),
+        false,
+        false
+      );
+
+      emit EtherTransferInitiated(
+        _hashlocks[i],
+        _amounts[i],
+        _chainIDs[i],
+        _timelocks[i],
+        msg.sender,
+        _srcAddresses[i],
+        _targetCurrencyReceiversAddresses[i],
+        _phtlcIds[i]
+      );
+
+          if (messengers[i] != address(0)) {
+        uint256 codeSize;
+        address currentMessenger = messengers[i];
+        assembly { codeSize := extcodesize(currentMessenger) }
+        if (codeSize > 0) {
+            try IMessenger(messengers[i]).notifyHTLC(
+                _hashlocks[i],
+                payable(msg.sender),
+                payable(_srcAddresses[i]),
+                msg.value,
+                _timelocks[i],
+                _hashlocks[i],
+                _targetCurrencyReceiversAddresses[i],
+                _phtlcIds[i]
+            ) {
+                // Notify successful
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch (bytes memory lowLevelData ) {
+                emit LowLevelErrorOccurred(lowLevelData);
+                revert("IMessenger notifyHTLC failed");
+            }
+        }
+    }
+    }
+  }
+
+  function batchRedeem(bytes32[] memory _htlcIds, bytes32[] memory _secrets) external returns (bool) {
+    if (_htlcIds.length != _secrets.length) {
+      revert IncorrectData();
+    }
+    for (uint256 i; i < _htlcIds.length; i++) {
+      if (!hasHTLC(_htlcIds[i])) revert HTLCNotExists();
+    }
+    uint256 totalToRedeem;
+    address payable _receiver = contracts[_htlcIds[0]].srcAddress;
+    for (uint256 i; i < _htlcIds.length; i++) {
+      HTLC storage htlc = contracts[_htlcIds[i]];
+      bytes32 pre = sha256(abi.encodePacked(_secrets[i]));
+      if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
+      if (htlc.refunded) revert AlreadyRefunded();
+      if (htlc.redeemed) revert AlreadyRedeemed();
+      if (htlc.timelock <= block.timestamp) revert NotFutureTimelock();
+
+      htlc.secret = _secrets[i];
+      htlc.redeemed = true;
+      if (_receiver == htlc.srcAddress) {
+        totalToRedeem += htlc.amount;
+      } else {
+        htlc.srcAddress.transfer(htlc.amount);
+      }
+      emit EtherTransferClaimed(_htlcIds[i],msg.sender);
+    }
+    _receiver.transfer(totalToRedeem);
+    return true;
+  }
+
   function getHTLCDetails(
     bytes32 _htlcId
   )
