@@ -8,8 +8,8 @@ import {
   OP_HTLC_CONTRACT_ADDRESS,
   USER_PRIVATE_KEY,
   USER_TIMELOCK_SECONDS,
-} from '../config';
-import { checkConfirmations, getContractEventListener, log, subscribeToEvent } from './helper';
+} from '../../config';
+import { checkConfirmations, getContractEventListener, log, subscribeToEvent } from '../helper';
 import { ChainID, AssetID, PreEvmHtlc } from '@layerswap/evm';
 
 (async () => {

@@ -1,4 +1,4 @@
-import { checkConfirmations, getContractEventListener, log, subscribeToEvent } from './helper';
+import { checkConfirmations, getContractEventListener, log, subscribeToEvent } from '../helper';
 import { ChainID, PreEvmHtlc } from '@layerswap/evm';
 import {
   ARBITRUM_RPC_ENDPOINT,
@@ -8,7 +8,7 @@ import {
   OPTIMISM_RPC_ENDPOINT,
   ARB_HTLC_CONTRACT_ADDRESS,
   OP_HTLC_CONTRACT_ADDRESS,
-} from '../config';
+} from '../../config';
 
 (async () => {
   let hashPair: { secret: string; proof: string };
@@ -46,11 +46,28 @@ import {
 
     try {
       await checkConfirmations(clientArb, transactionHash);
-      // Redeem user's funds on Optimism
       await createRedeemTransaction(returnValues);
+    } catch (error) {
+      log('Error checking confirmations:', error);
+    }
+  };
 
-      // Redeem lp's funds on Arbitrum and wait for confirmation
-      await createUserRedeemTransaction(returnValues);
+  const processTransferClaimedEvent = async (event: any) => {
+    const { transactionHash } = event;
+
+    log('\n');
+    log(`"EtherTransferClaimed" event detected on Arbitrum`);
+    log(`Hash: ${transactionHash}`);
+
+    try {
+      await checkConfirmations(clientArb, transactionHash);
+      const totalCostEthBN = totalL2Fee.add(totalL1Fee);
+      const formattotalCostEthBN = clientOp.web3.utils.fromWei(totalCostEthBN.toString(), 'ether');
+
+      log(`Total fee: ${formattotalCostEthBN.toString()} ETH`);
+      log(`Execution Time: ${(Date.now() - startTime) / 1000} seconds`);
+      log(`Done! Burger time! 🍔🍟🥤`);
+      process.exit(0);
     } catch (error) {
       log('Error checking confirmations:', error);
     }
@@ -99,63 +116,18 @@ import {
     const { hashlock } = returnValues;
 
     try {
-      const receipt = await clientOp.redeem(hashlock, hashPair.proof, {
+      const accounts = clientArb.web3.eth.accounts;
+      const lpAddress = accounts.wallet.add(LP_PRIVATE_KEY).address;
+      const receipt = await clientArb.redeem(hashlock, hashPair.proof, {
         senderAddress: lpAddress,
       });
 
       log(`Redeem transaction sent: ${receipt.transactionHash}`);
 
-      await checkConfirmations(clientOp, receipt.transactionHash);
-
-      // Current transaction fee spent
-      const l1Fee = clientOp.web3.utils.hexToNumberString(receipt.l1Fee);
-      totalL1Fee = totalL1Fee.add(clientOp.web3.utils.toBN(l1Fee));
-
-      const gasUsedBN = clientOp.web3.utils.toBN(receipt.gasUsed);
-      const totalCostWeiBN = gasUsedBN.mul(clientOp.web3.utils.toBN(receipt.effectiveGasPrice));
-
-      totalL2Fee = totalL2Fee.add(totalCostWeiBN);
-
-      // Total transaction fee spent
-      const totalCostEthBN = totalL2Fee.add(totalL1Fee);
-      const formattotalCostEthBN = clientOp.web3.utils.fromWei(totalCostEthBN.toString(), 'ether');
-
-      log(`Total fee: ${formattotalCostEthBN.toString()} ETH`);
-      log(`Execution time after user funds are redeemed : ${(Date.now() - startTime) / 1000} seconds`);
-    } catch (error) {
-      log(`Error creating redeem transaction: ${error}`);
-    }
-  };
-
-  const createUserRedeemTransaction = async (returnValues: any) => {
-    log('The LP is preparing to make a "redeem" transaction for user on Arbitrum...');
-    const { hashlock } = returnValues;
-    const accounts = clientArb.web3.eth.accounts;
-    const lpAddress = accounts.wallet.add(LP_PRIVATE_KEY).address;
-
-    try {
-      const receipt = await clientArb.redeem(hashlock, hashPair.proof, {
-        senderAddress: lpAddress,
-      });
-
-      log(`User redeem transaction sent: ${receipt.transactionHash}`);
-
-      await checkConfirmations(clientArb, receipt.transactionHash);
-
-      // Current transaction fee spent on Arbitrum
       const gasUsedBN = clientArb.web3.utils.toBN(receipt.gasUsed);
       const totalCostWeiBN = gasUsedBN.mul(clientArb.web3.utils.toBN(receipt.effectiveGasPrice));
 
       totalL2Fee = totalL2Fee.add(totalCostWeiBN);
-
-      // Total transaction fee spent
-      const totalCostEthBN = totalL2Fee.add(totalL1Fee);
-      const formattotalCostEthBN = clientOp.web3.utils.fromWei(totalCostEthBN.toString(), 'ether');
-
-      log(`Total fee: ${formattotalCostEthBN.toString()} ETH`);
-      log(`Execution Time: ${(Date.now() - startTime) / 1000} seconds`);
-      log(`Done!`);
-      process.exit(0);
     } catch (error) {
       log(`Error creating redeem transaction: ${error}`);
     }
@@ -166,6 +138,7 @@ import {
     log(`The LP has initiated listening for user transaction on ${chain}...`);
     subscribeToEvent(contract, 'EtherTransferPreInitiated', processPreInitiatedEvent);
     subscribeToEvent(contract, 'EtherTransferInitiated', processTransferInitiatedEvent);
+    subscribeToEvent(contract, 'EtherTransferClaimed', processTransferClaimedEvent);
   };
 
   await listenForUserTransaction();
