@@ -114,6 +114,82 @@ function createP(uint[] memory chainIds,string[] memory dstAddresses,uint dstCha
     emit EtherTransferPreInitiated(chainIds,dstAddresses,counter,dstChainId,dstAssetId,dstAddress,srcAssetId,srcAddress,timelock, messenger,msg.value,false,false);
 }
 
+function createPBatch(
+  uint[][] memory chainIds,
+  string[][] memory dstAddresses,
+  uint[] memory dstChainId,
+  uint[] memory dstAssetId,
+  string[] memory dstAddress,
+  uint[] memory srcAssetId,
+  address[] memory srcAddress,
+  uint[] memory timelock,
+  address[] memory messenger,
+  uint[] memory amount
+) external payable returns (uint[] memory phtlcIDs) {
+  uint totalAmount = 0;
+  for (uint256 i = 0; i < amount.length; i++) {
+    if (amount[i] == 0) {
+      revert FundsNotSent();
+    }
+    totalAmount += amount[i];
+  }
+
+  if (
+    chainIds.length != dstAddresses.length ||
+    chainIds.length != dstChainId.length ||
+    chainIds.length != dstAssetId.length ||
+    chainIds.length != dstAddress.length ||
+    chainIds.length != srcAssetId.length ||
+    chainIds.length != srcAddress.length ||
+    chainIds.length != timelock.length ||
+    chainIds.length != messenger.length ||
+    chainIds.length != amount.length ||
+    msg.value != totalAmount
+  ) {
+    revert IncorrectData();
+  }
+
+  phtlcIDs = new uint[](amount.length);
+  for (uint256 i = 0; i < srcAddress.length; i++) {
+    if (timelock[i] <= block.timestamp) {
+      revert NotFutureTimelock();
+    }
+
+    counter += 1;
+
+    phtlcIDs[i] = counter;
+
+    pContracts[counter] = PHTLC(
+      dstAddress[i],
+      srcAssetId[i],
+      payable(msg.sender),
+      payable(srcAddress[i]),
+      timelock[i],
+      messenger[i],
+      msg.value,
+      false,
+      false
+    );
+
+    emit EtherTransferPreInitiated(
+      chainIds[i],
+      dstAddresses[i],
+      counter,
+      dstChainId[i],
+      dstAssetId[i],
+      dstAddress[i],
+      srcAssetId[i],
+      srcAddress[i],
+      timelock[i],
+      messenger[i],
+      amount[i],
+      false,
+      false
+    );
+  }
+  return phtlcIDs;
+}
+
 function refundP(uint _phtlcID) external phtlcExists(_phtlcID) returns (bool){
     PHTLC storage phtlc = pContracts[_phtlcID];
 
@@ -146,6 +222,50 @@ function convertP(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) 
     }else{
       revert NoAllowance();
     }
+}
+
+function convertPBatch(uint[] memory phtlcIDs, bytes32[] memory hashlocks) external returns (bytes32[] memory htlcIDs) {
+  if (phtlcIDs.length != hashlocks.length) {
+    revert IncorrectData();
+  }
+
+  htlcIDs = new bytes32[](phtlcIDs.length);
+
+  for (uint i = 0; i < phtlcIDs.length; i++) {
+    if (!hasPHTLC(phtlcIDs[i])) {
+      revert PreHTLCNotExists();
+    }
+
+    if (msg.sender == pContracts[phtlcIDs[i]].sender || msg.sender == pContracts[phtlcIDs[i]].messenger) {
+      pContracts[phtlcIDs[i]].converted = true;
+      htlcIDs[i] = hashlocks[i];
+      contracts[htlcIDs[i]] = HTLC(
+        hashlocks[i],
+        0x0,
+        pContracts[phtlcIDs[i]].amount,
+        pContracts[phtlcIDs[i]].timelock,
+        payable(pContracts[phtlcIDs[i]].sender),
+        pContracts[phtlcIDs[i]].srcAddress,
+        false,
+        false
+      );
+
+      emit EtherTransferInitiated(
+        hashlocks[i],
+        pContracts[phtlcIDs[i]].amount,
+        pContracts[phtlcIDs[i]].srcAssetId,
+        pContracts[phtlcIDs[i]].timelock,
+        pContracts[phtlcIDs[i]].sender,
+        pContracts[phtlcIDs[i]].srcAddress,
+        pContracts[phtlcIDs[i]].dstAddress,
+        phtlcIDs[i]
+      );
+    } else {
+      revert NoAllowance();
+    }
+  }
+
+  return htlcIDs;
 }
 
 function create(
