@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import { PreEvmHtlc, PreHashedTimeLockEtherABI } from '@layerswap/evm';
 import Contract from 'web3-eth-contract';
-import { CONFIRMATION_THRESHOLD, PRE_HTLC_CONTRACT_ADDRESS } from '../config';
+import { CONFIRMATION_THRESHOLD } from '../config';
 
 export const log = (message: string, ...args: any[]) => {
   console.log(`[${new Date().toISOString()}] - ${message}`, ...args);
@@ -37,7 +37,7 @@ export const subscribeToEvent = async (contract: Contract, eventName: string, ca
   });
 };
 
-export const getContractEventListener = async (wssEndpoint: string) => {
+export const getContractEventListener = async (wssEndpoint: string, contractAddress: string) => {
   const provider = new Web3.providers.WebsocketProvider(wssEndpoint, {
     clientConfig: {
       // Useful to keep a connection alive
@@ -62,7 +62,7 @@ export const getContractEventListener = async (wssEndpoint: string) => {
 
   const web3 = new Web3(provider);
 
-  return new web3.eth.Contract(PreHashedTimeLockEtherABI, PRE_HTLC_CONTRACT_ADDRESS);
+  return new web3.eth.Contract(PreHashedTimeLockEtherABI, contractAddress);
 };
 
 export const checkConfirmations = (client: PreEvmHtlc, transactionHash: string): Promise<void> => {

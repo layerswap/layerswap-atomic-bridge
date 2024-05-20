@@ -6,14 +6,15 @@ import {
   LP_PRIVATE_KEY,
   OPTIMISM_MESSANGER_ADDRESS,
   OPTIMISM_RPC_ENDPOINT,
-  PRE_HTLC_CONTRACT_ADDRESS,
+  ARB_HTLC_CONTRACT_ADDRESS,
+  OP_HTLC_CONTRACT_ADDRESS,
 } from '../config';
 
 (async () => {
   let hashPair: { secret: string; proof: string };
   const chain = 'Arbitrum';
-  const clientArb = new PreEvmHtlc(ARBITRUM_RPC_ENDPOINT, PRE_HTLC_CONTRACT_ADDRESS);
-  const clientOp = new PreEvmHtlc(OPTIMISM_RPC_ENDPOINT, PRE_HTLC_CONTRACT_ADDRESS);
+  const clientArb = new PreEvmHtlc(ARBITRUM_RPC_ENDPOINT, ARB_HTLC_CONTRACT_ADDRESS);
+  const clientOp = new PreEvmHtlc(OPTIMISM_RPC_ENDPOINT, OP_HTLC_CONTRACT_ADDRESS);
 
   const accounts = clientOp.web3.eth.accounts;
   const lpAddress = accounts.wallet.add(LP_PRIVATE_KEY).address;
@@ -134,7 +135,7 @@ import {
   };
 
   const listenForUserTransaction = async () => {
-    const contract = await getContractEventListener(ARBITRUM_WSS_ENDPOINT);
+    const contract = await getContractEventListener(ARBITRUM_WSS_ENDPOINT, ARB_HTLC_CONTRACT_ADDRESS);
     log(`The LP has initiated listening for user transaction on ${chain}...`);
     subscribeToEvent(contract, 'EtherTransferPreInitiated', processPreInitiatedEvent);
     subscribeToEvent(contract, 'EtherTransferInitiated', processTransferInitiatedEvent);

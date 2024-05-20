@@ -41,6 +41,11 @@
   },
   {
     "inputs": [],
+    "name": "NoAllowance",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "NotFutureTimelock",
     "type": "error"
   },
@@ -131,6 +136,18 @@
   {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "chainIds",
+        "type": "uint256[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "string[]",
+        "name": "dstAddresses",
+        "type": "string[]"
+      },
       {
         "indexed": false,
         "internalType": "uint256",
@@ -224,8 +241,45 @@
         "type": "uint256"
       }
     ],
-    "name": "EtherTransferRefunded",
+    "name": "EtherTransferRefundedP",
     "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "lowLevelData",
+        "type": "bytes"
+      }
+    ],
+    "name": "LowLevelErrorOccurred",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "_htlcIds",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_secrets",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "batchRedeem",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
     "inputs": [
@@ -302,6 +356,70 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_srcAddresses",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_hashlocks",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_timelocks",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_chainIDs",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "string[]",
+        "name": "_targetCurrencyReceiversAddresses",
+        "type": "string[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_amounts",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_phtlcIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "messengers",
+        "type": "address[]"
+      }
+    ],
+    "name": "createBatch",
+    "outputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "htlcIds",
+        "type": "bytes32[]"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "chainIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "string[]",
+        "name": "dstAddresses",
+        "type": "string[]"
+      },
       {
         "internalType": "uint256",
         "name": "dstChainId",
