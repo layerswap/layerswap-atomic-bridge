@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
@@ -9,7 +10,8 @@ interface IMessenger {
         uint256 amount,
         uint256 timelock,
         bytes32 hashlock,
-        string memory dstAddress
+        string memory dstAddress,
+        uint256 phtlcID
     ) external;
 }
 
@@ -21,7 +23,8 @@ contract SimpleMessenger is IMessenger {
         uint256 amount,
         uint256 timelock,
         bytes32 hashlock,
-        string dstAddress
+        string dstAddress,
+        uint256 phtlcID
     );
 
     function notifyHTLC(
@@ -31,8 +34,9 @@ contract SimpleMessenger is IMessenger {
         uint256 amount,
         uint256 timelock,
         bytes32 hashlock,
-        string memory dstAddress
-    ) external override {
+        string memory dstAddress,
+        uint256 phtlcID
+    ) public  override {
         emit HTLCNotificationReceived(
             htlcId,
             sender,
@@ -40,7 +44,8 @@ contract SimpleMessenger is IMessenger {
             amount,
             timelock,
             hashlock,
-            dstAddress
+            dstAddress,
+            phtlcID
         );
     }
 }
