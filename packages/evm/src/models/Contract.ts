@@ -39,8 +39,24 @@ interface EtherTransferInitiatedReturnValues {
   targetCurrencyReceiverAddress: string;
 }
 
+interface EtherHtlcInitiatedReturnValues {
+  hashlock: string;
+  amount: string;
+  chainID: string;
+  timelock: string;
+  sender: string;
+  srcAddress: string;
+  targetCurrencyReceiverAddress: string;
+  phtlcID: string;
+}
+
 interface EtherTransferClaimedReturnValues {
   contractId: string;
+}
+
+interface EtherTransferPreClaimedReturnValues {
+  htlcId: string;
+  redeemAddress: string;
 }
 
 interface TokenTransferInitiatedReturnValues {
@@ -59,15 +75,45 @@ interface TokenTransferClaimedReturnValues {
   contractId: string;
 }
 
+interface EtherTransferPreInitiatedReturnValues {
+  chainIds: Array<string>;
+  dstAddresses: Array<string>;
+  phtlcID: string;
+  dstChainId: string;
+  dstAssetId: string;
+  dstAddress: string;
+  srcAssetId: string;
+  srcAddress: string;
+  timelock: string;
+  messenger: string;
+  amount: string;
+  refunded: boolean;
+  converted: boolean;
+}
+
 export interface EtherTransferInitiatedResult extends TransactionResult {
   events: {
     EtherTransferInitiated: BaseEvent & { returnValues: EtherTransferInitiatedReturnValues };
   };
 }
 
+export interface EtherHtlcInitiatedResult extends TransactionResult {
+  l1Fee: string;
+  events: {
+    EtherTransferInitiated: BaseEvent & { returnValues: EtherHtlcInitiatedReturnValues };
+  };
+}
+
 export interface EtherTransferClaimedResult extends TransactionResult {
   events: {
     EtherTransferClaimed: BaseEvent & { returnValues: EtherTransferClaimedReturnValues };
+  };
+}
+
+export interface EtherTransferPreClaimedResult extends TransactionResult {
+  l1Fee: string;
+  events: {
+    EtherTransferClaimed: BaseEvent & { returnValues: EtherTransferPreClaimedReturnValues };
   };
 }
 
@@ -80,5 +126,11 @@ export interface TokenTransferInitiatedResult extends TransactionResult {
 export interface TokenTransferClaimedResult extends TransactionResult {
   events: {
     TokenTransferClaimed: BaseEvent & { returnValues: TokenTransferClaimedReturnValues };
+  };
+}
+
+export interface EtherTransferPreInitiatedResult extends TransactionResult {
+  events: {
+    EtherTransferPreInitiated: BaseEvent & { returnValues: EtherTransferPreInitiatedReturnValues };
   };
 }

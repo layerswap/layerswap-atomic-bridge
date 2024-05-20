@@ -1,0 +1,645 @@
+[
+  {
+    "inputs": [],
+    "name": "AlreadyConvertedToHTLC",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyRedeemed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyRefunded",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ContractAlreadyExist",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FundsNotSent",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "HTLCNotExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "HashlockNotMatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "IncorrectData",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoAllowance",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotFutureTimelock",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotPassedTimelock",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PreHTLCNotExists",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "htlcId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "redeemAddress",
+        "type": "address"
+      }
+    ],
+    "name": "EtherTransferClaimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "hashlock",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "chainID",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timelock",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "dstAddress",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "phtlcID",
+        "type": "uint256"
+      }
+    ],
+    "name": "EtherTransferInitiated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "chainIds",
+        "type": "uint256[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "string[]",
+        "name": "dstAddresses",
+        "type": "string[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "phtlcID",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "dstChainId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "dstAssetId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "dstAddress",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "srcAssetId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "srcAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timelock",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "messenger",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "refunded",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "converted",
+        "type": "bool"
+      }
+    ],
+    "name": "EtherTransferPreInitiated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "htlcId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "EtherTransferRefunded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "phtlcId",
+        "type": "uint256"
+      }
+    ],
+    "name": "EtherTransferRefundedP",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "lowLevelData",
+        "type": "bytes"
+      }
+    ],
+    "name": "LowLevelErrorOccurred",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "_htlcIds",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_secrets",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "batchRedeem",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "phtlcID",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "hashlock",
+        "type": "bytes32"
+      }
+    ],
+    "name": "convertP",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "htlcID",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address payable",
+        "name": "srcAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_hashlock",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_timelock",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_chainID",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_targetCurrencyReceiverAddress",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "phtlcID",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "messenger",
+        "type": "address"
+      }
+    ],
+    "name": "create",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "htlcId",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_srcAddresses",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_hashlocks",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_timelocks",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_chainIDs",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "string[]",
+        "name": "_targetCurrencyReceiversAddresses",
+        "type": "string[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_amounts",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_phtlcIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "messengers",
+        "type": "address[]"
+      }
+    ],
+    "name": "createBatch",
+    "outputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "htlcIds",
+        "type": "bytes32[]"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "chainIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "string[]",
+        "name": "dstAddresses",
+        "type": "string[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dstChainId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dstAssetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "dstAddress",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "srcAssetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "srcAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "timelock",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "messenger",
+        "type": "address"
+      }
+    ],
+    "name": "createP",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "phtlcID",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_htlcId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getHTLCDetails",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "hashlock",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "secret",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "timelock",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address payable",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "address payable",
+        "name": "srcAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "redeemed",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "refunded",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_phtlcId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPHTLCDetails",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "dstAddress",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "srcAssetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address payable",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "address payable",
+        "name": "srcAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "timelock",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "messenger",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "refunded",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "converted",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_htlcId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_secret",
+        "type": "bytes32"
+      }
+    ],
+    "name": "redeem",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_htlcId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "refund",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_phtlcID",
+        "type": "uint256"
+      }
+    ],
+    "name": "refundP",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

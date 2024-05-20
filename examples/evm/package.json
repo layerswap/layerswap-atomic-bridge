@@ -13,7 +13,9 @@
     "start:lock-erc20": "ts-node ./src/erc20/lock.ts",
     "start:withdraw-erc20": "ts-node ./src/erc20/withdraw.ts",
     "start:refund-erc20": "ts-node ./src/erc20/refund.ts",
-    "start:batch-withdraw-erc20": "ts-node ./src/erc20/batch-withdraw.ts"
+    "start:batch-withdraw-erc20": "ts-node ./src/erc20/batch-withdraw.ts",
+    "start:user": "ts-node ./src/scripts/user.ts",
+    "start:lp": "ts-node ./src/scripts/lp.ts"
   },
   "license": "MIT",
   "dependencies": {
