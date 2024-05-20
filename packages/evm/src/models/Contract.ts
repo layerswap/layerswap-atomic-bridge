@@ -76,6 +76,8 @@ interface TokenTransferClaimedReturnValues {
 }
 
 interface EtherTransferPreInitiatedReturnValues {
+  chainIds: Array<string>;
+  dstAddresses: Array<string>;
   phtlcID: string;
   dstChainId: string;
   dstAssetId: string;

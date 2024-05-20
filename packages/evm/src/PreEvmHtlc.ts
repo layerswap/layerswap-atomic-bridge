@@ -15,6 +15,8 @@ export class PreEvmHtlc extends BaseHTLCService {
   }
 
   async createPre(
+    chainIds: ChainID[],
+    dstAddresses: string[],
     dstChainId: ChainID,
     dstAssetId: AssetID,
     dstAddress: string,
@@ -33,6 +35,8 @@ export class PreEvmHtlc extends BaseHTLCService {
         (await this.estimateGas(
           { from: senderAddress, value },
           'createP',
+          chainIds,
+          dstAddresses,
           dstChainId,
           dstAssetId,
           dstAddress,
@@ -44,7 +48,7 @@ export class PreEvmHtlc extends BaseHTLCService {
       );
 
     return this.contract.methods
-      .createP(dstChainId, dstAssetId, dstAddress, srcAssetId, srcAddress, timelock, messenger)
+      .createP(chainIds, dstAddresses, dstChainId, dstAssetId, dstAddress, srcAssetId, srcAddress, timelock, messenger)
       .send({ from: senderAddress, gas: estimatedGas.toString(), value });
   }
 
