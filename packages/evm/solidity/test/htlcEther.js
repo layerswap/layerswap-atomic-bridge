@@ -1190,5 +1190,334 @@ it('batchRedeem() should fail if any timelock has passed', async function () {
 });
 
 
+it('createPBatch() should successfully create multiple PHTLCs', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const chainIds = [[35], [1155111]];
+  const dstAddresses = [[receiver.address], [receiver.address]];
+  const dstChainId = [100, 1200];
+  const dstAssetId = [1, 1];
+  const dstAddress = [receiver.address, receiver.address];
+  const srcAssetId = [1, 1];
+  const srcAddress = [receiver.address, receiver.address];
+  const timelock = [futureTime, futureTime];
+  const messenger = [accounts[2].address, accounts[2].address];
+  const amount = [oneFinney, oneFinney];
+
+  const totalAmount = twoFinney;
+
+  const tx = await contract.connect(sender).createPBatch(
+    chainIds,
+    dstAddresses,
+    dstChainId,
+    dstAssetId,
+    dstAddress,
+    srcAssetId,
+    srcAddress,
+    timelock,
+    messenger,
+    amount,
+    { value: totalAmount }
+  );
+
+  const receipt = await tx.wait();
+  const eventArgs = receipt.logs;
+
+  expect(eventArgs.length).to.equal(2, 'Number of events does not match');
+
+  for (let i = 0; i < 2; i++) {
+    expect(eventArgs[i].args[0][0]).to.equal(chainIds[i][0], 'Chain ID does not match');
+    expect(eventArgs[i].args[1][0]).to.equal(dstAddresses[i][0], 'Destination address does not match');
+    expect(eventArgs[i].args[2]).to.equal(i + 1, 'PHTLC ID does not match');
+    expect(eventArgs[i].args[3]).to.equal(dstChainId[i], 'Destination Chain ID does not match');
+    expect(eventArgs[i].args[4]).to.equal(dstAssetId[i], 'Destination Asset ID does not match');
+    expect(eventArgs[i].args[5]).to.equal(dstAddress[i], 'Destination address does not match');
+    expect(eventArgs[i].args[6]).to.equal(srcAssetId[i], 'Source Asset ID does not match');
+    expect(eventArgs[i].args[7]).to.equal(srcAddress[i], 'Source address does not match');
+    expect(eventArgs[i].args[8]).to.equal(timelock[i], 'Timelock does not match');
+    expect(eventArgs[i].args[9]).to.equal(messenger[i], 'Messenger address does not match');
+    expect(eventArgs[i].args[10].toString()).to.equal(oneFinney.toString(), 'Amount does not match');
+    expect(eventArgs[i].args[11]).to.be.false;
+    expect(eventArgs[i].args[12]).to.be.false;
+  }
+});
+
+it('createPBatch() should fail if the total value sent does not match the sum of amounts', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const chainIds = [[1], [1]];
+  const dstAddresses = [[receiver.address], [receiver.address]];
+  const dstChainId = [100, 100];
+  const dstAssetId = [1, 1];
+  const dstAddress = [receiver.address, receiver.address];
+  const srcAssetId = [1, 1];
+  const srcAddress = [receiver.address, receiver.address];
+  const timelock = [futureTime, futureTime];
+  const messenger = [accounts[2].address, accounts[2].address];
+  const amount = [oneFinney, oneFinney];
+
+  const incorrectTotalAmount = oneFinney;
+
+  await expect(
+    contract.connect(sender).createPBatch(
+      chainIds,
+      dstAddresses,
+      dstChainId,
+      dstAssetId,
+      dstAddress,
+      srcAssetId,
+      srcAddress,
+      timelock,
+      messenger,
+      amount,
+      { value: incorrectTotalAmount }
+    )
+  ).to.be.revertedWithCustomError(contract, 'IncorrectData');
+});
+
+it('createPBatch() should fail if any amount is zero', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const chainIds = [[1], [1]];
+  const dstAddresses = [[receiver.address], [receiver.address]];
+  const dstChainId = [100, 100];
+  const dstAssetId = [1, 1];
+  const dstAddress = [receiver.address, receiver.address];
+  const srcAssetId = [1, 1];
+  const srcAddress = [receiver.address, receiver.address];
+  const timelock = [futureTime, futureTime];
+  const messenger = [accounts[2].address, accounts[2].address];
+  const amount = [oneFinney, 0];
+
+  const totalAmount = oneFinney;
+
+  await expect(
+    contract.connect(sender).createPBatch(
+      chainIds,
+      dstAddresses,
+      dstChainId,
+      dstAssetId,
+      dstAddress,
+      srcAssetId,
+      srcAddress,
+      timelock,
+      messenger,
+      amount,
+      { value: totalAmount }
+    )
+  ).to.be.revertedWithCustomError(contract, 'FundsNotSent');
+});
+
+it('createPBatch() should fail if any timelock is not in the future', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const chainIds = [[1], [1]];
+  const dstAddresses = [[receiver.address], [receiver.address]];
+  const dstChainId = [100, 100];
+  const dstAssetId = [1, 1];
+  const dstAddress = [receiver.address, receiver.address];
+  const srcAssetId = [1, 1];
+  const srcAddress = [receiver.address, receiver.address];
+  const timelock = [futureTime, pastTime];
+  const messenger = [accounts[2].address, accounts[2].address];
+  const amount = [oneFinney, oneFinney];
+
+  const totalAmount = twoFinney;
+
+  await expect(
+    contract.connect(sender).createPBatch(
+      chainIds,
+      dstAddresses,
+      dstChainId,
+      dstAssetId,
+      dstAddress,
+      srcAssetId,
+      srcAddress,
+      timelock,
+      messenger,
+      amount,
+      { value: totalAmount }
+    )
+  ).to.be.revertedWithCustomError(contract, 'NotFutureTimelock');
+});
+
+it('createPBatch() should fail if data lengths do not match', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const chainIds = [[1], [1]];
+  const dstAddresses = [[receiver.address]];
+  const dstChainId = [100, 100];
+  const dstAssetId = [1, 1];
+  const dstAddress = [receiver.address, receiver.address];
+  const srcAssetId = [1, 1];
+  const srcAddress = [receiver.address, receiver.address];
+  const timelock = [futureTime, futureTime];
+  const messenger = [accounts[2].address, accounts[2].address];
+  const amount = [oneFinney, oneFinney];
+
+  const totalAmount = twoFinney;
+
+  await expect(
+    contract.connect(sender).createPBatch(
+      chainIds,
+      dstAddresses,
+      dstChainId,
+      dstAssetId,
+      dstAddress,
+      srcAssetId,
+      srcAddress,
+      timelock,
+      messenger,
+      amount,
+      { value: totalAmount }
+    )
+  ).to.be.revertedWithCustomError(contract, 'IncorrectData');
+});
+
+it('convertPBatch() should successfully convert multiple PHTLCs', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const chainIds = [1];
+  const dstAddresses = [receiver.address];
+  const phtlcIDs = [];
+  const hashlocks = [newSecretHashPair().hash, newSecretHashPair().hash];
+
+  for (let i = 0; i < 2; i++) {
+    const tx = await contract.connect(sender).createP(
+      chainIds,
+      dstAddresses,
+      1,
+      100,
+      receiver.address,
+      1,
+      receiver.address,
+      futureTime,
+      accounts[2].address,
+      { value: oneFinney }
+    );
+
+    const receipt = await tx.wait();
+    const eventArgs = txLoggedArgs(receipt);
+    phtlcIDs.push(eventArgs[2]);
+  }
+
+  const tx2 = await contract.connect(sender).convertPBatch(phtlcIDs, hashlocks);
+  const receipt2 = await tx2.wait();
+  const eventArgs2 = receipt2.logs;
+
+  for (let i = 0; i < 2; i++) {
+    expect(eventArgs2[i].args[0]).to.equal(hashlocks[i], 'Hashlock does not match');
+    expect(eventArgs2[i].args[1].toString()).to.equal(oneFinney.toString(), 'Amount does not match');
+    expect(eventArgs2[i].args[2]).to.equal(1, 'Source Asset ID does not match');
+    expect(eventArgs2[i].args[3]).to.equal(futureTime, 'Timelock does not match');
+    expect(eventArgs2[i].args[4]).to.equal(sender.address, 'Sender does not match');
+    expect(eventArgs2[i].args[5]).to.equal(receiver.address, 'Source address does not match');
+    expect(eventArgs2[i].args[6]).to.equal(receiver.address, 'Destination address does not match');
+    expect(eventArgs2[i].args[7]).to.equal(phtlcIDs[i], 'PHTLC ID does not match');
+
+    const pContract = await contract.getPHTLCDetails(phtlcIDs[i]);
+    expect(pContract.converted).to.be.true;
+
+    const htlc = await contract.getHTLCDetails(hashlocks[i]);
+    expect(htlc.sender).to.equal(sender.address);
+    expect(htlc.amount.toString()).to.equal(oneFinney.toString());
+  }
+});
+
+it('convertPBatch() should fail if the data lengths do not match', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const chainIds = [1];
+  const dstAddresses = [receiver.address];
+  const phtlcIDs = [];
+  const hashlocks = [newSecretHashPair().hash];
+
+  for (let i = 0; i < 2; i++) {
+    const tx = await contract.connect(sender).createP(
+      chainIds,
+      dstAddresses,
+      1,
+      100,
+      receiver.address, 
+      1,
+      receiver.address,
+      futureTime,
+      accounts[2].address,
+      { value: oneFinney }
+    );
+
+    const receipt = await tx.wait();
+    const eventArgs = txLoggedArgs(receipt);
+    phtlcIDs.push(eventArgs[2]);
+  }
+
+  await expect(
+    contract.connect(sender).convertPBatch(phtlcIDs, hashlocks)
+  ).to.be.revertedWithCustomError(contract, 'IncorrectData');
+});
+
+it('convertPBatch() should fail if any PHTLC does not exist', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const chainIds = [1];
+  const dstAddresses = [receiver.address];
+  const phtlcIDs = [64];
+  const hashlocks = [newSecretHashPair().hash, newSecretHashPair().hash];
+
+    const tx = await contract.connect(sender).createP(
+      chainIds,
+      dstAddresses,
+      1,
+      100,
+      receiver.address, 
+      1,
+      receiver.address,
+      futureTime,
+      accounts[2].address,
+      { value: oneFinney }
+    );
+
+    const receipt = await tx.wait();
+    const eventArgs = txLoggedArgs(receipt);
+    phtlcIDs.push(eventArgs[2]);
+  
+  await expect(
+    contract.connect(sender).convertPBatch(phtlcIDs, hashlocks)
+  ).to.be.revertedWithCustomError(contract, 'PreHTLCNotExists');
+});
+
+it('convertPBatch() should fail if called by an unauthorized user', async function () {
+  const sender = accounts[0];
+  const receiver = accounts[1];
+  const unauthorized = accounts[3];
+  const chainIds = [1];
+  const dstAddresses = [receiver.address];
+  const phtlcIDs = [];
+  const hashlocks = [newSecretHashPair().hash, newSecretHashPair().hash];
+
+  for (let i = 0; i < 2; i++) {
+    const tx = await contract.connect(sender).createP(
+      chainIds,
+      dstAddresses,
+      1,
+      100,
+      receiver.address, 
+      1,
+      receiver.address,
+      futureTime,
+      accounts[2].address,
+      { value: oneFinney }
+    );
+
+    const receipt = await tx.wait();
+    const eventArgs = txLoggedArgs(receipt);
+    phtlcIDs.push(eventArgs[2]);
+  }
+
+  await expect(
+    contract.connect(unauthorized).convertPBatch(phtlcIDs, hashlocks)
+  ).to.be.revertedWithCustomError(contract, 'NoAllowance');
+});
+
 });
 
