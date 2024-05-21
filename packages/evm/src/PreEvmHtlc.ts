@@ -26,8 +26,8 @@ export class PreEvmHtlc extends BaseHTLCService {
     messenger: string,
     options: SendOptions
   ): Promise<EtherTransferPreInitiatedResult> {
-    const { gasLimit, senderAddress, amount } = options;
-    const value = this.web3.utils.toWei(this.web3.utils.toBN(amount), 'finney');
+    const { gasLimit, senderAddress, amount, gasPrice = undefined } = options;
+    const value = this.web3.utils.toWei(this.web3.utils.toBN(amount), 'kwei');
 
     const estimatedGas =
       gasLimit ??
@@ -49,7 +49,7 @@ export class PreEvmHtlc extends BaseHTLCService {
 
     return this.contract.methods
       .createP(chainIds, dstAddresses, dstChainId, dstAssetId, dstAddress, srcAssetId, srcAddress, timelock, messenger)
-      .send({ from: senderAddress, gas: estimatedGas.toString(), value });
+      .send({ from: senderAddress, gas: estimatedGas.toString(), gasPrice, value });
   }
 
   public async createHtlc(
@@ -62,7 +62,7 @@ export class PreEvmHtlc extends BaseHTLCService {
     messenger: string,
     options: SendOptions
   ): Promise<EtherHtlcInitiatedResult> {
-    const { gasLimit, senderAddress, amount: value } = options;
+    const { gasLimit, gasPrice = undefined, senderAddress, amount: value } = options;
 
     const estimatedGas =
       gasLimit ??
@@ -82,7 +82,7 @@ export class PreEvmHtlc extends BaseHTLCService {
 
     return await this.contract.methods
       .create(srcAddress, hashlock, timelock, chainId, receiverChainAddress, phtlcID, messenger)
-      .send({ from: senderAddress, gas: estimatedGas.toString(), value });
+      .send({ from: senderAddress, gas: estimatedGas.toString(), gasPrice, value });
   }
 
   public async convertP(
@@ -90,14 +90,14 @@ export class PreEvmHtlc extends BaseHTLCService {
     hashlock: string,
     options: PartialSendOptions
   ): Promise<EtherHtlcInitiatedResult> {
-    const { gasLimit, senderAddress } = options;
+    const { gasLimit, gasPrice = undefined, senderAddress } = options;
 
     const estimatedGas =
       gasLimit ?? Math.floor((await this.estimateGas({ from: senderAddress }, 'convertP', phtlcID, hashlock)) * 1.2);
 
     return this.contract.methods
       .convertP(phtlcID, hashlock)
-      .send({ from: senderAddress, gas: estimatedGas.toString() });
+      .send({ from: senderAddress, gas: estimatedGas.toString(), gasPrice });
   }
 
   public async redeem(
@@ -105,11 +105,13 @@ export class PreEvmHtlc extends BaseHTLCService {
     proof: string,
     options: PartialSendOptions
   ): Promise<EtherTransferPreClaimedResult> {
-    const { gasLimit, senderAddress } = options;
+    const { gasLimit, gasPrice = undefined, senderAddress } = options;
 
     const estimatedGas =
       gasLimit ?? Math.floor((await this.estimateGas({ from: senderAddress }, 'redeem', hashlock, proof)) * 1.2);
 
-    return this.contract.methods.redeem(hashlock, proof).send({ from: senderAddress, gas: estimatedGas.toString() });
+    return this.contract.methods
+      .redeem(hashlock, proof)
+      .send({ from: senderAddress, gas: estimatedGas.toString(), gasPrice });
   }
 }
