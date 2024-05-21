@@ -19,6 +19,13 @@ import {
   const accounts = clientOp.web3.eth.accounts;
   const lpAddress = accounts.wallet.add(LP_PRIVATE_KEY).address;
   const startTime = Date.now();
+  // Percentage to increate the original gas price
+  const percent = clientOp.web3.utils.toBN(20);
+  const hundredPercent = clientOp.web3.utils.toBN(100);
+  const increaseFactor = hundredPercent.add(percent);
+  let gasPriceWei = await clientOp.web3.eth.getGasPrice();
+  gasPriceWei = clientOp.web3.utils.toBN(gasPriceWei).mul(increaseFactor).div(hundredPercent).toString();
+
   let totalL1Fee = clientOp.web3.utils.toBN(0);
   let totalL2Fee = clientOp.web3.utils.toBN(0);
 
@@ -77,6 +84,7 @@ import {
         {
           senderAddress: lpAddress,
           amount,
+          gasPrice: gasPriceWei,
         }
       );
 
@@ -100,6 +108,7 @@ import {
 
     try {
       const receipt = await clientOp.redeem(hashlock, hashPair.proof, {
+        gasPrice: gasPriceWei,
         senderAddress: lpAddress,
       });
 
