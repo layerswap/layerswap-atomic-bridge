@@ -1,4 +1,4 @@
-import { checkConfirmations, getContractEventListener, log, subscribeToEvent } from './helper';
+import { checkConfirmations, getContractEventListener, log, subscribeToEvent } from '../helper';
 import { ChainID, PreEvmHtlc } from '@layerswap/evm';
 import {
   ARBITRUM_RPC_ENDPOINT,
@@ -8,7 +8,7 @@ import {
   OPTIMISM_RPC_ENDPOINT,
   ARB_HTLC_CONTRACT_ADDRESS,
   OP_HTLC_CONTRACT_ADDRESS,
-} from '../config';
+} from '../../config';
 
 (async () => {
   let hashPair: { secret: string; proof: string };

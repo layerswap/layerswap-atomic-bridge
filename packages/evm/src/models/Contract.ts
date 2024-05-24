@@ -130,6 +130,7 @@ export interface TokenTransferClaimedResult extends TransactionResult {
 }
 
 export interface EtherTransferPreInitiatedResult extends TransactionResult {
+  l1Fee: string;
   events: {
     EtherTransferPreInitiated: BaseEvent & { returnValues: EtherTransferPreInitiatedReturnValues };
   };

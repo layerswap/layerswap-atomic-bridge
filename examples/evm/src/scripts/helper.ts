@@ -65,8 +65,11 @@ export const getContractEventListener = async (wssEndpoint: string, contractAddr
   return new web3.eth.Contract(PreHashedTimeLockEtherABI, contractAddress);
 };
 
-export const checkConfirmations = (client: PreEvmHtlc, transactionHash: string): Promise<void> => {
-  const delay = 10000;
+export const checkConfirmations = (
+  client: PreEvmHtlc,
+  transactionHash: string,
+  delay: number = 10000
+): Promise<void> => {
   return new Promise(async (resolve, reject) => {
     const check = async () => {
       try {
@@ -95,4 +98,15 @@ export const checkConfirmations = (client: PreEvmHtlc, transactionHash: string):
 
     check();
   });
+};
+
+export const getIncreasedGasPrice = async (web3Instance: Web3, increasePercent: number): Promise<string> => {
+  const percent = web3Instance.utils.toBN(increasePercent);
+  const hundredPercent = web3Instance.utils.toBN(100);
+  const increaseFactor = hundredPercent.add(percent);
+  let gasPriceWei = await web3Instance.eth.getGasPrice();
+
+  gasPriceWei = web3Instance.utils.toBN(gasPriceWei).mul(increaseFactor).div(hundredPercent).toString();
+
+  return gasPriceWei;
 };
