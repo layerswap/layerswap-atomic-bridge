@@ -19,6 +19,7 @@ module.exports = {
         enabled: true,
         runs: 200,
       },
+      viaIR: true
     },
   },
   networks: {
@@ -66,6 +67,18 @@ module.exports = {
       url: process.env.ARBITRUM_URL || '',
       accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
+    arbitrumSepolia: {
+      url: process.env.ARBITRUM_SEPOLIA_URL || '',
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    optimism: {
+      url: process.env.OPTIMISM_URL || '',
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    optimismSepolia: {
+      url: process.env.OPTIMISM_SEPOLIA_URL || '',
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
     mumbai: {
       url: process.env.MUMBAI_URL || '',
       accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
@@ -84,6 +97,9 @@ module.exports = {
   },
   etherscan: {
     apiKey: process.env.ARBITRUM_API_KEY,
+  },
+  etherscan: {
+    apiKey: process.env.OPTIMISM_API_KEY,
   },
   etherscan: {
     apiKey: process.env.BSC_API_KEY,

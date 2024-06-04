@@ -28,7 +28,6 @@ const defaultGasPrice = 100000000000; //  fixed gas price
 const txGas = (txReceipt, gasPrice = defaultGasPrice) => BigNumber.from(`${txReceipt.receipt.gasUsed * gasPrice}`);
 const txLoggedArgs = (txReceipt) => txReceipt.logs[0].args;
 const txLoggedArgsWithIndex = (txReceipt, index) => txReceipt.logs[index].args;
-const txContractId = (txReceipt) => txLoggedArgs(txReceipt).contractId;
 
 const htlcArrayToObj = (c) => {
   return {
@@ -69,7 +68,6 @@ module.exports = {
   nowSeconds,
   random32,
   sha256,
-  txContractId,
   txGas,
   txLoggedArgs,
   txLoggedArgsWithIndex,
