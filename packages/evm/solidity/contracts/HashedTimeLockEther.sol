@@ -166,7 +166,7 @@ function createPBatch(
       payable(srcAddress[i]),
       timelock[i],
       messenger[i],
-      msg.value,
+      amount[i],
       false,
       false
     );
@@ -206,6 +206,9 @@ function refundP(uint _phtlcID) external phtlcExists(_phtlcID) returns (bool){
 function convertP(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) returns (bytes32 htlcID){
     htlcID = hashlock;
     if(msg.sender == pContracts[phtlcID].sender || msg.sender == pContracts[phtlcID].messenger) {
+        if(pContracts[phtlcID].converted == true){
+          revert AlreadyConvertedToHTLC();
+        }
         pContracts[phtlcID].converted = true;
         contracts[htlcID] = HTLC(hashlock, 0x0, pContracts[phtlcID].amount, pContracts[phtlcID].timelock, payable(pContracts[phtlcID].sender), pContracts[phtlcID].srcAddress, false, false);
 
@@ -234,6 +237,10 @@ function convertPBatch(uint[] memory phtlcIDs, bytes32[] memory hashlocks) exter
   for (uint i = 0; i < phtlcIDs.length; i++) {
     if (!hasPHTLC(phtlcIDs[i])) {
       revert PreHTLCNotExists();
+    }
+
+    if(pContracts[phtlcIDs[i]].converted == true){
+      revert AlreadyConvertedToHTLC();
     }
 
     if (msg.sender == pContracts[phtlcIDs[i]].sender || msg.sender == pContracts[phtlcIDs[i]].messenger) {
