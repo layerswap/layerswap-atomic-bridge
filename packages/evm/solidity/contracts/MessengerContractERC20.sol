@@ -1,0 +1,55 @@
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.23;
+
+interface IMessenger {
+    function notifyHTLC(
+        bytes32 htlcId,
+        address payable sender,
+        address payable receiver,
+        uint256 amount,
+        uint256 timelock,
+        bytes32 hashlock,
+        string memory dstAddress,
+        uint256 phtlcID,
+        address tokenContract
+    ) external;
+}
+
+contract SimpleMessenger is IMessenger {
+    event HTLCNotificationReceived(
+        bytes32 indexed htlcId,
+        address payable sender,
+        address payable receiver,
+        uint256 amount,
+        uint256 timelock,
+        bytes32 hashlock,
+        string dstAddress,
+        uint256 phtlcID,
+        address tokenContract
+    );
+
+    function notifyHTLC(
+        bytes32 htlcId,
+        address payable sender,
+        address payable receiver,
+        uint256 amount,
+        uint256 timelock,
+        bytes32 hashlock,
+        string memory dstAddress,
+        uint256 phtlcID,
+        address tokenContract
+    ) public  override {
+        emit HTLCNotificationReceived(
+            htlcId,
+            sender,
+            receiver,
+            amount,
+            timelock,
+            hashlock,
+            dstAddress,
+            phtlcID,
+            tokenContract
+        );
+    }
+}
