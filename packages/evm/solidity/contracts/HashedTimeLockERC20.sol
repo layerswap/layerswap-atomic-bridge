@@ -11,15 +11,30 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
  *
  * Protocol:
  *
- *  1) create(receiver, hashlock, timelock, tokenContract, amount) - a
+ *  1) create(srcAddress, hashlock, timelock, tokenContract, amount) - a
  *      sender calls this to create a new HTLC on a given token (tokenContract)
  *       for a given amount. A 32 byte contract id is returned
- *  2) redeem(contractId, secret) - once the receiver knows the secret of
+ *  2) redeem(contractId, secret) - once the srcAddress knows the secret of
  *      the hashlock hash they can claim the tokens with this function
- *  3) refund() - after timelock has expired and if the receiver did not
+ *  3) refund() - after timelock has expired and if the srcAddress did not
  *      redeem the tokens the sender / creator of the HTLC can get their tokens
  *      back with this function.
  */
+
+interface IMessenger {
+    function notifyHTLC(
+        bytes32 htlcId,
+        address payable sender,
+        address payable srcAddress,
+        uint256 amount,
+        uint256 timelock,
+        bytes32 hashlock,
+        string memory dstAddress,
+        uint256 phtlcID,
+        address tokenContract
+    ) external;
+}
+
 contract HashedTimeLockERC20 {
   error NotFutureTimelock();
   error NotPassedTimelock();
@@ -32,6 +47,8 @@ contract HashedTimeLockERC20 {
   error IncorrectData();
   error InsufficientBalance();
   error NoAllowance();
+  error PreHTLCNotExists();
+  error AlreadyConvertedToHTLC();
 
   struct HTLC {
     bytes32 hashlock;
@@ -39,14 +56,29 @@ contract HashedTimeLockERC20 {
     uint256 amount;
     uint256 timelock;
     address sender;
-    address receiver;
+    address srcAddress;
     address tokenContract;
     bool redeemed;
     bool refunded;
   }
 
+  struct PHTLC {
+    string dstAddress;
+    uint srcAssetId;
+    address payable sender;
+    address payable srcAddress;
+    uint timelock; 
+    address messenger;
+    uint amount;
+    bool refunded;
+    bool converted;
+    address tokenContract;
+  }
+
   using SafeERC20 for IERC20;
   mapping(bytes32 => HTLC) contracts;
+  mapping(uint256 => PHTLC) pContracts;
+  uint256 counter = 0;
 
   event TokenTransferInitiated(
     bytes32 indexed hashlock,
@@ -54,22 +86,149 @@ contract HashedTimeLockERC20 {
     uint256 chainId,
     uint256 timelock,
     address indexed sender,
-    address indexed receiver,
+    address indexed srcAddress,
     address tokenContract,
-    string targetCurrencyReceiverAddress
+    string dstAddress,
+    uint256 phtlcID
   );
   event TokenTransferClaimed(bytes32 indexed htlcId);
   event TokenTransferRefunded(bytes32 indexed htlcId);
+
+  event TokenTransferPreInitiated(
+    uint[] chainIds,
+    string[] dstAddresses,
+    uint phtlcID,
+    uint dstChainId,
+    uint dstAssetId,
+    string dstAddress,
+    address indexed sender,
+    uint srcAssetId,
+    address indexed srcAddress,
+    uint timelock, 
+    address messenger,
+    uint amount,
+    address tokenContract
+  );
+
+  event LowLevelErrorOccurred(bytes lowLevelData);
+  event TokenTransferRefundedP(uint indexed phtlcId);
+
+  modifier phtlcExists(uint _phtlcId) {
+        if (!hasPHTLC(_phtlcId)) revert PreHTLCNotExists();
+    _;
+  }
 
   modifier htlcExists(bytes32 _htlcId) {
     if (!hasHTLC(_htlcId)) revert HTLCNotExist();
     _;
   }
 
+ function createP(
+    uint[] memory chainIds,
+    string[] memory dstAddresses,
+    uint dstChainId,
+    uint dstAssetId,
+    string memory dstAddress,
+    uint srcAssetId,
+    address srcAddress,
+    uint timelock,
+    uint amount,
+    address messenger,
+    address tokenContract
+  ) external payable returns (uint phtlcID) {
+    if (amount == 0) {
+      revert FundsNotSent();
+    }
+    if (timelock <= block.timestamp) {
+      revert NotFutureTimelock();
+    }
+
+    IERC20 token = IERC20(tokenContract);
+    counter += 1;
+    phtlcID = counter;
+
+    if (token.balanceOf(msg.sender) < amount) {
+      revert InsufficientBalance();
+    }
+
+    if (token.allowance(msg.sender, address(this)) < amount) {
+      revert NoAllowance();
+    }
+
+    token.safeTransferFrom(msg.sender, address(this), amount);
+
+    pContracts[phtlcID] = PHTLC(
+      dstAddress,
+      srcAssetId,
+      payable(msg.sender),
+      payable(srcAddress),
+      timelock,
+      messenger,
+      amount,
+      false,
+      false,
+      tokenContract
+    );
+
+    emit TokenTransferPreInitiated(
+      chainIds,
+      dstAddresses,
+      phtlcID,
+      dstChainId,
+      dstAssetId,
+      dstAddress,
+      msg.sender,
+      srcAssetId,
+      srcAddress,
+      timelock,
+      messenger,
+      amount,
+      tokenContract
+    );
+  }
+
+  function convertP(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) returns (bytes32 htlcID) {
+    htlcID = hashlock;
+    if (pContracts[phtlcID].refunded == true) {
+      revert AlreadyRefunded();
+    }
+    if (pContracts[phtlcID].converted == true) {
+      revert AlreadyConvertedToHTLC();
+    }
+    if (msg.sender == pContracts[phtlcID].sender || msg.sender == pContracts[phtlcID].messenger) {
+      pContracts[phtlcID].converted = true;
+      contracts[hashlock] = HTLC(
+        hashlock,
+        0x0,
+        pContracts[phtlcID].amount,
+        pContracts[phtlcID].timelock,
+        payable(pContracts[phtlcID].sender),
+        pContracts[phtlcID].srcAddress,
+        pContracts[phtlcID].tokenContract,
+        false,
+        false
+      );
+
+      emit TokenTransferInitiated(
+        hashlock,
+        pContracts[phtlcID].amount,
+        pContracts[phtlcID].srcAssetId,
+        pContracts[phtlcID].timelock,
+        pContracts[phtlcID].sender,
+        pContracts[phtlcID].srcAddress,
+        pContracts[phtlcID].tokenContract,
+        pContracts[phtlcID].dstAddress,
+        phtlcID
+      );
+    } else {
+      revert NoAllowance();
+    }
+  }
+
   /**
    * @dev Sender / Payer sets up a new hash time lock contract depositing the
    * funds and providing the reciever and terms.
-   * @param _receiver Receiver of the funds.
+   * @param _srcAddress srcAddress of the funds.
    * @param _hashlock A sha-256 hash hashlock.
    * @param _timelock UNIX epoch seconds time that the lock expires at.
    *                  Refunds can be made after this time.
@@ -78,13 +237,15 @@ contract HashedTimeLockERC20 {
    */
 
   function create(
-    address _receiver,
+    address _srcAddress,
     bytes32 _hashlock,
     uint256 _timelock,
     address _tokenContract,
     uint256 _amount,
     uint256 _chainID,
-    string memory _targetCurrencyReceiverAddress
+    string memory _dstAddress,
+    uint256 _phtlcID,
+    address _messenger
   ) external returns (bytes32 htlcId) {
     if (_timelock <= block.timestamp) {
       revert NotFutureTimelock();
@@ -108,7 +269,7 @@ contract HashedTimeLockERC20 {
     }
 
     token.safeTransferFrom(msg.sender, address(this), _amount);
-    contracts[htlcId] = HTLC(_hashlock, 0x0, _amount, _timelock, msg.sender, _receiver, _tokenContract, false, false);
+    contracts[htlcId] = HTLC(_hashlock, 0x0, _amount, _timelock, msg.sender, _srcAddress, _tokenContract, false, false);
 
     emit TokenTransferInitiated(
       _hashlock,
@@ -116,51 +277,80 @@ contract HashedTimeLockERC20 {
       _chainID,
       _timelock,
       msg.sender,
-      _receiver,
+      _srcAddress,
       _tokenContract,
-      _targetCurrencyReceiverAddress
+      _dstAddress,
+      _phtlcID
     );
+        if (_messenger != address(0)) {
+        uint256 codeSize;
+        assembly { codeSize := extcodesize(_messenger) }
+        if (codeSize > 0) {
+            try IMessenger(_messenger).notifyHTLC(
+                _hashlock,
+                payable(msg.sender),
+                payable(_srcAddress),
+                _amount,
+                _timelock,
+                _hashlock,
+                _dstAddress,
+                _phtlcID,
+                _tokenContract
+            ) {
+                // Notify successful
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch (bytes memory lowLevelData ) {
+                emit LowLevelErrorOccurred(lowLevelData);
+                revert("IMessenger notifyHTLC failed");
+            }
+        }
+    }
   }
 
   function batchCreate(
-    address[] memory _receivers,
+    address[] memory _srcAddresses,
     bytes32[] memory _hashlocks,
     uint256[] memory _timelocks,
     address[] memory _tokenContracts,
     uint256[] memory _amounts,
     uint256[] memory _chainIDs,
-    string[] memory _targetCurrencyReceiversAddresses
+    string[] memory _dstAddresses,
+    address[] memory _messengers,
+    uint256[] memory _phtlcIDs
   ) external payable returns (bytes32[] memory htlcIds) {
     if (
-      _receivers.length == 0 ||
-      _receivers.length != _hashlocks.length ||
-      _receivers.length != _timelocks.length ||
-      _receivers.length != _chainIDs.length ||
-      _receivers.length != _targetCurrencyReceiversAddresses.length ||
-      _receivers.length != _amounts.length ||
-      _receivers.length != _tokenContracts.length
+      _srcAddresses.length == 0 ||
+      _srcAddresses.length != _hashlocks.length ||
+      _srcAddresses.length != _timelocks.length ||
+      _srcAddresses.length != _chainIDs.length ||
+      _srcAddresses.length != _dstAddresses.length ||
+      _srcAddresses.length != _amounts.length ||
+      _srcAddresses.length != _tokenContracts.length ||
+      _srcAddresses.length != _messengers.length ||
+      _srcAddresses.length != _phtlcIDs.length
     ) {
       revert IncorrectData();
     }
 
-    htlcIds = new bytes32[](_receivers.length);
+    htlcIds = new bytes32[](_srcAddresses.length);
 
-    for (uint256 i = 0; i < _receivers.length; i++) {
+    for (uint256 i = 0; i < _srcAddresses.length; i++) {
       if (_timelocks[i] <= block.timestamp) {
         revert NotFutureTimelock();
       }
       if (_amounts[i] == 0) {
         revert FundsNotSent();
       }
+    }
 
+    for (uint256 i = 0; i < _srcAddresses.length; i++) {
       htlcIds[i] = _hashlocks[i];
 
       if (hasHTLC(htlcIds[i])) {
         revert HTLCAlreadyExist();
       }
-    }
 
-    for (uint256 i = 0; i < _receivers.length; i++) {
       IERC20 token = IERC20(_tokenContracts[i]);
 
       if (token.balanceOf(msg.sender) < _amounts[i]) {
@@ -171,14 +361,14 @@ contract HashedTimeLockERC20 {
         revert NoAllowance();
       }
 
-      token.safeTransferFrom(msg.sender, _receivers[i], _amounts[i]);
+      token.safeTransferFrom(msg.sender, _srcAddresses[i], _amounts[i]);
       contracts[htlcIds[i]] = HTLC(
         _hashlocks[i],
         0x0,
         _amounts[i],
         _timelocks[i],
         msg.sender,
-        _receivers[i],
+        _srcAddresses[i],
         _tokenContracts[i],
         false,
         false
@@ -190,15 +380,42 @@ contract HashedTimeLockERC20 {
         _chainIDs[i],
         _timelocks[i],
         msg.sender,
-        _receivers[i],
+        _srcAddresses[i],
         _tokenContracts[i],
-        _targetCurrencyReceiversAddresses[i]
+        _dstAddresses[i],
+        _phtlcIDs[i]
       );
+
+      if (_messengers[i] != address(0)) {
+        uint256 codeSize;
+        address currentMessenger = _messengers[i];
+        assembly { codeSize := extcodesize(currentMessenger) }
+        if (codeSize > 0) {
+            try IMessenger(_messengers[i]).notifyHTLC(
+                _hashlocks[i],
+                payable(msg.sender),
+                payable(_srcAddresses[i]),
+                _amounts[i],
+                _timelocks[i],
+                _hashlocks[i],
+                _dstAddresses[i],
+                _phtlcIDs[i],
+                _tokenContracts[i]
+            ) {
+                // Notify successful
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch (bytes memory lowLevelData ) {
+                emit LowLevelErrorOccurred(lowLevelData);
+                revert("IMessenger notifyHTLC failed");
+            }
+        }
+      }
     }
   }
 
   /**
-   * @dev Called by the receiver once they know the secret of the hashlock.
+   * @dev Called by the srcAddress once they know the secret of the hashlock.
    * This will transfer the locked funds to their address.
    *
    * @param _htlcId Id of the HTLC.
@@ -215,7 +432,7 @@ contract HashedTimeLockERC20 {
 
     htlc.secret = _secret;
     htlc.redeemed = true;
-    IERC20(htlc.tokenContract).safeTransfer(htlc.receiver, htlc.amount);
+    IERC20(htlc.tokenContract).safeTransfer(htlc.srcAddress, htlc.amount);
     emit TokenTransferClaimed(_htlcId);
     return true;
   }
@@ -244,7 +461,7 @@ contract HashedTimeLockERC20 {
 
       htlc.secret = _secrets[i];
       htlc.redeemed = true;
-      IERC20(htlc.tokenContract).safeTransfer(htlc.receiver, htlc.amount);
+      IERC20(htlc.tokenContract).safeTransfer(htlc.srcAddress, htlc.amount);
       emit TokenTransferClaimed(_htlcIds[i]);
     }
     return true;
@@ -269,6 +486,19 @@ contract HashedTimeLockERC20 {
     return true;
   }
 
+  function refundP(uint _phtlcID) external phtlcExists(_phtlcID) returns (bool){
+    PHTLC storage phtlc = pContracts[_phtlcID];
+
+    if(phtlc.refunded) revert AlreadyRefunded();
+    if(phtlc.converted) revert AlreadyConvertedToHTLC();
+    if(phtlc.timelock > block.timestamp) revert NotPassedTimelock();
+
+    phtlc.refunded = true;
+    IERC20(phtlc.tokenContract).safeTransfer(phtlc.sender, phtlc.amount);
+    emit TokenTransferRefundedP(_phtlcID);
+    return true;
+}
+
   /**
    * @dev Get contract details.
    * @param _htlcId HTLC contract id
@@ -280,7 +510,7 @@ contract HashedTimeLockERC20 {
     view
     returns (
       address sender,
-      address receiver,
+      address srcAddress,
       address tokenContract,
       uint256 amount,
       bytes32 hashlock,
@@ -296,7 +526,7 @@ contract HashedTimeLockERC20 {
     HTLC storage htlc = contracts[_htlcId];
     return (
       htlc.sender,
-      htlc.receiver,
+      htlc.srcAddress,
       htlc.tokenContract,
       htlc.amount,
       htlc.hashlock,
@@ -307,6 +537,42 @@ contract HashedTimeLockERC20 {
     );
   }
 
+function getPHTLCDetails(
+    uint _phtlcId
+  )
+    public
+    view
+    returns (
+      string memory dstAddress,
+      uint srcAssetId,
+      address payable sender,
+      address payable srcAddress,
+      uint timelock,
+      address messenger,
+      uint amount,
+      bool refunded,
+      bool converted,
+      address tokenContract
+    )
+  {
+    if (!hasPHTLC(_phtlcId)) {
+      return ('0', 0, payable(address(0)), payable(address(0)), 0, address(0), 0, false, false, address(0));
+    }
+    PHTLC storage phtlc = pContracts[_phtlcId];
+    return (
+      phtlc.dstAddress,
+      phtlc.srcAssetId,
+      phtlc.sender,
+      phtlc.srcAddress,
+      phtlc.timelock,
+      phtlc.messenger,
+      phtlc.amount,
+      phtlc.refunded,
+      phtlc.converted,
+      phtlc.tokenContract
+    );
+  }
+
   /**
    * @dev Check if there is a contract with a given id.
    * @param _htlcId Id into contracts mapping.
@@ -314,4 +580,8 @@ contract HashedTimeLockERC20 {
   function hasHTLC(bytes32 _htlcId) internal view returns (bool exists) {
     exists = (contracts[_htlcId].sender != address(0));
   }
+
+  function hasPHTLC(uint _phtlcID) internal view returns (bool exists) {
+    exists = (pContracts[_phtlcID].sender != address(0));
+}
 }

@@ -10,9 +10,11 @@ interface IMessenger {
         uint256 timelock,
         bytes32 hashlock,
         string memory dstAddress,
-        uint phtlcID
+        uint256 phtlcID,
+        address tokenContract
     ) external;
 }
+
 
 contract HashedTimeLockEther {
   uint256 private counter = 0;
@@ -280,7 +282,7 @@ function create(
     bytes32 _hashlock,
     uint256 _timelock,
     uint256 _chainID,
-    string memory _targetCurrencyReceiverAddress,
+    string memory _dstAddress,
     uint phtlcID,
     address messenger
 ) external payable returns (bytes32 htlcId) {
@@ -304,7 +306,7 @@ function create(
         _timelock,
         msg.sender,
         srcAddress,
-        _targetCurrencyReceiverAddress,
+        _dstAddress,
         phtlcID
     );
 
@@ -319,8 +321,9 @@ function create(
                 msg.value,
                 _timelock,
                 _hashlock,
-                _targetCurrencyReceiverAddress,
-                phtlcID
+                _dstAddress,
+                phtlcID,
+                address(0)
             ) {
                 // Notify successful
             } catch Error(string memory reason) {
@@ -366,7 +369,7 @@ function create(
     bytes32[] memory _hashlocks,
     uint256[] memory _timelocks,
     uint256[] memory _chainIDs,
-    string[] memory _targetCurrencyReceiversAddresses,
+    string[] memory _dstAddresses,
     uint[] memory _amounts,
     uint[] memory _phtlcIds,
     address[] memory messengers
@@ -391,7 +394,7 @@ function create(
       _srcAddresses.length != _hashlocks.length ||
       _srcAddresses.length != _timelocks.length ||
       _srcAddresses.length != _chainIDs.length ||
-      _srcAddresses.length != _targetCurrencyReceiversAddresses.length ||
+      _srcAddresses.length != _dstAddresses.length ||
       _srcAddresses.length != _phtlcIds.length ||
       _srcAddresses.length != messengers.length ||
       result != msg.value
@@ -427,7 +430,7 @@ function create(
         _timelocks[i],
         msg.sender,
         _srcAddresses[i],
-        _targetCurrencyReceiversAddresses[i],
+        _dstAddresses[i],
         _phtlcIds[i]
       );
 
@@ -443,8 +446,9 @@ function create(
                 msg.value,
                 _timelocks[i],
                 _hashlocks[i],
-                _targetCurrencyReceiversAddresses[i],
-                _phtlcIds[i]
+                _dstAddresses[i],
+                _phtlcIds[i],
+                address(0)
             ) {
                 // Notify successful
             } catch Error(string memory reason) {

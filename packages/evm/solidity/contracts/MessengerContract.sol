@@ -11,7 +11,8 @@ interface IMessenger {
         uint256 timelock,
         bytes32 hashlock,
         string memory dstAddress,
-        uint256 phtlcID
+        uint256 phtlcID,
+        address tokenContract
     ) external;
 }
 
@@ -24,7 +25,8 @@ contract SimpleMessenger is IMessenger {
         uint256 timelock,
         bytes32 hashlock,
         string dstAddress,
-        uint256 phtlcID
+        uint256 phtlcID,
+        address tokenContract
     );
 
     function notifyHTLC(
@@ -35,7 +37,8 @@ contract SimpleMessenger is IMessenger {
         uint256 timelock,
         bytes32 hashlock,
         string memory dstAddress,
-        uint256 phtlcID
+        uint256 phtlcID,
+        address tokenContract
     ) public  override {
         emit HTLCNotificationReceived(
             htlcId,
@@ -45,7 +48,8 @@ contract SimpleMessenger is IMessenger {
             timelock,
             hashlock,
             dstAddress,
-            phtlcID
+            phtlcID,
+            tokenContract
         );
     }
 }
