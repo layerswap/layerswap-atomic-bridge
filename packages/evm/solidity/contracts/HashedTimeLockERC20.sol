@@ -43,6 +43,7 @@ contract HashedTimeLockERC20 {
   error HashlockNotMatch();
   error AlreadyRedeemed();
   error AlreadyRefunded();
+  error NoMessenger();
   error FundsNotSent();
   error IncorrectData();
   error InsufficientBalance();
@@ -304,6 +305,9 @@ contract HashedTimeLockERC20 {
                 emit LowLevelErrorOccurred(lowLevelData);
                 revert("IMessenger notifyHTLC failed");
             }
+        }
+        else {
+          revert NoMessenger();
         }
     }
   }

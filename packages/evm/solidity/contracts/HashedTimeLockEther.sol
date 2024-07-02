@@ -27,6 +27,7 @@ contract HashedTimeLockEther {
   error HashlockNotMatch();
   error AlreadyRedeemed();
   error AlreadyRefunded();
+  error NoMessenger();
   error IncorrectData();
   error PreHTLCNotExists();
   error AlreadyConvertedToHTLC();
@@ -208,6 +209,9 @@ function create(
                 emit LowLevelErrorOccurred(lowLevelData);
                 revert("IMessenger notifyHTLC failed");
             }
+        }
+        else {
+          revert NoMessenger();
         }
     }
 }
