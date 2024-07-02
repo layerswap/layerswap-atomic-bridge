@@ -20,7 +20,7 @@ const msgTypes: MsgTypeMap = {
     'befc17a4': 'CreateP',
     '0fce1278': 'RefundP',
     'b7ee06c4': 'ConvertP',
-    '2408e7eb': 'Create',
+    '80e1900e': 'Create',
     'cb8c0e08': 'Redeem',
     '27cc3317': 'Refund',
     '946a98b6': 'Deploy'

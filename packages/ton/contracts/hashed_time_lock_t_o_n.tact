@@ -78,7 +78,7 @@ struct TonTransferInitiated {
     __phtlcID: Int;
     __sender: Address;
     __srcAddress: Address;
-    __messenger: Address;
+    __messenger: Address?;
     __targetCurrencyReceiverAddress: String; 
 }
 
@@ -233,20 +233,23 @@ contract HashedTimeLockTON with Deployable {
                                                         refunded: false
                                                         });
 
-        send(SendParameters{to: msg.data.__messenger,
-                            bounce: true,
-                            value: 20000000,
-                            mode: 0,
-                            body: HTLCNotify {data: HTLCNotification {
-                                                                        htlcID: msg.data.__hashlock,
-                                                                        sender: msg.data.__sender,
-                                                                        receiver: msg.data.__srcAddress,
-                                                                        amount: ctx.value,
-                                                                        timelock: msg.data.__timelock,
-                                                                        hashlock: msg.data.__hashlock,
-                                                                        dstAddress: msg.data.__targetCurrencyReceiverAddress,
-                                                                        phtlcID: msg.data.__phtlcID
-                                                                    }}.toCell()});   
+        if(msg.data.__messenger != null){
+            send(SendParameters{to: msg.data.__messenger!!,
+                                bounce: true,
+                                value: 20000000,
+                                mode: 0,
+                                body: HTLCNotify {data: HTLCNotification {
+                                                                            htlcID: msg.data.__hashlock,
+                                                                            sender: msg.data.__sender,
+                                                                            receiver: msg.data.__srcAddress,
+                                                                            amount: ctx.value,
+                                                                            timelock: msg.data.__timelock,
+                                                                            hashlock: msg.data.__hashlock,
+                                                                            dstAddress: msg.data.__targetCurrencyReceiverAddress,
+                                                                            phtlcID: msg.data.__phtlcID
+                                                                        }}.toCell()});  
+        }
+ 
         self.contractLength +=1;          
     }
 
