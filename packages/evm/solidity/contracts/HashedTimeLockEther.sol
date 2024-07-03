@@ -38,32 +38,31 @@ contract HashedTimeLockEther {
     uint256 amount;
     uint256 timelock;
     address payable sender;
-    address payable srcAddress;
+    address payable receiver;
     bool redeemed;
     bool refunded;
   }
 
     struct PHTLC {
     string dstAddress;
-    uint srcAssetId;
+    string srcAsset;
     address payable sender;
-    address payable srcAddress;
+    address payable receiver;
     uint timelock; 
     address messenger;
     uint amount;
     bool refunded;
     bool converted;
   }
-
   event EtherTransferPreInitiated(
-    uint[] chainIds,
+    string[] chains,
     string[] dstAddresses,
     uint phtlcID,
-    uint dstChainId,
-    uint dstAssetId,
+    string dstChain,
+    string dstAsset,
     string dstAddress,
-    uint srcAssetId,
-    address srcAddress,
+    string srcAsset,
+    address receiver,
     uint timelock, 
     address messenger,
     uint amount,
@@ -73,7 +72,7 @@ contract HashedTimeLockEther {
   event EtherTransferInitiated(
     bytes32 indexed hashlock,
     uint256 amount,
-    uint256 chainID,
+    string chain,
     uint256 timelock,
     address indexed sender,
     address indexed receiver,
@@ -98,9 +97,11 @@ contract HashedTimeLockEther {
 
   mapping(bytes32 => HTLC) contracts;
   mapping(uint => PHTLC) pContracts;
+  bytes32 [] contractIds;
+  uint [] pContractIds;
 
 
-function createP(uint[] memory chainIds,string[] memory dstAddresses,uint dstChainId,uint dstAssetId, string memory dstAddress,uint srcAssetId,address srcAddress,uint timelock, address messenger) external payable  returns (uint phtlcID) {
+function createP(string[] memory chains,string[] memory dstAddresses,string memory dstChain,string memory dstAsset, string memory dstAddress,string memory srcAsset,address receiver,uint timelock, address messenger) external payable  returns (uint phtlcID) {
     counter+=1;
     if (msg.value == 0) {
       revert FundsNotSent();
@@ -111,9 +112,10 @@ function createP(uint[] memory chainIds,string[] memory dstAddresses,uint dstCha
 
     phtlcID = counter;
 
-    pContracts[phtlcID] = PHTLC(dstAddress,srcAssetId,payable(msg.sender),payable(srcAddress),timelock, messenger,msg.value,false,false);
+    pContracts[phtlcID] = PHTLC(dstAddress,srcAsset,payable(msg.sender),payable(receiver),timelock, messenger,msg.value,false,false);
+    pContractIds.push(phtlcID);
 
-    emit EtherTransferPreInitiated(chainIds,dstAddresses,counter,dstChainId,dstAssetId,dstAddress,srcAssetId,srcAddress,timelock, messenger,msg.value,false,false);
+    emit EtherTransferPreInitiated(chains,dstAddresses,counter,dstChain,dstAsset,dstAddress,srcAsset,receiver,timelock, messenger,msg.value,false,false);
 }
 
 function refundP(uint _phtlcID) external phtlcExists(_phtlcID) returns (bool){
@@ -136,15 +138,15 @@ function convertP(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) 
           revert AlreadyConvertedToHTLC();
         }
         pContracts[phtlcID].converted = true;
-        contracts[htlcID] = HTLC(hashlock, 0x0, pContracts[phtlcID].amount, pContracts[phtlcID].timelock, payable(pContracts[phtlcID].sender), pContracts[phtlcID].srcAddress, false, false);
-
+        contracts[htlcID] = HTLC(hashlock, 0x0, pContracts[phtlcID].amount, pContracts[phtlcID].timelock, payable(pContracts[phtlcID].sender), pContracts[phtlcID].receiver, false, false);
+    contractIds.push(hashlock);
     emit EtherTransferInitiated(
       hashlock,
       pContracts[phtlcID].amount,
-      pContracts[phtlcID].srcAssetId,
+      pContracts[phtlcID].srcAsset,
       pContracts[phtlcID].timelock,
       pContracts[phtlcID].sender,
-      pContracts[phtlcID].srcAddress,
+      pContracts[phtlcID].receiver,
       pContracts[phtlcID].dstAddress,
       phtlcID
     );
@@ -154,10 +156,10 @@ function convertP(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) 
 }
 
 function create(
-    address payable srcAddress,
+    address payable receiver,
     bytes32 _hashlock,
     uint256 _timelock,
-    uint256 _chainID,
+    string memory _chain,
     string memory _dstAddress,
     uint phtlcID,
     address messenger
@@ -173,15 +175,15 @@ function create(
     }
 
     htlcId = _hashlock;
-    contracts[_hashlock] = HTLC(_hashlock, 0x0, msg.value, _timelock, payable(msg.sender), srcAddress, false, false);
-
+    contracts[_hashlock] = HTLC(_hashlock, 0x0, msg.value, _timelock, payable(msg.sender), receiver, false, false);  
+    contractIds.push(_hashlock);
     emit EtherTransferInitiated(
         _hashlock,
         msg.value,
-        _chainID,
+        _chain,
         _timelock,
         msg.sender,
-        srcAddress,
+        receiver,
         _dstAddress,
         phtlcID
     );
@@ -193,7 +195,7 @@ function create(
             try IMessenger(messenger).notifyHTLC(
                 _hashlock,
                 payable(msg.sender),
-                srcAddress,
+                receiver,
                 msg.value,
                 _timelock,
                 _hashlock,
@@ -222,7 +224,7 @@ function create(
 
     htlc.secret = _secret;
     htlc.redeemed = true;
-    htlc.srcAddress.transfer(htlc.amount);
+    htlc.receiver.transfer(htlc.amount);
     emit EtherTransferClaimed(_htlcId,msg.sender);
     return true;
   }
@@ -251,7 +253,7 @@ function create(
     uint256 amount,
     uint256 timelock,
     address payable sender,
-    address payable srcAddress,
+    address payable receiver,
     bool redeemed,
     bool refunded
     )
@@ -275,7 +277,7 @@ function create(
     htlc.amount,
     htlc.timelock,
     htlc.sender,
-    htlc.srcAddress,
+    htlc.receiver,
     htlc.redeemed,
     htlc.refunded
     );
@@ -288,9 +290,9 @@ function create(
     view
     returns (
     string memory dstAddress,
-    uint srcAssetId,
+    string memory srcAsset,
     address payable sender,
-    address payable srcAddress,
+    address payable receiver,
     uint timelock, 
     address messenger,
     uint amount,
@@ -301,7 +303,7 @@ function create(
     if (!hasPHTLC(_phtlcId)) {
       return (
         "0",
-        0,
+        "0",
         payable(address(0)),
         payable(address(0)),
         0,
@@ -314,9 +316,9 @@ function create(
     PHTLC storage phtlc = pContracts[_phtlcId];
     return (
     phtlc.dstAddress,
-    phtlc.srcAssetId,
+    phtlc.srcAsset,
     phtlc.sender,
-    phtlc.srcAddress,
+    phtlc.receiver,
     phtlc.timelock, 
     phtlc.messenger,
     phtlc.amount,
@@ -326,11 +328,54 @@ function create(
   }
 
 function hasPHTLC(uint _phtlcID) internal view returns (bool exists) {
-    exists = (pContracts[_phtlcID].srcAddress != address(0));
+    exists = (pContracts[_phtlcID].receiver != address(0));
 }
 
 function hasHTLC(bytes32 _htlcId) internal view returns (bool exists) {
     exists = (contracts[_htlcId].sender != address(0));
 }
 
+function getHTLContracts(address addr) public view returns(bytes32[] memory) {
+    uint count = 0;
+
+    for (uint i = 0; i < contractIds.length; i++) {
+        if (contracts[contractIds[i]].sender == addr) {
+            count++;
+        }
+    }
+
+    bytes32[] memory result = new bytes32[](count);
+    uint j = 0;
+
+    for (uint i = 0; i < contractIds.length; i++) {
+        if (contracts[contractIds[i]].sender == addr) {
+            result[j] = contractIds[i];
+            j++;
+        }
+    }
+
+    return result;
+}
+
+function getPreHTLContracts(address addr) public view returns (uint[] memory) {
+    uint count = 0;
+
+    for (uint i = 0; i < pContractIds.length; i++) {
+        if (pContracts[pContractIds[i]].sender == addr) {
+            count++;
+        }
+    }
+
+   uint[] memory result = new uint[](count);
+    uint j = 0;
+
+    for (uint i = 0; i < contractIds.length; i++) {
+        if (pContracts[pContractIds[i]].sender == addr) {
+            result[j] = pContractIds[i];
+            j++;
+        }
+    }
+
+    return result;
+}
 }
