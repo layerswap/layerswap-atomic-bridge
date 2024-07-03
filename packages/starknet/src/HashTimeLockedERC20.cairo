@@ -21,6 +21,7 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn createP(
         ref self: TContractState,
         chainIds: Span<u256>,
+        assetIds: Span<u256>,
         LpPath: Span<felt252>,
         dstChainId: u256,
         dstAssetId: u256,
@@ -146,6 +147,7 @@ mod HashedTimelockERC20 {
     #[derive(Drop, starknet::Event)]
     struct TokenTransferPreInitiated {
         chainIds: Span<u256>,
+        assetIds: Span<u256>,
         LpPath: Span<felt252>,
         phtlcId: u256,
         dstChainId: u256,
@@ -207,6 +209,7 @@ mod HashedTimelockERC20 {
         fn createP(
             ref self: ContractState,
             chainIds: Span<u256>,
+            assetIds: Span<u256>,
             LpPath: Span<felt252>,
             dstChainId: u256,
             dstAssetId: u256,
@@ -254,6 +257,7 @@ mod HashedTimelockERC20 {
                 .emit(
                     TokenTransferPreInitiated {
                         chainIds: chainIds,
+                        assetIds: assetIds,
                         LpPath: LpPath,
                         phtlcId: phtlcId,
                         dstChainId: dstChainId,
