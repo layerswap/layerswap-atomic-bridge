@@ -6,7 +6,7 @@ pub trait IMessenger<TContractState> {
         ref self: TContractState,
         htlcId: u256,
         sender: ContractAddress,
-        srcAddress: ContractAddress,
+        receiver: ContractAddress,
         amount: u256,
         timelock: u256,
         hashlock: u256,
@@ -20,14 +20,14 @@ pub trait IMessenger<TContractState> {
 pub trait IHashedTimelockERC20<TContractState> {
     fn createP(
         ref self: TContractState,
-        chainIds: Span<u256>,
+        chains: Span<felt252>,
         assetIds: Span<u256>,
         LpPath: Span<felt252>,
-        dstChainId: u256,
-        dstAssetId: u256,
+        dstChain: felt252,
+        dstAsset: felt252,
         dstAddress: felt252,
-        srcAssetId: u256,
-        srcAddress: ContractAddress,
+        srcAsset: felt252,
+        receiver: ContractAddress,
         timelock: u256,
         messenger: ContractAddress,
         tokenContract: ContractAddress,
@@ -35,12 +35,12 @@ pub trait IHashedTimelockERC20<TContractState> {
     ) -> u256;
     fn create(
         ref self: TContractState,
-        _srcAddress: ContractAddress,
+        _receiver: ContractAddress,
         _hashlock: u256,
         _timelock: u256,
         _tokenContract: ContractAddress,
         _amount: u256,
-        _chainId: u256,
+        _chain: felt252,
         _dstAddress: felt252,
         _phtlcId: u256,
         _messenger: ContractAddress,
@@ -53,7 +53,7 @@ pub trait IHashedTimelockERC20<TContractState> {
         self: @TContractState, phtlcId: u256
     ) -> (
         (ContractAddress, ContractAddress, ContractAddress, ContractAddress),
-        (u256, u256, u256),
+        (u256, felt252, u256),
         (bool, bool),
         felt252
     );
@@ -73,12 +73,12 @@ pub trait IHashedTimelockERC20<TContractState> {
 ///
 /// Protocol:
 ///
-///  1) create(srcAddress, hashlock, timelock, tokenContract, amount) - a
+///  1) create(receiver, hashlock, timelock, tokenContract, amount) - a
 ///      sender calls this to create a new HTLC on a given token (tokenContract)
 ///       for a given amount. A uint256 htlcId is returned
-///  2) redeem(htlcId, secret) - once the srcAddress knows the secret of
+///  2) redeem(htlcId, secret) - once the receiver knows the secret of
 ///      the hashlock hash they can claim the tokens with this function
-///  3) refund(htlcId) - after timelock has expired and if the srcAddress did not
+///  3) refund(htlcId) - after timelock has expired and if the receiver did not
 ///      redeem the tokens the sender / creator of the HTLC can get their tokens
 ///      back with this function.
 #[starknet::contract]
@@ -116,7 +116,7 @@ mod HashedTimelockERC20 {
         amount: u256,
         timelock: u256,
         sender: ContractAddress,
-        srcAddress: ContractAddress,
+        receiver: ContractAddress,
         tokenContract: ContractAddress,
         redeemed: bool,
         refunded: bool,
@@ -124,9 +124,9 @@ mod HashedTimelockERC20 {
     #[derive(Drop, Serde, starknet::Store)]
     struct PHTLC {
         dstAddress: felt252, //TODO: check what type is this 
-        srcAssetId: u256,
+        srcAsset: felt252,
         sender: ContractAddress,
-        srcAddress: ContractAddress,
+        receiver: ContractAddress,
         amount: u256,
         timelock: u256,
         messenger: ContractAddress,
@@ -146,18 +146,18 @@ mod HashedTimelockERC20 {
     }
     #[derive(Drop, starknet::Event)]
     struct TokenTransferPreInitiated {
-        chainIds: Span<u256>,
+        chains: Span<felt252>,
         assetIds: Span<u256>,
         LpPath: Span<felt252>,
         phtlcId: u256,
-        dstChainId: u256,
-        dstAssetId: u256,
+        dstChain: felt252,
+        dstAsset: felt252,
         dstAddress: felt252,
         #[key]
         sender: ContractAddress,
-        srcAssetId: u256,
+        srcAsset: felt252,
         #[key]
-        srcAddress: ContractAddress,
+        receiver: ContractAddress,
         timelock: u256,
         messenger: ContractAddress,
         amount: u256,
@@ -168,12 +168,12 @@ mod HashedTimelockERC20 {
         #[key]
         hashlock: u256,
         amount: u256,
-        chainId: u256,
+        chain: felt252,
         timelock: u256,
         #[key]
         sender: ContractAddress,
         #[key]
-        srcAddress: ContractAddress,
+        receiver: ContractAddress,
         tokenContract: ContractAddress,
         dstAddress: felt252,
         phtlcId: u256,
@@ -201,21 +201,21 @@ mod HashedTimelockERC20 {
     #[abi(embed_v0)]
     impl HashedTimelockERC20 of super::IHashedTimelockERC20<ContractState> {
         /// @dev Sender / Payer sets up a new pre-hash time lock contract depositing the
-        /// funds and providing the reciever/srcAddress and terms.
-        /// @param _srcAddress reciever/srcAddress of the funds.
+        /// funds and providing the reciever/receiver and terms.
+        /// @param _receiver reciever/receiver of the funds.
         /// @param _timelock UNIX epoch seconds time that the lock expires at.
         ///                  Refunds can be made after this time.
         /// @return Id of the new PHTLC. This is needed for subsequent calls.
         fn createP(
             ref self: ContractState,
-            chainIds: Span<u256>,
+            chains: Span<felt252>,
             assetIds: Span<u256>,
             LpPath: Span<felt252>,
-            dstChainId: u256,
-            dstAssetId: u256,
+            dstChain: felt252,
+            dstAsset: felt252,
             dstAddress: felt252,
-            srcAssetId: u256,
-            srcAddress: ContractAddress,
+            srcAsset: felt252,
+            receiver: ContractAddress,
             timelock: u256,
             messenger: ContractAddress,
             tokenContract: ContractAddress,
@@ -242,9 +242,9 @@ mod HashedTimelockERC20 {
                     phtlcId,
                     PHTLC {
                         dstAddress: dstAddress,
-                        srcAssetId: srcAssetId,
+                        srcAsset: srcAsset,
                         sender: get_caller_address(),
-                        srcAddress: srcAddress,
+                        receiver: receiver,
                         amount: amount,
                         timelock: timelock,
                         messenger: messenger,
@@ -256,16 +256,16 @@ mod HashedTimelockERC20 {
             self
                 .emit(
                     TokenTransferPreInitiated {
-                        chainIds: chainIds,
+                        chains: chains,
                         assetIds: assetIds,
                         LpPath: LpPath,
                         phtlcId: phtlcId,
-                        dstChainId: dstChainId,
-                        dstAssetId: dstAssetId,
+                        dstChain: dstChain,
+                        dstAsset: dstAsset,
                         dstAddress: dstAddress,
                         sender: get_caller_address(),
-                        srcAssetId: srcAssetId,
-                        srcAddress: srcAddress,
+                        srcAsset: srcAsset,
+                        receiver: receiver,
                         timelock: timelock,
                         messenger: messenger,
                         amount: amount,
@@ -277,19 +277,19 @@ mod HashedTimelockERC20 {
 
         /// @dev Sender / Payer sets up a new hash time lock contract depositing the
         /// funds and providing the reciever and terms.
-        /// @param _srcAddress srcAddress of the funds.
+        /// @param _receiver receiver of the funds.
         /// @param _hashlock A sha-256 hash hashlock.
         /// @param _timelock UNIX epoch seconds time that the lock expires at.
         ///                  Refunds can be made after this time.
         /// @return Id of the new HTLC. This is needed for subsequent calls.
         fn create(
             ref self: ContractState,
-            _srcAddress: ContractAddress,
+            _receiver: ContractAddress,
             _hashlock: u256,
             _timelock: u256,
             _tokenContract: ContractAddress,
             _amount: u256,
-            _chainId: u256,
+            _chain: felt252,
             _dstAddress: felt252,
             _phtlcId: u256,
             _messenger: ContractAddress,
@@ -318,7 +318,7 @@ mod HashedTimelockERC20 {
                         amount: _amount,
                         timelock: _timelock,
                         sender: get_caller_address(),
-                        srcAddress: _srcAddress,
+                        receiver: _receiver,
                         tokenContract: _tokenContract,
                         redeemed: false,
                         refunded: false
@@ -329,10 +329,10 @@ mod HashedTimelockERC20 {
                     TokenTransferInitiated {
                         hashlock: _hashlock,
                         amount: _amount,
-                        chainId: _chainId,
+                        chain: _chain,
                         timelock: _timelock,
                         sender: get_caller_address(),
-                        srcAddress: _srcAddress,
+                        receiver: _receiver,
                         tokenContract: _tokenContract,
                         dstAddress: _dstAddress,
                         phtlcId: _phtlcId,
@@ -346,7 +346,7 @@ mod HashedTimelockERC20 {
                     .notifyHTLC(
                         htlcId,
                         get_caller_address(),
-                        _srcAddress,
+                        _receiver,
                         _amount,
                         _timelock,
                         _hashlock,
@@ -358,7 +358,7 @@ mod HashedTimelockERC20 {
             htlcId
         }
 
-        /// @dev Called by the srcAddress once they know the secret of the hashlock.
+        /// @dev Called by the receiver once they know the secret of the hashlock.
         /// This will transfer the locked funds to their address.
         ///
         /// @param htlcId of the HTLC.
@@ -387,14 +387,14 @@ mod HashedTimelockERC20 {
                         amount: htlc.amount,
                         timelock: htlc.timelock,
                         sender: htlc.sender,
-                        srcAddress: htlc.srcAddress,
+                        receiver: htlc.receiver,
                         tokenContract: htlc.tokenContract,
                         redeemed: true,
                         refunded: htlc.refunded
                     }
                 );
             IERC20Dispatcher { contract_address: htlc.tokenContract }
-                .transfer(htlc.srcAddress, htlc.amount);
+                .transfer(htlc.receiver, htlc.amount);
             self.emit(TokenTransferClaimed { htlcId: htlcId, redeemAddress: get_caller_address() });
             true
         }
@@ -418,9 +418,9 @@ mod HashedTimelockERC20 {
                     phtlcId,
                     PHTLC {
                         dstAddress: phtlc.dstAddress,
-                        srcAssetId: phtlc.srcAssetId,
+                        srcAsset: phtlc.srcAsset,
                         sender: phtlc.sender,
-                        srcAddress: phtlc.srcAddress,
+                        receiver: phtlc.receiver,
                         amount: phtlc.amount,
                         timelock: phtlc.timelock,
                         messenger: phtlc.messenger,
@@ -434,6 +434,42 @@ mod HashedTimelockERC20 {
             self.emit(TokenTransferRefunded { htlcId: phtlcId });
             true
         }
+
+        /// @dev Called by the sender if there was no redeem AND the time lock has
+        /// expired. This will refund the contract amount.
+        ///
+        /// @param _htlcId of the HTLC to refund from.
+        /// @return bool true on success
+        fn refund(ref self: ContractState, htlcId: u256) -> bool {
+            assert!(self.hasHTLC(htlcId), "HTLC Does Not Exist");
+            let htlc: HTLC = self.contracts.read(htlcId);
+
+            assert!(!htlc.redeemed, "Funds Are Already Redeemed");
+            assert!(!htlc.refunded, "Funds Are Already Refunded");
+            assert!(htlc.timelock <= get_block_timestamp().into(), "Not Passed Time Lock");
+
+            self
+                .contracts
+                .write(
+                    htlcId,
+                    HTLC {
+                        hashlock: htlc.hashlock,
+                        secret: htlc.secret,
+                        amount: htlc.amount,
+                        timelock: htlc.timelock,
+                        sender: htlc.sender,
+                        receiver: htlc.receiver,
+                        tokenContract: htlc.tokenContract,
+                        redeemed: htlc.redeemed,
+                        refunded: true
+                    }
+                );
+            IERC20Dispatcher { contract_address: htlc.tokenContract }
+                .transfer(htlc.sender, htlc.amount);
+            self.emit(TokenTransferRefunded { htlcId: htlcId });
+            true
+        }
+
         /// @dev Called by the sender to convert the PHTLC to HTLC
         /// expired. This will refund the contract amount.
         ///
@@ -457,9 +493,9 @@ mod HashedTimelockERC20 {
                     phtlcId,
                     PHTLC {
                         dstAddress: phtlc.dstAddress,
-                        srcAssetId: phtlc.srcAssetId,
+                        srcAsset: phtlc.srcAsset,
                         sender: phtlc.sender,
-                        srcAddress: phtlc.srcAddress,
+                        receiver: phtlc.receiver,
                         amount: phtlc.amount,
                         timelock: phtlc.timelock,
                         messenger: phtlc.messenger,
@@ -478,7 +514,7 @@ mod HashedTimelockERC20 {
                         amount: phtlc.amount,
                         timelock: phtlc.timelock,
                         sender: phtlc.sender,
-                        srcAddress: phtlc.srcAddress,
+                        receiver: phtlc.receiver,
                         tokenContract: phtlc.tokenContract,
                         redeemed: false,
                         refunded: false
@@ -507,7 +543,7 @@ mod HashedTimelockERC20 {
             }
             let htlc: HTLC = self.contracts.read(htlcId);
             (
-                (htlc.sender, htlc.srcAddress, htlc.tokenContract),
+                (htlc.sender, htlc.receiver, htlc.tokenContract),
                 (htlc.amount, htlc.hashlock, htlc.timelock),
                 (htlc.redeemed, htlc.refunded),
                 htlc.secret
@@ -517,22 +553,22 @@ mod HashedTimelockERC20 {
             self: @ContractState, phtlcId: u256
         ) -> (
             (ContractAddress, ContractAddress, ContractAddress, ContractAddress),
-            (u256, u256, u256),
+            (u256, felt252, u256),
             (bool, bool),
             felt252
         ) {
             if !self.hasPHTLC(phtlcId) {
                 return (
                     (Zero::zero(), Zero::zero(), Zero::zero(), Zero::zero()),
-                    (0_u256, 0_u256, 0_u256),
+                    (0_u256, 0, 0_u256),
                     (false, false),
                     0
                 );
             }
             let phtlc: PHTLC = self.pContracts.read(phtlcId);
             (
-                (phtlc.sender, phtlc.srcAddress, phtlc.tokenContract, phtlc.messenger),
-                (phtlc.amount, phtlc.srcAssetId, phtlc.timelock),
+                (phtlc.sender, phtlc.receiver, phtlc.tokenContract, phtlc.messenger),
+                (phtlc.amount, phtlc.srcAsset, phtlc.timelock),
                 (phtlc.refunded, phtlc.converted),
                 phtlc.dstAddress
             )
