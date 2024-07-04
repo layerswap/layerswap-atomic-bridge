@@ -343,7 +343,8 @@ function getHTLContracts(address addr) public view returns(bytes32[] memory) {
     uint count = 0;
 
     for (uint i = 0; i < contractIds.length; i++) {
-        if (contracts[contractIds[i]].sender == addr) {
+      HTLC memory htlc =  contracts[contractIds[i]];
+        if (htlc.sender == addr) {
             count++;
         }
     }
@@ -365,15 +366,16 @@ function getPreHTLContracts(address addr) public view returns (uint[] memory) {
     uint count = 0;
 
     for (uint i = 0; i < pContractIds.length; i++) {
-        if (pContracts[pContractIds[i]].sender == addr) {
+      PHTLC memory phtlc =  pContracts[pContractIds[i]];
+        if (phtlc.sender == addr) {
             count++;
         }
     }
 
-   uint[] memory result = new uint[](count);
+    uint[] memory result = new uint[](count);
     uint j = 0;
 
-    for (uint i = 0; i < contractIds.length; i++) {
+    for (uint i = 0; i < pContractIds.length; i++) {
         if (pContracts[pContractIds[i]].sender == addr) {
             result[j] = pContractIds[i];
             j++;
