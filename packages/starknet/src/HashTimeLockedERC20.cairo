@@ -434,6 +434,42 @@ mod HashedTimelockERC20 {
             self.emit(TokenTransferRefunded { htlcId: phtlcId });
             true
         }
+
+        /// @dev Called by the sender if there was no redeem AND the time lock has
+        /// expired. This will refund the contract amount.
+        ///
+        /// @param _htlcId of the HTLC to refund from.
+        /// @return bool true on success
+        fn refund(ref self: ContractState, htlcId: u256) -> bool {
+            assert!(self.hasHTLC(htlcId), "HTLC Does Not Exist");
+            let htlc: HTLC = self.contracts.read(htlcId);
+
+            assert!(!htlc.redeemed, "Funds Are Already Redeemed");
+            assert!(!htlc.refunded, "Funds Are Already Refunded");
+            assert!(htlc.timelock <= get_block_timestamp().into(), "Not Passed Time Lock");
+
+            self
+                .contracts
+                .write(
+                    htlcId,
+                    HTLC {
+                        hashlock: htlc.hashlock,
+                        secret: htlc.secret,
+                        amount: htlc.amount,
+                        timelock: htlc.timelock,
+                        sender: htlc.sender,
+                        receiver: htlc.receiver,
+                        tokenContract: htlc.tokenContract,
+                        redeemed: htlc.redeemed,
+                        refunded: true
+                    }
+                );
+            IERC20Dispatcher { contract_address: htlc.tokenContract }
+                .transfer(htlc.sender, htlc.amount);
+            self.emit(TokenTransferRefunded { htlcId: htlcId });
+            true
+        }
+
         /// @dev Called by the sender to convert the PHTLC to HTLC
         /// expired. This will refund the contract amount.
         ///
