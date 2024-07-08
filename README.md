@@ -1,11 +1,6 @@
 # Layerswap Atomic Bridge
 Permissionless, trustless cross-chain bridging protocol without Oracles
 
-## Disclaimer: Development in Progress
-
-Please note that this project is actively under development. It is not ready for deployment on any mainnet environments.
-As we continue to experiment and test new ideas, expect significant changes to the interface. Please be prepared for ongoing modifications.
-
 ## The Motivation
 
 An Ideal bridging solution ❌ **SHOULD NOT**:
@@ -18,7 +13,10 @@ It **SHOULD** be trustless, open to any participant, and free of external depend
 
 Read full article [here](https://layerswap.notion.site/Layerswap-V2-Atomic-Bridging-Protocol-58944b7ddce54b838a23feee3aebebf5).
 
----
+## Disclaimer: Development in Progress
+
+Please note that this project is actively under development. It is not ready for deployment on any mainnet environments.
+As we continue to experiment and test new ideas, expect significant changes to the interface. Please be prepared for ongoing modifications.
 
 ## Supported Networks
 
@@ -33,15 +31,21 @@ Read full article [here](https://layerswap.notion.site/Layerswap-V2-Atomic-Bridg
   - Starknet PHTLC package can be found [here](./packages/starknet/README.md)
 - TON
   - [Learn more about TON](https://ton.org/)
-  - Starknet PHTLC package can be found [here](./packages/ton/README.md)
+  - TON PHTLC package can be found [here](./packages/ton/README.md)
+- Solana (in progress)
+- Aptos/Sui (in progress)
+- Stacks (in progress)
 
+---
 
-## Prerequisites
+## Getting Started
+
+### Prerequisites
 
 - Node.js and npm installed on your machine.
 - Basic understanding of Bitcoin transactions, Smart Contracts, HTLC
 
-## Getting Started
+### Building the project
 
 Clone the repository to your local machine:
 
@@ -54,8 +58,6 @@ cd layerswap-atomic-bridge
 # install dependencies
 npm install
 ```
-
-#### Building the project
 
 Once you have cloned the repository and installed all dependencies, you can build the project by running the build command. This command will compile the TypeScript files and make sure everything is set up correctly.
 
