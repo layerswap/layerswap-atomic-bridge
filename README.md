@@ -6,7 +6,7 @@ Permissionless, trustless cross-chain bridging protocol without Oracles
 Please note that this project is actively under development. It is not ready for deployment on any mainnet environments.
 As we continue to experiment and test new ideas, expect significant changes to the interface. Please be prepared for ongoing modifications.
 
-## Protcol design and motivation
+## The Motivation
 
 An Ideal bridging solution ❌ **SHOULD NOT**:
 
