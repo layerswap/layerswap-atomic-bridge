@@ -71,3 +71,7 @@ This command executes the build scripts defined in the `package.json` file. It s
 > ```bash
 > npm run build:bitcoin
 > ```
+
+## Acknowledgements
+
+- The initial HTLC implementation was based on the work done in the atomic-port project by Yuki Uichiro (https://github.com/ymuichiro/atomic-port)
