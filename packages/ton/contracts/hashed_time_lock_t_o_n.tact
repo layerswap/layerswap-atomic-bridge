@@ -185,7 +185,8 @@ contract HashedTimeLockTON with Deployable {
     receive(msg: ConvertP){
         let ctx: Context = context();
         let htlcID: Int = msg.data.hashlock;
-
+        require(self.phtlcExists(msg.phtlcID) == true,"Contract Does Not Exist");
+        
         if(ctx.sender == (self.pContracts.get(msg.data.phtlcID)!!).sender || ctx.sender == (self.pContracts.get(msg.data.phtlcID)!!).messenger){
                     require(self.htlcExsits(htlcID) == false ,"HTLC With That Hashlock Exists");
                     require((self.pContracts.get(msg.data.phtlcID)!!).converted == false,"Already Converted To HTLC");

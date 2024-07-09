@@ -48,7 +48,7 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn redeem(ref self: TContractState, htlcId: u256, _secret: felt252) -> bool;
     fn refundP(ref self: TContractState, phtlcId: u256) -> bool;
     fn refund(ref self: TContractState, htlcId: u256) -> bool;
-    fn convertP(ref self: TContractState, phtlcId: u256, hashlock: u256) -> u256;
+    fn convert(ref self: TContractState, phtlcId: u256, hashlock: u256) -> u256;
     fn getPHTLCDetails(
         self: @TContractState, phtlcId: u256
     ) -> (
@@ -476,13 +476,14 @@ mod HashedTimelockERC20 {
         /// @param _phtlcId of the PHTLC to convert.
         /// @param hashlock of the HTLC to be converted.
         /// @return id of the converted HTLC
-        fn convertP(ref self: ContractState, phtlcId: u256, hashlock: u256) -> u256 {
+        fn convert(ref self: ContractState, phtlcId: u256, hashlock: u256) -> u256 {
             assert!(self.hasPHTLC(phtlcId), "PHTLC Does Not Exist");
             let htlcId = hashlock;
             let phtlc: PHTLC = self.pContracts.read(phtlcId);
 
             assert!(!phtlc.refunded, "Can't convert refunded PHTLC");
             assert!(!phtlc.converted, "Already Converted to HTLC");
+            assert!(!self.hasHTLC(htlcId), "HTLC Already Exists");
             assert!(
                 get_caller_address() == phtlc.sender || get_caller_address() == phtlc.messenger,
                 "No Allowance"

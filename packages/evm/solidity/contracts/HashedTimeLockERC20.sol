@@ -190,17 +190,21 @@ contract HashedTimeLockERC20 {
     );
   }
 
-  function convertP(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) returns (bytes32 htlcID) {
-    htlcID = hashlock;
+  function convert(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) returns (bytes32 htlcId) {
+    htlcId = hashlock;
     if (pContracts[phtlcID].refunded == true) {
       revert AlreadyRefunded();
     }
     if (pContracts[phtlcID].converted == true) {
       revert AlreadyConvertedToHTLC();
     }
+    if (hasHTLC(htlcId)) {
+      revert HTLCAlreadyExist();
+    }
     if (msg.sender == pContracts[phtlcID].sender || msg.sender == pContracts[phtlcID].messenger) {
       pContracts[phtlcID].converted = true;
-      contracts[hashlock] = HTLC(
+
+      contracts[htlcId] = HTLC(
         hashlock,
         0x0,
         pContracts[phtlcID].amount,

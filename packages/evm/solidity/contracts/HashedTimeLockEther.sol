@@ -132,14 +132,30 @@ function refundP(uint _phtlcID) external phtlcExists(_phtlcID) returns (bool){
     return true;
 }
 
-function convertP(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) returns (bytes32 htlcID){
-    htlcID = hashlock;
+function convert(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) returns (bytes32 htlcId){
+    htlcId = hashlock;
+    if (pContracts[phtlcID].refunded == true) {
+      revert AlreadyRefunded();
+    }
+    if (pContracts[phtlcID].converted == true) {
+      revert AlreadyConvertedToHTLC();
+    }
+    if (hasHTLC(htlcId)) {
+      revert HTLCAlreadyExist();
+    }
     if(msg.sender == pContracts[phtlcID].sender || msg.sender == pContracts[phtlcID].messenger) {
-        if(pContracts[phtlcID].converted == true){
-          revert AlreadyConvertedToHTLC();
-        }
         pContracts[phtlcID].converted = true;
-        contracts[htlcID] = HTLC(hashlock, 0x0, pContracts[phtlcID].amount, pContracts[phtlcID].timelock, payable(pContracts[phtlcID].sender), pContracts[phtlcID].receiver, false, false);
+
+        contracts[htlcId] = HTLC(
+          hashlock,
+          0x0,
+          pContracts[phtlcID].amount, 
+          pContracts[phtlcID].timelock, 
+          payable(pContracts[phtlcID].sender), 
+          pContracts[phtlcID].receiver, 
+          false, 
+          false)
+        ;
     contractIds.push(hashlock);
     emit EtherTransferInitiated(
       hashlock,
