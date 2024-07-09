@@ -65,6 +65,9 @@ pub trait IHashedTimelockERC20<TContractState> {
         (bool, bool),
         felt252
     );
+    fn getPHTLContracts(
+        self: @TContractState, sender: ContractAddress
+    ) -> Span<u256>;
 }
 
 /// @title Pre Hashed Timelock Contracts (PHTLCs) on Starknet ERC20 tokens.
@@ -473,7 +476,7 @@ mod HashedTimelockERC20 {
         /// @dev Called by the sender to convert the PHTLC to HTLC
         /// expired. This will refund the contract amount.
         ///
-        /// @param _phtlcId of the PHTLC to convert.
+        /// @param phtlcId of the PHTLC to convert.
         /// @param hashlock of the HTLC to be converted.
         /// @return id of the converted HTLC
         fn convert(ref self: ContractState, phtlcId: u256, hashlock: u256) -> u256 {
@@ -519,6 +522,20 @@ mod HashedTimelockERC20 {
                         tokenContract: phtlc.tokenContract,
                         redeemed: false,
                         refunded: false
+                    }
+                );
+            self
+                .emit(
+                    TokenTransferInitiated {
+                        hashlock: hashlock,
+                        amount: phtlc.amount,
+                        chain: 23,//TODO
+                        timelock: phtlc.timelock,
+                        sender: phtlc.sender,
+                        receiver: phtlc.receiver,
+                        tokenContract: phtlc.tokenContract,
+                        dstAddress: phtlc.dstAddress,
+                        phtlcId: phtlcId,
                     }
                 );
             htlcId
@@ -574,6 +591,20 @@ mod HashedTimelockERC20 {
                 phtlc.dstAddress
             )
         }
+        fn getPHTLContracts(
+            self: @ContractState, sender: ContractAddress
+        ) -> Span<u256>
+        {
+            let mut arr:Array<u256> = ArrayTrait::new();
+            let mut i: usize = 0;
+            while i <= self.counter.read() {
+                let phtlc: PHTLC = self.pContracts.read(i);
+                if phtlc.sender == sender {
+                    arr.append(i);
+                }
+                i +=1;
+            };
+            arr.span()
     }
 
     #[generate_trait]
