@@ -57,6 +57,7 @@ contract HashedTimeLockEther {
   }
   event EtherTransferPreInitiated(
     string[] chains,
+    string[] assets,
     string[] dstAddresses,
     uint phtlcID,
     string dstChain,
@@ -99,10 +100,8 @@ contract HashedTimeLockEther {
   mapping(bytes32 => HTLC) contracts;
   mapping(uint => PHTLC) pContracts;
   bytes32 [] contractIds;
-  uint [] pContractIds;
 
-
-function createP(string[] memory chains,string[] memory dstAddresses,string memory dstChain,string memory dstAsset, string memory dstAddress,string memory srcAsset,address receiver,uint timelock, address messenger) external payable  returns (uint phtlcID) {
+function createP(string[] memory chains,string[] memory assets,string[] memory dstAddresses,string memory dstChain,string memory dstAsset, string memory dstAddress,string memory srcAsset,address receiver,uint timelock, address messenger) external payable  returns (uint phtlcID) {
     counter+=1;
     if (msg.value == 0) {
       revert FundsNotSent();
@@ -114,9 +113,8 @@ function createP(string[] memory chains,string[] memory dstAddresses,string memo
     phtlcID = counter;
 
     pContracts[phtlcID] = PHTLC(dstAddress,srcAsset,payable(msg.sender),payable(receiver),timelock, messenger,msg.value,false,false);
-    pContractIds.push(phtlcID);
 
-    emit EtherTransferPreInitiated(chains,dstAddresses,counter,dstChain,dstAsset,dstAddress,srcAsset,receiver,timelock, messenger,msg.value,false,false);
+    emit EtherTransferPreInitiated(chains,assets,dstAddresses,counter,dstChain,dstAsset,dstAddress,srcAsset,receiver,timelock, messenger,msg.value,false,false);
 }
 
 function refundP(uint _phtlcID) external phtlcExists(_phtlcID) returns (bool){
@@ -141,7 +139,7 @@ function convert(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) r
       revert AlreadyConvertedToHTLC();
     }
     if (hasHTLC(htlcId)) {
-      revert HTLCAlreadyExist();
+      revert ContractAlreadyExist();
     }
     if(msg.sender == pContracts[phtlcID].sender || msg.sender == pContracts[phtlcID].messenger) {
         pContracts[phtlcID].converted = true;
@@ -381,8 +379,8 @@ function getHTLContracts(address addr) public view returns(bytes32[] memory) {
 function getPreHTLContracts(address addr) public view returns (uint[] memory) {
     uint count = 0;
 
-    for (uint i = 0; i < pContractIds.length; i++) {
-      PHTLC memory phtlc =  pContracts[pContractIds[i]];
+    for (uint i = 1; i < counter + 1; i++) {
+      PHTLC memory phtlc =  pContracts[i];
         if (phtlc.sender == addr) {
             count++;
         }
@@ -391,9 +389,9 @@ function getPreHTLContracts(address addr) public view returns (uint[] memory) {
     uint[] memory result = new uint[](count);
     uint j = 0;
 
-    for (uint i = 0; i < pContractIds.length; i++) {
-        if (pContracts[pContractIds[i]].sender == addr) {
-            result[j] = pContractIds[i];
+    for (uint i = 1; i < counter + 1; i++) {
+        if (pContracts[i].sender == addr) {
+            result[j] = i;
             j++;
         }
     }
