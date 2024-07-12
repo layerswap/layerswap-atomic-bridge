@@ -64,9 +64,9 @@ contract HashedTimeLockEther {
   }
   event TokenCommitted(
     uint commitId,
-    string[] lpChains,
-    string[] lpAssets,
-    string[] lpAddresses,
+    string[] LPChains,
+    string[] LPAssets,
+    string[] LPAddresses,
     string dstChain,
     string dstAddress,
     string dstAsset,
@@ -111,9 +111,9 @@ contract HashedTimeLockEther {
   bytes32[] lockIds;
 
   function commit(
-    string[] memory lpChains,
-    string[] memory lpAssets,
-    string[] memory lpAddresses,
+    string[] memory LPChains,
+    string[] memory LPAssets,
+    string[] memory LPAddresses,
     string memory dstChain,
     string memory dstAsset,
     string memory dstAddress,
@@ -148,9 +148,9 @@ contract HashedTimeLockEther {
 
     emit TokenCommitted(
       id,
-      lpChains,
-      lpAssets,
-      lpAddresses,
+      LPChains,
+      LPAssets,
+      LPAddresses,
       dstChain,
       dstAddress,
       dstAsset,
