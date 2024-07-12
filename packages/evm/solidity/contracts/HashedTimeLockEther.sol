@@ -2,107 +2,127 @@
 pragma solidity 0.8.23;
 
 interface IMessenger {
-    function notifyHTLC(
-        bytes32 htlcId,
-        address payable sender,
-        address payable receiver,
-        uint256 amount,
-        uint256 timelock,
-        bytes32 hashlock,
-        string memory dstAddress,
-        uint256 phtlcID,
-        address tokenContract
-    ) external;
+  function notify(
+    uint256 commitId,
+    bytes32 hashlock,
+    string memory dstChain,
+    string memory dstAsset,
+    string memory dstAddress,
+    string memory srcAsset,
+    address payable sender,
+    address payable srcReciever,
+    uint256 amount,
+    uint256 timelock,
+    address tokenContract
+  ) external;
 }
 
-
 contract HashedTimeLockEther {
-  uint256 private counter = 0;
-  
+  uint256 private id = 0;
+
   error FundsNotSent();
   error NotFutureTimelock();
   error NotPassedTimelock();
-  error ContractAlreadyExist();
-  error HTLCNotExists();
+  error LockAlreadyExists();
+  error LockNotExists();
   error HashlockNotMatch();
   error AlreadyRedeemed();
-  error AlreadyRefunded();
+  error AlreadyUnlocked();
   error NoMessenger();
-  error IncorrectData();
-  error PreHTLCNotExists();
-  error AlreadyConvertedToHTLC();
+  error CommitmentNotExists();
+  error AlreadyLocked();
+  error AlreadyUncommitted();
   error NoAllowance();
 
   struct HTLC {
+    string dstAddress;
+    string dstChain;
+    string dstAsset;
+    string srcAsset;
+    address payable sender;
+    address payable srcReciever;
     bytes32 hashlock;
     bytes32 secret;
     uint256 amount;
     uint256 timelock;
-    address payable sender;
-    address payable receiver;
     bool redeemed;
-    bool refunded;
+    bool unlocked;
   }
 
-    struct PHTLC {
+  struct PHTLC {
     string dstAddress;
+    string dstChain;
+    string dstAsset;
     string srcAsset;
     address payable sender;
-    address payable receiver;
-    uint timelock; 
-    address messenger;
+    address payable srcReciever;
+    uint timelock;
     uint amount;
-    bool refunded;
-    bool converted;
+    address messenger;
+    bool locked;
+    bool uncommitted;
   }
-  event EtherTransferPreInitiated(
-    string[] chains,
-    string[] assets,
-    string[] dstAddresses,
-    uint phtlcID,
+  event TokenCommitted(
+    uint commitId,
+    string[] lpChains,
+    string[] lpAssets,
+    string[] lpAddresses,
     string dstChain,
+    string dstAddress,
     string dstAsset,
-    string dstAddress,
+    address sender,
+    address srcReciever,
     string srcAsset,
-    address receiver,
-    uint timelock, 
-    address messenger,
     uint amount,
-    bool refunded,
-    bool converted
+    uint timelock,
+    address messenger
   );
-  event EtherTransferInitiated(
+  event TokenLocked(
     bytes32 indexed hashlock,
-    uint256 amount,
-    string chain,
-    uint256 timelock,
-    address indexed sender,
-    address indexed receiver,
+    string dstChain,
     string dstAddress,
-    uint phtlcID
+    string dstAsset,
+    address indexed sender,
+    address indexed srcReciever,
+    string srcAsset,
+    uint amount,
+    uint timelock,
+    address messenger,
+    uint commitId
   );
 
   event LowLevelErrorOccurred(bytes lowLevelData);
-  event EtherTransferRefunded(bytes32 indexed htlcId);
-  event EtherTransferRefundedP(uint indexed phtlcId);
-  event EtherTransferClaimed(bytes32 indexed htlcId,address redeemAddress);
+  event TokenUnlocked(bytes32 indexed lockId);
+  event TokenUncommitted(uint indexed commitId);
+  event TokenRedeemed(bytes32 indexed lockId, address redeemAddress);
 
-  modifier phtlcExists(uint _phtlcId) {
-        if (!hasPHTLC(_phtlcId)) revert PreHTLCNotExists();
+  modifier _committed(uint commitId) {
+    if (!hasPHTLC(commitId)) revert CommitmentNotExists();
     _;
   }
 
-  modifier htlcExists(bytes32 _htlcId) {
-    if (!hasHTLC(_htlcId)) revert HTLCNotExists();
+  modifier _locked(bytes32 lockId) {
+    if (!hasHTLC(lockId)) revert LockNotExists();
     _;
   }
 
-  mapping(bytes32 => HTLC) contracts;
-  mapping(uint => PHTLC) pContracts;
-  bytes32 [] contractIds;
+  mapping(bytes32 => HTLC) locks;
+  mapping(uint => PHTLC) commits;
+  bytes32[] lockIds;
 
-function createP(string[] memory chains,string[] memory assets,string[] memory dstAddresses,string memory dstChain,string memory dstAsset, string memory dstAddress,string memory srcAsset,address receiver,uint timelock, address messenger) external payable  returns (uint phtlcID) {
-    counter+=1;
+  function commit(
+    string[] memory lpChains,
+    string[] memory lpAssets,
+    string[] memory lpAddresses,
+    string memory dstChain,
+    string memory dstAsset,
+    string memory dstAddress,
+    string memory srcAsset,
+    address srcReciever,
+    uint timelock,
+    address messenger
+  ) external payable returns (uint commitId) {
+    id += 1;
     if (msg.value == 0) {
       revert FundsNotSent();
     }
@@ -110,173 +130,229 @@ function createP(string[] memory chains,string[] memory assets,string[] memory d
       revert NotFutureTimelock();
     }
 
-    phtlcID = counter;
+    commitId = id;
 
-    pContracts[phtlcID] = PHTLC(dstAddress,srcAsset,payable(msg.sender),payable(receiver),timelock, messenger,msg.value,false,false);
-
-    emit EtherTransferPreInitiated(chains,assets,dstAddresses,counter,dstChain,dstAsset,dstAddress,srcAsset,receiver,timelock, messenger,msg.value,false,false);
-}
-
-function refundP(uint _phtlcID) external phtlcExists(_phtlcID) returns (bool){
-    PHTLC storage phtlc = pContracts[_phtlcID];
-
-    if(phtlc.refunded) revert AlreadyRefunded();
-    if(phtlc.converted) revert AlreadyConvertedToHTLC();
-    if(phtlc.timelock > block.timestamp) revert NotPassedTimelock();
-
-    phtlc.refunded = true;
-    phtlc.sender.transfer(phtlc.amount);
-    emit EtherTransferRefundedP(_phtlcID);
-    return true;
-}
-
-function convert(uint phtlcID, bytes32 hashlock) external phtlcExists(phtlcID) returns (bytes32 htlcId){
-    htlcId = hashlock;
-    if (pContracts[phtlcID].refunded == true) {
-      revert AlreadyRefunded();
-    }
-    if (pContracts[phtlcID].converted == true) {
-      revert AlreadyConvertedToHTLC();
-    }
-    if (hasHTLC(htlcId)) {
-      revert ContractAlreadyExist();
-    }
-    if(msg.sender == pContracts[phtlcID].sender || msg.sender == pContracts[phtlcID].messenger) {
-        pContracts[phtlcID].converted = true;
-
-        contracts[htlcId] = HTLC(
-          hashlock,
-          0x0,
-          pContracts[phtlcID].amount, 
-          pContracts[phtlcID].timelock, 
-          payable(pContracts[phtlcID].sender), 
-          pContracts[phtlcID].receiver, 
-          false, 
-          false)
-        ;
-    contractIds.push(hashlock);
-    emit EtherTransferInitiated(
-      hashlock,
-      pContracts[phtlcID].amount,
-      pContracts[phtlcID].srcAsset,
-      pContracts[phtlcID].timelock,
-      pContracts[phtlcID].sender,
-      pContracts[phtlcID].receiver,
-      pContracts[phtlcID].dstAddress,
-      phtlcID
+    commits[commitId] = PHTLC(
+      dstAddress,
+      dstChain,
+      dstAsset,
+      srcAsset,
+      payable(msg.sender),
+      payable(srcReciever),
+      timelock,
+      msg.value,
+      messenger,
+      false,
+      false
     );
-    }else{
+
+    emit TokenCommitted(
+      id,
+      lpChains,
+      lpAssets,
+      lpAddresses,
+      dstChain,
+      dstAddress,
+      dstAsset,
+      msg.sender,
+      srcReciever,
+      srcAsset,
+      msg.value,
+      timelock,
+      messenger
+    );
+  }
+
+  function uncommit(uint commitId) external _committed(commitId) returns (bool) {
+    PHTLC storage phtlc = commits[commitId];
+
+    if (phtlc.uncommitted) revert AlreadyUncommitted();
+    if (phtlc.locked) revert AlreadyLocked();
+    if (phtlc.timelock > block.timestamp) revert NotPassedTimelock();
+
+    phtlc.uncommitted = true;
+    phtlc.sender.transfer(phtlc.amount);
+    emit TokenUncommitted(commitId);
+    return true;
+  }
+
+  function lockCommitment(uint commitId, bytes32 hashlock) external _committed(commitId) returns (bytes32 lockId) {
+    lockId = hashlock;
+    if (commits[commitId].uncommitted == true) {
+      revert AlreadyUncommitted();
+    }
+    if (commits[commitId].locked == true) {
+      revert AlreadyLocked();
+    }
+    if (hasHTLC(lockId)) {
+      revert LockAlreadyExists();
+    }
+    if (msg.sender == commits[commitId].sender || msg.sender == commits[commitId].messenger) {
+      commits[commitId].locked = true;
+
+      locks[lockId] = HTLC(
+        commits[commitId].dstAddress,
+        commits[commitId].dstChain,
+        commits[commitId].dstAsset,
+        commits[commitId].srcAsset,
+        payable(commits[commitId].sender),
+        commits[commitId].srcReciever,
+        hashlock,
+        0x0,
+        commits[commitId].amount,
+        commits[commitId].timelock,
+        false,
+        false
+      );
+      lockIds.push(hashlock);
+      emit TokenLocked(
+        hashlock,
+        commits[commitId].dstChain,
+        commits[commitId].dstAddress,
+        commits[commitId].dstAsset,
+        commits[commitId].sender,
+        commits[commitId].srcReciever,
+        commits[commitId].srcAsset,
+        commits[commitId].amount,
+        commits[commitId].timelock,
+        commits[commitId].messenger,
+        commitId
+      );
+    } else {
       revert NoAllowance();
     }
-}
+  }
 
-function create(
-    address payable receiver,
-    bytes32 _hashlock,
-    uint256 _timelock,
-    string memory _chain,
-    string memory _dstAddress,
-    uint phtlcID,
+  function lock(
+    bytes32 hashlock,
+    uint256 timelock,
+    address payable srcReciever,
+    string memory srcAsset,
+    string memory dstChain,
+    string memory dstAddress,
+    string memory dstAsset,
+    uint commitId,
     address messenger
-) external payable returns (bytes32 htlcId) {
+  ) external payable returns (bytes32 lockId) {
     if (msg.value == 0) {
-        revert FundsNotSent();
+      revert FundsNotSent();
     }
-    if (_timelock <= block.timestamp) {
-        revert NotFutureTimelock();
+    if (timelock <= block.timestamp) {
+      revert NotFutureTimelock();
     }
-    if (hasHTLC(_hashlock)) {
-        revert ContractAlreadyExist();
+    if (hasHTLC(hashlock)) {
+      revert LockAlreadyExists();
     }
 
-    htlcId = _hashlock;
-    contracts[_hashlock] = HTLC(_hashlock, 0x0, msg.value, _timelock, payable(msg.sender), receiver, false, false);  
-    contractIds.push(_hashlock);
-    emit EtherTransferInitiated(
-        _hashlock,
-        msg.value,
-        _chain,
-        _timelock,
-        msg.sender,
-        receiver,
-        _dstAddress,
-        phtlcID
+    locks[hashlock] = HTLC(
+      dstAddress,
+      dstChain,
+      dstAsset,
+      srcAsset,
+      payable(msg.sender),
+      srcReciever,
+      hashlock,
+      0x0,
+      msg.value,
+      timelock,
+      false,
+      false
+    );
+    lockId = hashlock;
+    lockIds.push(hashlock);
+    emit TokenLocked(
+      hashlock,
+      dstChain,
+      dstAddress,
+      dstAsset,
+      msg.sender,
+      srcReciever,
+      srcAsset,
+      msg.value,
+      timelock,
+      messenger,
+      commitId
     );
 
     if (messenger != address(0)) {
-        uint256 codeSize;
-        assembly { codeSize := extcodesize(messenger) }
-        if (codeSize > 0) {
-            try IMessenger(messenger).notifyHTLC(
-                _hashlock,
-                payable(msg.sender),
-                receiver,
-                msg.value,
-                _timelock,
-                _hashlock,
-                _dstAddress,
-                phtlcID,
-                address(0)
-            ) {
-                // Notify successful
-            } catch Error(string memory reason) {
-                revert(reason);
-            } catch (bytes memory lowLevelData ) {
-                emit LowLevelErrorOccurred(lowLevelData);
-                revert("IMessenger notifyHTLC failed");
-            }
+      uint256 codeSize;
+      assembly {
+        codeSize := extcodesize(messenger)
+      }
+      if (codeSize > 0) {
+        try
+          IMessenger(messenger).notify(
+            commitId,
+            hashlock,
+            dstChain,
+            dstAsset,
+            dstAddress,
+            srcAsset,
+            payable(msg.sender),
+            srcReciever,
+            msg.value,
+            timelock,
+            address(0)
+          )
+        {
+          // Notify successful
+        } catch Error(string memory reason) {
+          revert(reason);
+        } catch (bytes memory lowLevelData) {
+          emit LowLevelErrorOccurred(lowLevelData);
+          revert('IMessenger notify failed');
         }
-        else {
-          revert NoMessenger();
-        }
+      } else {
+        revert NoMessenger();
+      }
     }
-}
+  }
 
-  function redeem(bytes32 _htlcId, bytes32 _secret) external htlcExists(_htlcId) returns (bool) {
-    HTLC storage htlc = contracts[_htlcId];
+  function redeem(bytes32 lockId, bytes32 _secret) external _locked(lockId) returns (bool) {
+    HTLC storage htlc = locks[lockId];
 
     bytes32 pre = sha256(abi.encodePacked(_secret));
     if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
-    if (htlc.refunded) revert AlreadyRefunded();
+    if (htlc.unlocked) revert AlreadyUnlocked();
     if (htlc.redeemed) revert AlreadyRedeemed();
 
     htlc.secret = _secret;
     htlc.redeemed = true;
-    htlc.receiver.transfer(htlc.amount);
-    emit EtherTransferClaimed(_htlcId,msg.sender);
+    htlc.srcReciever.transfer(htlc.amount);
+    emit TokenRedeemed(lockId, msg.sender);
     return true;
   }
 
-  function refund(bytes32 _htlcId) external htlcExists(_htlcId) returns (bool) {
-    HTLC storage htlc = contracts[_htlcId];
+  function unlock(bytes32 lockId) external _locked(lockId) returns (bool) {
+    HTLC storage htlc = locks[lockId];
 
-    if (htlc.refunded) revert AlreadyRefunded();
+    if (htlc.unlocked) revert AlreadyUnlocked();
     if (htlc.redeemed) revert AlreadyRedeemed();
     if (htlc.timelock > block.timestamp) revert NotPassedTimelock();
 
-    htlc.refunded = true;
+    htlc.unlocked = true;
     htlc.sender.transfer(htlc.amount);
-    emit EtherTransferRefunded(_htlcId);
+    emit TokenUnlocked(lockId);
     return true;
   }
 
-  function getHTLCDetails(
-    bytes32 _htlcId
+  function getLockDetails(
+    bytes32 lockId
   )
     public
     view
     returns (
-    bytes32 hashlock,
-    bytes32 secret,
-    uint256 amount,
-    uint256 timelock,
-    address payable sender,
-    address payable receiver,
-    bool redeemed,
-    bool refunded
+      bytes32 hashlock,
+      bytes32 secret,
+      uint256 amount,
+      uint256 timelock,
+      address payable sender,
+      address payable srcReciever,
+      bool redeemed,
+      bool unlocked
     )
   {
-    if (!hasHTLC(_htlcId)) {
+    if (!hasHTLC(lockId)) {
       return (
         bytes32(0x0),
         bytes32(0x0),
@@ -286,116 +362,106 @@ function create(
         payable(address(0)),
         false,
         false
-        );
+      );
     }
-    HTLC storage htlc = contracts[_htlcId];
+    HTLC storage htlc = locks[lockId];
     return (
-    htlc.hashlock,
-    htlc.secret,
-    htlc.amount,
-    htlc.timelock,
-    htlc.sender,
-    htlc.receiver,
-    htlc.redeemed,
-    htlc.refunded
+      htlc.hashlock,
+      htlc.secret,
+      htlc.amount,
+      htlc.timelock,
+      htlc.sender,
+      htlc.srcReciever,
+      htlc.redeemed,
+      htlc.unlocked
     );
   }
 
-    function getPHTLCDetails(
-    uint _phtlcId
+  function getCommitDetails(
+    uint commitId
   )
     public
     view
     returns (
-    string memory dstAddress,
-    string memory srcAsset,
-    address payable sender,
-    address payable receiver,
-    uint timelock, 
-    address messenger,
-    uint amount,
-    bool refunded,
-    bool converted
+      string memory dstAddress,
+      string memory srcAsset,
+      address payable sender,
+      address payable srcReciever,
+      uint timelock,
+      address messenger,
+      uint amount,
+      bool uncommitted,
+      bool locked
     )
   {
-    if (!hasPHTLC(_phtlcId)) {
-      return (
-        "0",
-        "0",
-        payable(address(0)),
-        payable(address(0)),
-        0,
-        address(0),
-        0,
-        false,
-        false
-        );
+    if (!hasPHTLC(commitId)) {
+      return ('0', '0', payable(address(0)), payable(address(0)), 0, address(0), 0, false, false);
     }
-    PHTLC storage phtlc = pContracts[_phtlcId];
+    PHTLC storage phtlc = commits[commitId];
     return (
-    phtlc.dstAddress,
-    phtlc.srcAsset,
-    phtlc.sender,
-    phtlc.receiver,
-    phtlc.timelock, 
-    phtlc.messenger,
-    phtlc.amount,
-    phtlc.refunded,
-    phtlc.converted
+      phtlc.dstAddress,
+      phtlc.srcAsset,
+      phtlc.sender,
+      phtlc.srcReciever,
+      phtlc.timelock,
+      phtlc.messenger,
+      phtlc.amount,
+      phtlc.uncommitted,
+      phtlc.locked
     );
   }
 
-function hasPHTLC(uint _phtlcID) internal view returns (bool exists) {
-    exists = (pContracts[_phtlcID].receiver != address(0));
-}
+  function hasPHTLC(uint commitId) internal view returns (bool exists) {
+    exists = (commitId <= id);
+  }
 
-function hasHTLC(bytes32 _htlcId) internal view returns (bool exists) {
-    exists = (contracts[_htlcId].sender != address(0));
-}
+  function hasHTLC(bytes32 lockId) internal view returns (bool exists) {
+    exists = (locks[lockId].sender != address(0));
+  }
 
-function getHTLContracts(address addr) public view returns(bytes32[] memory) {
+  function getLocks(address senderAddr) public view returns (bytes32[] memory) {
     uint count = 0;
 
-    for (uint i = 0; i < contractIds.length; i++) {
-      HTLC memory htlc =  contracts[contractIds[i]];
-        if (htlc.sender == addr) {
-            count++;
-        }
+    for (uint i = 0; i < lockIds.length; i++) {
+      HTLC memory htlc = locks[lockIds[i]];
+      if (htlc.sender == senderAddr) {
+        count++;
+      }
     }
 
     bytes32[] memory result = new bytes32[](count);
     uint j = 0;
 
-    for (uint i = 0; i < contractIds.length; i++) {
-        if (contracts[contractIds[i]].sender == addr) {
-            result[j] = contractIds[i];
-            j++;
-        }
+    for (uint i = 0; i < lockIds.length; i++) {
+      if (locks[lockIds[i]].sender == senderAddr) {
+        result[j] = lockIds[i];
+        j++;
+      }
     }
 
     return result;
-}
+  }
 
-function getPreHTLContracts(address addr) public view returns (uint[] memory) {
+  function getCommits(address senderAddr) public view returns (uint[] memory) {
     uint count = 0;
 
-    for (uint i = 1; i < counter + 1; i++) {
-      PHTLC memory phtlc =  pContracts[i];
-        if (phtlc.sender == addr) {
-            count++;
-        }
+    for (uint i = 1; i < id + 1; i++) {
+      PHTLC memory phtlc = commits[i];
+      if (phtlc.sender == senderAddr) {
+        count++;
+      }
     }
 
     uint[] memory result = new uint[](count);
     uint j = 0;
 
-    for (uint i = 1; i < counter + 1; i++) {
-        if (pContracts[i].sender == addr) {
-            result[j] = i;
-            j++;
-        }
+    for (uint i = 1; i < id + 1; i++) {
+      if (commits[i].sender == senderAddr) {
+        result[j] = i;
+        j++;
+      }
     }
 
     return result;
-}
+  }
 }
