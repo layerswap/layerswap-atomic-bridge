@@ -4,14 +4,16 @@ use starknet::ContractAddress;
 pub trait IMessenger<TContractState> {
     fn notify(
         ref self: TContractState,
-        lockId: u256,
+        commitId: u256,
+        hashlock: u256,
+        dstChain: felt252,
+        dstAsset: felt252,
+        dstAddress: felt252,
+        srcAsset: felt252,
         sender: ContractAddress,
         srcReceiver: ContractAddress,
         amount: u256,
         timelock: u256,
-        hashlock: u256,
-        dstAddress: felt252,
-        commitId: u256,
         tokenContract: ContractAddress,
     );
 }
@@ -21,9 +23,9 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn commit(
         ref self: TContractState,
         amount: u256,
-        LPChains: Span<felt252>,
-        LPAssets: Span<felt252>,
-        LPAddress: Span<felt252>,
+        HopChains: Span<felt252>,
+        HopAssets: Span<felt252>,
+        HopAddress: Span<felt252>,
         dstChain: felt252,
         dstAsset: felt252,
         dstAddress: felt252,
@@ -51,7 +53,7 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn uncommit(ref self: TContractState, commitId: u256) -> bool;
     fn unlock(ref self: TContractState, lockId: u256) -> bool;
     fn lockCommit(ref self: TContractState, commitId: u256, hashlock: u256) -> u256;
-    fn getPHTLCDetails(
+    fn getCommitDetails(
         self: @TContractState, commitId: u256
     ) -> (
         (ContractAddress, ContractAddress, ContractAddress, ContractAddress),
@@ -60,7 +62,7 @@ pub trait IHashedTimelockERC20<TContractState> {
         felt252
     );
     //fn getHTLContracts(self: @TContractState, sender: ContractAddress) -> Span<u256>;
-    fn getHTLCDetails(
+    fn getLockDetails(
         self: @TContractState, lockId: u256
     ) -> (
         (ContractAddress, ContractAddress, ContractAddress),
@@ -68,7 +70,7 @@ pub trait IHashedTimelockERC20<TContractState> {
         (bool, bool),
         felt252
     );
-    fn getPHTLContracts(self: @TContractState, sender: ContractAddress) -> Span<u256>;
+    fn getCommits(self: @TContractState, sender: ContractAddress) -> Span<u256>;
 }
 
 /// @title Pre Hashed Timelock Contracts (PHTLCs) on Starknet ERC20 tokens.
@@ -162,9 +164,9 @@ mod HashedTimelockERC20 {
     #[derive(Drop, starknet::Event)]
     struct TokenCommitted {
         commitId: u256,
-        LPChains: Span<felt252>,
-        LPAssets: Span<felt252>,
-        LPAddress: Span<felt252>,
+        HopChains: Span<felt252>,
+        HopAssets: Span<felt252>,
+        HopAddress: Span<felt252>,
         dstChain: felt252,
         dstAddress: felt252,
         dstAsset: felt252,
@@ -230,9 +232,9 @@ mod HashedTimelockERC20 {
         fn commit(
             ref self: ContractState,
             amount: u256,
-            LPChains: Span<felt252>,
-            LPAssets: Span<felt252>,
-            LPAddress: Span<felt252>,
+            HopChains: Span<felt252>,
+            HopAssets: Span<felt252>,
+            HopAddress: Span<felt252>,
             dstChain: felt252,
             dstAsset: felt252,
             dstAddress: felt252,
@@ -280,9 +282,9 @@ mod HashedTimelockERC20 {
                 .emit(
                     TokenCommitted {
                         commitId: commitId,
-                        LPChains: LPChains,
-                        LPAssets: LPAssets,
-                        LPAddress: LPAddress,
+                        HopChains: HopChains,
+                        HopAssets: HopAssets,
+                        HopAddress: HopAddress,
                         dstChain: dstChain,
                         dstAddress: dstAddress,
                         dstAsset: dstAsset,
@@ -376,14 +378,16 @@ mod HashedTimelockERC20 {
                 };
                 messenger
                     .notify(
-                        lockId,
+                        commitId,
+                        hashlock,
+                        dstChain,
+                        dstAsset,
+                        dstAddress,
+                        srcAsset,
                         get_caller_address(),
                         srcReceiver,
                         amount,
                         timelock,
-                        hashlock,
-                        dstAddress,
-                        commitId,
                         tokenContract,
                     );
             }
@@ -591,7 +595,7 @@ mod HashedTimelockERC20 {
 
         /// @dev Get HTLC details.
         /// @param lockId of the HTLC.
-        fn getHTLCDetails(
+        fn getLockDetails(
             self: @ContractState, lockId: u256
         ) -> (
             (ContractAddress, ContractAddress, ContractAddress),
@@ -630,7 +634,7 @@ mod HashedTimelockERC20 {
         //     };
         //     arr.span()
         // }
-        fn getPHTLCDetails(
+        fn getCommitDetails(
             self: @ContractState, commitId: u256
         ) -> (
             (ContractAddress, ContractAddress, ContractAddress, ContractAddress),
@@ -654,7 +658,7 @@ mod HashedTimelockERC20 {
                 phtlc.dstAddress
             )
         }
-        fn getPHTLContracts(self: @ContractState, sender: ContractAddress) -> Span<u256> {
+        fn getCommits(self: @ContractState, sender: ContractAddress) -> Span<u256> {
             let mut arr: Array<u256> = ArrayTrait::new();
             let mut i: u256 = 1;
             while i <= self
