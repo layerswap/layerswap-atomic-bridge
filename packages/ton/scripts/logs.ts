@@ -1,12 +1,8 @@
 import { HttpClient, Api } from 'tonapi-sdk-js';
 import {
-    loadBatchRedeem,
     loadConvertP,
-    loadConvertPBatch,
     loadCreate,
-    loadCreateBatch,
     loadCreateP,
-    loadCreatePBatch,
     loadDeploy,
     loadRedeem,
     loadRefund,
@@ -22,14 +18,10 @@ type MsgTypeMap = {
 
 const msgTypes: MsgTypeMap = {
     'befc17a4': 'CreateP',
-    '539d813a': 'CreatePBatch',
     '0fce1278': 'RefundP',
     'b7ee06c4': 'ConvertP',
-    '662e1bb1': 'ConvertPBatch',
-    '2408e7eb': 'Create',
-    'cc50d360': 'CreateBatch',
+    '80e1900e': 'Create',
     'cb8c0e08': 'Redeem',
-    '6a0867af': 'BatchRedeem',
     '27cc3317': 'Refund',
     '946a98b6': 'Deploy'
 };
@@ -42,10 +34,6 @@ const functionMap: { [key: string]: (slice: Slice) => any } = {
     'RefundP': loadRefundP,
     'ConvertP': loadConvertP,
     'CreateP': loadCreateP,
-    'BatchRedeem': loadBatchRedeem,
-    'CreatePBatch': loadCreatePBatch,
-    'ConvertPBatch': loadConvertPBatch,
-    'CreateBatch': loadCreateBatch,
 };
 
 async function parseTx(address: string, token: string, index: number): Promise<any> {

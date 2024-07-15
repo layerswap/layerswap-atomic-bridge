@@ -1,55 +1,64 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
 interface IMessenger {
-    function notifyHTLC(
-        bytes32 htlcId,
-        address payable sender,
-        address payable receiver,
-        uint256 amount,
-        uint256 timelock,
-        bytes32 hashlock,
-        string memory dstAddress,
-        uint256 phtlcID,
-        address tokenContract
-    ) external;
+  function notify(
+    uint256 commitId,
+    bytes32 hashlock,
+    string memory dstChain,
+    string memory dstAsset,
+    string memory dstAddress,
+    string memory srcAsset,
+    address payable sender,
+    address payable srcReciever,
+    uint256 amount,
+    uint256 timelock,
+    address tokenContract
+  ) external;
 }
 
 contract SimpleMessenger is IMessenger {
-    event HTLCNotificationReceived(
-        bytes32 indexed htlcId,
-        address payable sender,
-        address payable receiver,
-        uint256 amount,
-        uint256 timelock,
-        bytes32 hashlock,
-        string dstAddress,
-        uint256 phtlcID,
-        address tokenContract
-    );
+  event NotificationReceived(
+    bytes32 indexed lockId,
+    uint256 commitId,
+    bytes32 hashlock,
+    string dstChain,
+    string dstAsset,
+    string dstAddress,
+    string srcAsset,
+    address payable sender,
+    address payable srcReciever,
+    uint256 amount,
+    uint256 timelock,
+    address tokenContract
+  );
 
-    function notifyHTLC(
-        bytes32 htlcId,
-        address payable sender,
-        address payable receiver,
-        uint256 amount,
-        uint256 timelock,
-        bytes32 hashlock,
-        string memory dstAddress,
-        uint256 phtlcID,
-        address tokenContract
-    ) public  override {
-        emit HTLCNotificationReceived(
-            htlcId,
-            sender,
-            receiver,
-            amount,
-            timelock,
-            hashlock,
-            dstAddress,
-            phtlcID,
-            tokenContract
-        );
-    }
+  function notify(
+    uint256 commitId,
+    bytes32 hashlock,
+    string memory dstChain,
+    string memory dstAsset,
+    string memory dstAddress,
+    string memory srcAsset,
+    address payable sender,
+    address payable srcReciever,
+    uint256 amount,
+    uint256 timelock,
+    address tokenContract
+  ) public override {
+    emit NotificationReceived(
+      hashlock,
+      commitId,
+      hashlock,
+      dstChain,
+      dstAsset,
+      dstAddress,
+      srcAsset,
+      sender,
+      srcReciever,
+      amount,
+      timelock,
+      tokenContract
+    );
+  }
 }
