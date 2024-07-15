@@ -10,7 +10,7 @@ interface IMessenger {
     string memory dstAddress,
     string memory srcAsset,
     address payable sender,
-    address payable srcReciever,
+    address payable srcReceiver,
     uint256 amount,
     uint256 timelock,
     address tokenContract
@@ -40,7 +40,7 @@ contract HashedTimeLockEther {
     string dstAsset;
     string srcAsset;
     address payable sender;
-    address payable srcReciever;
+    address payable srcReceiver;
     bytes32 hashlock;
     bytes32 secret;
     uint256 amount;
@@ -55,7 +55,7 @@ contract HashedTimeLockEther {
     string dstAsset;
     string srcAsset;
     address payable sender;
-    address payable srcReciever;
+    address payable srcReceiver;
     uint timelock;
     uint amount;
     address messenger;
@@ -64,14 +64,14 @@ contract HashedTimeLockEther {
   }
   event TokenCommitted(
     uint commitId,
-    string[] LPChains,
-    string[] LPAssets,
-    string[] LPAddresses,
+    string[] HopChains,
+    string[] HopAssets,
+    string[] HopAddresses,
     string dstChain,
     string dstAddress,
     string dstAsset,
     address sender,
-    address srcReciever,
+    address srcReceiver,
     string srcAsset,
     uint amount,
     uint timelock,
@@ -83,7 +83,7 @@ contract HashedTimeLockEther {
     string dstAddress,
     string dstAsset,
     address indexed sender,
-    address indexed srcReciever,
+    address indexed srcReceiver,
     string srcAsset,
     uint amount,
     uint timelock,
@@ -111,14 +111,14 @@ contract HashedTimeLockEther {
   bytes32[] lockIds;
 
   function commit(
-    string[] memory LPChains,
-    string[] memory LPAssets,
-    string[] memory LPAddresses,
+    string[] memory HopChains,
+    string[] memory HopAssets,
+    string[] memory HopAddresses,
     string memory dstChain,
     string memory dstAsset,
     string memory dstAddress,
     string memory srcAsset,
-    address srcReciever,
+    address srcReceiver,
     uint timelock,
     address messenger
   ) external payable returns (uint commitId) {
@@ -138,7 +138,7 @@ contract HashedTimeLockEther {
       dstAsset,
       srcAsset,
       payable(msg.sender),
-      payable(srcReciever),
+      payable(srcReceiver),
       timelock,
       msg.value,
       messenger,
@@ -148,14 +148,14 @@ contract HashedTimeLockEther {
 
     emit TokenCommitted(
       id,
-      LPChains,
-      LPAssets,
-      LPAddresses,
+      HopChains,
+      HopAssets,
+      HopAddresses,
       dstChain,
       dstAddress,
       dstAsset,
       msg.sender,
-      srcReciever,
+      srcReceiver,
       srcAsset,
       msg.value,
       timelock,
@@ -196,7 +196,7 @@ contract HashedTimeLockEther {
         commits[commitId].dstAsset,
         commits[commitId].srcAsset,
         payable(commits[commitId].sender),
-        commits[commitId].srcReciever,
+        commits[commitId].srcReceiver,
         hashlock,
         0x0,
         commits[commitId].amount,
@@ -211,7 +211,7 @@ contract HashedTimeLockEther {
         commits[commitId].dstAddress,
         commits[commitId].dstAsset,
         commits[commitId].sender,
-        commits[commitId].srcReciever,
+        commits[commitId].srcReceiver,
         commits[commitId].srcAsset,
         commits[commitId].amount,
         commits[commitId].timelock,
@@ -226,7 +226,7 @@ contract HashedTimeLockEther {
   function lock(
     bytes32 hashlock,
     uint256 timelock,
-    address payable srcReciever,
+    address payable srcReceiver,
     string memory srcAsset,
     string memory dstChain,
     string memory dstAddress,
@@ -250,7 +250,7 @@ contract HashedTimeLockEther {
       dstAsset,
       srcAsset,
       payable(msg.sender),
-      srcReciever,
+      srcReceiver,
       hashlock,
       0x0,
       msg.value,
@@ -266,7 +266,7 @@ contract HashedTimeLockEther {
       dstAddress,
       dstAsset,
       msg.sender,
-      srcReciever,
+      srcReceiver,
       srcAsset,
       msg.value,
       timelock,
@@ -289,7 +289,7 @@ contract HashedTimeLockEther {
             dstAddress,
             srcAsset,
             payable(msg.sender),
-            srcReciever,
+            srcReceiver,
             msg.value,
             timelock,
             address(0)
@@ -318,7 +318,7 @@ contract HashedTimeLockEther {
 
     htlc.secret = _secret;
     htlc.redeemed = true;
-    htlc.srcReciever.transfer(htlc.amount);
+    htlc.srcReceiver.transfer(htlc.amount);
     emit TokenRedeemed(lockId, msg.sender);
     return true;
   }
@@ -347,7 +347,7 @@ contract HashedTimeLockEther {
       uint256 amount,
       uint256 timelock,
       address payable sender,
-      address payable srcReciever,
+      address payable srcReceiver,
       bool redeemed,
       bool unlocked
     )
@@ -371,7 +371,7 @@ contract HashedTimeLockEther {
       htlc.amount,
       htlc.timelock,
       htlc.sender,
-      htlc.srcReciever,
+      htlc.srcReceiver,
       htlc.redeemed,
       htlc.unlocked
     );
@@ -386,7 +386,7 @@ contract HashedTimeLockEther {
       string memory dstAddress,
       string memory srcAsset,
       address payable sender,
-      address payable srcReciever,
+      address payable srcReceiver,
       uint timelock,
       address messenger,
       uint amount,
@@ -402,7 +402,7 @@ contract HashedTimeLockEther {
       phtlc.dstAddress,
       phtlc.srcAsset,
       phtlc.sender,
-      phtlc.srcReciever,
+      phtlc.srcReceiver,
       phtlc.timelock,
       phtlc.messenger,
       phtlc.amount,
