@@ -49,7 +49,7 @@ pub trait IHashedTimelockERC20<TContractState> {
         messenger: ContractAddress,
         tokenContract: ContractAddress,
     ) -> u256;
-    fn redeem(ref self: TContractState, lockId: u256, secret: felt252) -> bool;
+    fn redeem(ref self: TContractState, lockId: u256, secret: u256) -> bool;
     fn uncommit(ref self: TContractState, commitId: u256) -> bool;
     fn unlock(ref self: TContractState, lockId: u256) -> bool;
     fn lockCommit(ref self: TContractState, commitId: u256, hashlock: u256) -> u256;
@@ -57,18 +57,17 @@ pub trait IHashedTimelockERC20<TContractState> {
         self: @TContractState, commitId: u256
     ) -> (
         (ContractAddress, ContractAddress, ContractAddress, ContractAddress),
-        (u256, felt252, u256),
-        (bool, bool),
-        felt252
+        (u256, u256),
+        (felt252, felt252, felt252, felt252),
+        (bool, bool)
     );
-    //fn getHTLContracts(self: @TContractState, sender: ContractAddress) -> Span<u256>;
     fn getLockDetails(
         self: @TContractState, lockId: u256
     ) -> (
         (ContractAddress, ContractAddress, ContractAddress),
-        (u256, u256, u256),
-        (bool, bool),
-        felt252
+        (u256, u256, u256, u256),
+        (felt252, felt252, felt252, felt252),
+        (bool, bool)
     );
     fn getCommits(self: @TContractState, sender: ContractAddress) -> Span<u256>;
     fn getLocks(self: @TContractState, sender: ContractAddress) -> Span<u256>;
@@ -131,7 +130,7 @@ mod HashedTimelockERC20 {
         sender: ContractAddress,
         srcReceiver: ContractAddress,
         hashlock: u256,
-        secret: felt252,
+        secret: u256,
         amount: u256,
         timelock: u256,
         tokenContract: ContractAddress,
@@ -218,9 +217,6 @@ mod HashedTimelockERC20 {
     }
     #[constructor]
     fn constructor(ref self: ContractState) {
-        // let mut arr: Array<u256> = ArrayTrait::new();
-        // let span_arr = arr.span();
-        // self.contractIds.write(span_arr);
         self.commitCounter.write(0);
         self.lockCounter.write(0);
     }
@@ -427,12 +423,12 @@ mod HashedTimelockERC20 {
         /// @param lockId of the HTLC.
         /// @param secret sha256(secret) should equal the contract hashlock.
         /// @return bool true on success
-        fn redeem(ref self: ContractState, lockId: u256, secret: felt252) -> bool {
+        fn redeem(ref self: ContractState, lockId: u256, secret: u256) -> bool {
             assert!(self.hasLockId(lockId), "Lock Id Does Not Exist");
             let htlc: HTLC = self.locks.read(lockId);
 
             let mut bytes: Bytes = BytesTrait::new(0, array![]);
-            bytes.append_felt252(secret);
+            bytes.append_u256(secret);
             let pre = bytes.sha256();
             let mut bytes: Bytes = BytesTrait::new(0, array![]);
             bytes.append_u256(pre);
@@ -629,24 +625,24 @@ mod HashedTimelockERC20 {
             self: @ContractState, lockId: u256
         ) -> (
             (ContractAddress, ContractAddress, ContractAddress),
-            (u256, u256, u256),
-            (bool, bool),
-            felt252
+            (u256, u256, u256, u256),
+            (felt252, felt252, felt252, felt252),
+            (bool, bool)
         ) {
             if !self.hasLockId(lockId) {
                 return (
                     (Zero::zero(), Zero::zero(), Zero::zero()),
-                    (0_u256, 0_u256, 0_u256),
-                    (false, false),
-                    0
+                    (0, 0, 0, 0),
+                    (0, 0, 0, 0),
+                    (false, false)
                 );
             }
             let htlc: HTLC = self.locks.read(lockId);
             (
                 (htlc.sender, htlc.srcReceiver, htlc.tokenContract),
-                (htlc.amount, htlc.hashlock, htlc.timelock),
+                (htlc.amount, htlc.secret, htlc.hashlock, htlc.timelock),
+                (htlc.dstChain, htlc.dstAddress, htlc.dstAsset, htlc.srcAsset),
                 (htlc.redeemed, htlc.unlocked),
-                htlc.secret
             )
         }
 
@@ -654,24 +650,24 @@ mod HashedTimelockERC20 {
             self: @ContractState, commitId: u256
         ) -> (
             (ContractAddress, ContractAddress, ContractAddress, ContractAddress),
-            (u256, felt252, u256),
-            (bool, bool),
-            felt252
+            (u256, u256),
+            (felt252, felt252, felt252, felt252),
+            (bool, bool)
         ) {
             if commitId > self.commitCounter.read() {
                 return (
                     (Zero::zero(), Zero::zero(), Zero::zero(), Zero::zero()),
-                    (0_u256, 0, 0_u256),
-                    (false, false),
-                    0
+                    (0, 0),
+                    (0, 0, 0, 0),
+                    (false, false)
                 );
             }
             let phtlc: PHTLC = self.commits.read(commitId);
             (
                 (phtlc.sender, phtlc.srcReceiver, phtlc.tokenContract, phtlc.messenger),
-                (phtlc.amount, phtlc.srcAsset, phtlc.timelock),
-                (phtlc.uncommitted, phtlc.locked),
-                phtlc.dstAddress
+                (phtlc.amount, phtlc.timelock),
+                (phtlc.dstChain, phtlc.dstAddress, phtlc.dstAsset, phtlc.srcAsset),
+                (phtlc.uncommitted, phtlc.locked)
             )
         }
         fn getCommits(self: @ContractState, sender: ContractAddress) -> Span<u256> {
