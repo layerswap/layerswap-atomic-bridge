@@ -3,7 +3,7 @@ pragma solidity 0.8.23;
 
 interface IMessenger {
   function notify(
-    uint256 commitId,
+    bytes32 commitId,
     bytes32 hashlock,
     string memory dstChain,
     string memory dstAsset,
@@ -18,8 +18,6 @@ interface IMessenger {
 }
 
 contract HashedTimeLockEther {
-  uint256 private id = 0;
-
   error FundsNotSent();
   error NotFutureTimelock();
   error NotPassedTimelock();
@@ -63,7 +61,7 @@ contract HashedTimeLockEther {
     bool uncommitted;
   }
   event TokenCommitted(
-    uint commitId,
+    bytes32 commitId,
     string[] HopChains,
     string[] HopAssets,
     string[] HopAddresses,
@@ -88,15 +86,15 @@ contract HashedTimeLockEther {
     uint amount,
     uint timelock,
     address messenger,
-    uint commitId
+    bytes32 commitId
   );
 
   event LowLevelErrorOccurred(bytes lowLevelData);
   event TokenUnlocked(bytes32 indexed lockId);
-  event TokenUncommitted(uint indexed commitId);
+  event TokenUncommitted(bytes32 indexed commitId);
   event TokenRedeemed(bytes32 indexed lockId, address redeemAddress);
 
-  modifier _committed(uint commitId) {
+  modifier _committed(bytes32 commitId) {
     if (!hasPHTLC(commitId)) revert CommitmentNotExists();
     _;
   }
@@ -107,8 +105,10 @@ contract HashedTimeLockEther {
   }
 
   mapping(bytes32 => HTLC) locks;
-  mapping(uint => PHTLC) commits;
+  mapping(bytes32 => PHTLC) commits;
+  mapping(bytes32 => bytes32) commitIdToLockId;
   bytes32[] lockIds;
+  bytes32[] commitIds;
 
   function commit(
     string[] memory HopChains,
@@ -121,8 +121,7 @@ contract HashedTimeLockEther {
     address srcReceiver,
     uint timelock,
     address messenger
-  ) external payable returns (uint commitId) {
-    id += 1;
+  ) external payable returns (bytes32 commitId) {
     if (msg.value == 0) {
       revert FundsNotSent();
     }
@@ -130,8 +129,21 @@ contract HashedTimeLockEther {
       revert NotFutureTimelock();
     }
 
-    commitId = id;
-
+    commitId = sha256(
+      abi.encodePacked(
+        address(this),
+        msg.sender,
+        msg.value,
+        dstChain,
+        dstAsset,
+        dstAddress,
+        srcAsset,
+        srcReceiver,
+        timelock,
+        messenger
+      )
+    );
+    commitIds.push(commitId);
     commits[commitId] = PHTLC(
       dstAddress,
       dstChain,
@@ -147,7 +159,7 @@ contract HashedTimeLockEther {
     );
 
     emit TokenCommitted(
-      id,
+      commitId,
       HopChains,
       HopAssets,
       HopAddresses,
@@ -163,7 +175,7 @@ contract HashedTimeLockEther {
     );
   }
 
-  function uncommit(uint commitId) external _committed(commitId) returns (bool) {
+  function uncommit(bytes32 commitId) external _committed(commitId) returns (bool) {
     PHTLC storage phtlc = commits[commitId];
 
     if (phtlc.uncommitted) revert AlreadyUncommitted();
@@ -176,7 +188,7 @@ contract HashedTimeLockEther {
     return true;
   }
 
-  function lockCommitment(uint commitId, bytes32 hashlock) external _committed(commitId) returns (bytes32 lockId) {
+  function lockCommitment(bytes32 commitId, bytes32 hashlock) external _committed(commitId) returns (bytes32 lockId) {
     lockId = hashlock;
     if (commits[commitId].uncommitted == true) {
       revert AlreadyUncommitted();
@@ -231,7 +243,7 @@ contract HashedTimeLockEther {
     string memory dstChain,
     string memory dstAddress,
     string memory dstAsset,
-    uint commitId,
+    bytes32 commitId,
     address messenger
   ) external payable returns (bytes32 lockId) {
     if (msg.value == 0) {
@@ -260,6 +272,7 @@ contract HashedTimeLockEther {
     );
     lockId = hashlock;
     lockIds.push(hashlock);
+    commitIdToLockId[commitId] = lockId;
     emit TokenLocked(
       hashlock,
       dstChain,
@@ -308,15 +321,15 @@ contract HashedTimeLockEther {
     }
   }
 
-  function redeem(bytes32 lockId, bytes32 _secret) external _locked(lockId) returns (bool) {
+  function redeem(bytes32 lockId, bytes32 secret) external _locked(lockId) returns (bool) {
     HTLC storage htlc = locks[lockId];
 
-    bytes32 pre = sha256(abi.encodePacked(_secret));
+    bytes32 pre = sha256(abi.encodePacked(secret));
     if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
     if (htlc.unlocked) revert AlreadyUnlocked();
     if (htlc.redeemed) revert AlreadyRedeemed();
 
-    htlc.secret = _secret;
+    htlc.secret = secret;
     htlc.redeemed = true;
     htlc.srcReceiver.transfer(htlc.amount);
     emit TokenRedeemed(lockId, msg.sender);
@@ -378,7 +391,7 @@ contract HashedTimeLockEther {
   }
 
   function getCommitDetails(
-    uint commitId
+    bytes32 commitId
   )
     public
     view
@@ -411,8 +424,8 @@ contract HashedTimeLockEther {
     );
   }
 
-  function hasPHTLC(uint commitId) internal view returns (bool exists) {
-    exists = (commitId <= id);
+  function hasPHTLC(bytes32 commitId) internal view returns (bool exists) {
+    exists = (commits[commitId].sender != address(0));
   }
 
   function hasHTLC(bytes32 lockId) internal view returns (bool exists) {
@@ -442,26 +455,30 @@ contract HashedTimeLockEther {
     return result;
   }
 
-  function getCommits(address senderAddr) public view returns (uint[] memory) {
+  function getCommits(address senderAddr) public view returns (bytes32[] memory) {
     uint count = 0;
 
-    for (uint i = 1; i < id + 1; i++) {
-      PHTLC memory phtlc = commits[i];
+    for (uint i = 0; i < commitIds.length; i++) {
+      PHTLC memory phtlc = commits[commitIds[i]];
       if (phtlc.sender == senderAddr) {
         count++;
       }
     }
 
-    uint[] memory result = new uint[](count);
+    bytes32[] memory result = new bytes32[](count);
     uint j = 0;
 
-    for (uint i = 1; i < id + 1; i++) {
-      if (commits[i].sender == senderAddr) {
-        result[j] = i;
+    for (uint i = 0; i < commitIds.length; i++) {
+      if (commits[commitIds[i]].sender == senderAddr) {
+        result[j] = commitIds[i];
         j++;
       }
     }
 
     return result;
+  }
+
+  function getLockIdByCommitId(bytes32 commitId) public view returns (bytes32) {
+    return commitIdToLockId[commitId];
   }
 }

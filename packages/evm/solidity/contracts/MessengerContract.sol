@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 interface IMessenger {
   function notify(
-    uint256 commitId,
+    bytes32 commitId,
     bytes32 hashlock,
     string memory dstChain,
     string memory dstAsset,
@@ -20,7 +20,7 @@ interface IMessenger {
 contract SimpleMessenger is IMessenger {
   event NotificationReceived(
     bytes32 indexed lockId,
-    uint256 commitId,
+    bytes32 commitId,
     bytes32 hashlock,
     string dstChain,
     string dstAsset,
@@ -34,7 +34,7 @@ contract SimpleMessenger is IMessenger {
   );
 
   function notify(
-    uint256 commitId,
+    bytes32 commitId,
     bytes32 hashlock,
     string memory dstChain,
     string memory dstAsset,
