@@ -448,31 +448,53 @@ contract HashedTimeLockERC20 {
     external
     view
     returns (
-      address sender,
-      address srcReceiver,
-      address tokenContract,
-      uint256 amount,
+      string memory dstAddress,
+      string memory dstChain,
+      string memory dstAsset,
+      string memory srcAsset,
+      address payable sender,
+      address payable srcReceiver,
       bytes32 hashlock,
+      bytes32 secret,
+      uint256 amount,
       uint256 timelock,
       bool redeemed,
       bool unlocked,
-      bytes32 secret
+      address tokenContract
     )
   {
     if (hasHTLC(lockId) == false) {
-      return (address(0), address(0), address(0), 0, 0, 0, false, false, 0);
+      return (
+        '',
+        '',
+        '',
+        '',
+        payable(address(0)),
+        payable(address(0)),
+        bytes32(0x0),
+        bytes32(0x0),
+        uint256(0),
+        uint256(0),
+        false,
+        false,
+        address(0)
+      );
     }
     HTLC storage htlc = locks[lockId];
     return (
+      htlc.dstAddress,
+      htlc.dstChain,
+      htlc.dstAsset,
+      htlc.srcAsset,
       htlc.sender,
       htlc.srcReceiver,
-      htlc.tokenContract,
-      htlc.amount,
       htlc.hashlock,
+      htlc.secret,
+      htlc.amount,
       htlc.timelock,
       htlc.redeemed,
       htlc.unlocked,
-      htlc.secret
+      htlc.tokenContract
     );
   }
 
@@ -483,31 +505,48 @@ contract HashedTimeLockERC20 {
     view
     returns (
       string memory dstAddress,
+      string memory dstChain,
+      string memory dstAsset,
       string memory srcAsset,
       address payable sender,
       address payable srcReceiver,
       uint timelock,
-      address messenger,
       uint amount,
-      bool uncommitted,
+      address messenger,
       bool locked,
+      bool uncommitted,
       address tokenContract
     )
   {
     if (!hasPHTLC(commitId)) {
-      return ('0', '0', payable(address(0)), payable(address(0)), 0, address(0), 0, false, false, address(0));
+      return (
+        '',
+        '',
+        '',
+        '',
+        payable(address(0)),
+        payable(address(0)),
+        uint256(0),
+        uint256(0),
+        address(0),
+        false,
+        false,
+        address(0)
+      );
     }
     PHTLC storage phtlc = commits[commitId];
     return (
       phtlc.dstAddress,
+      phtlc.dstChain,
+      phtlc.dstAsset,
       phtlc.srcAsset,
       phtlc.sender,
       phtlc.srcReceiver,
       phtlc.timelock,
-      phtlc.messenger,
       phtlc.amount,
-      phtlc.uncommitted,
+      phtlc.messenger,
       phtlc.locked,
+      phtlc.uncommitted,
       phtlc.tokenContract
     );
   }

@@ -359,36 +359,48 @@ contract HashedTimeLockEther {
     public
     view
     returns (
+      string memory dstAddress,
+      string memory dstChain,
+      string memory dstAsset,
+      string memory srcAsset,
+      address payable sender,
+      address payable srcReceiver,
       bytes32 hashlock,
       bytes32 secret,
       uint256 amount,
       uint256 timelock,
-      address payable sender,
-      address payable srcReceiver,
       bool redeemed,
       bool unlocked
     )
   {
     if (!hasHTLC(lockId)) {
       return (
+        '',
+        '',
+        '',
+        '',
+        payable(address(0)),
+        payable(address(0)),
         bytes32(0x0),
         bytes32(0x0),
         uint256(0),
         uint256(0),
-        payable(address(0)),
-        payable(address(0)),
         false,
         false
       );
     }
     HTLC storage htlc = locks[lockId];
     return (
+      htlc.dstAddress,
+      htlc.dstChain,
+      htlc.dstAsset,
+      htlc.srcAsset,
+      htlc.sender,
+      htlc.srcReceiver,
       htlc.hashlock,
       htlc.secret,
       htlc.amount,
       htlc.timelock,
-      htlc.sender,
-      htlc.srcReceiver,
       htlc.redeemed,
       htlc.unlocked
     );
@@ -401,30 +413,46 @@ contract HashedTimeLockEther {
     view
     returns (
       string memory dstAddress,
+      string memory dstChain,
+      string memory dstAsset,
       string memory srcAsset,
       address payable sender,
       address payable srcReceiver,
       uint timelock,
-      address messenger,
       uint amount,
-      bool uncommitted,
-      bool locked
+      address messenger,
+      bool locked,
+      bool uncommitted
     )
   {
     if (!hasPHTLC(commitId)) {
-      return ('0', '0', payable(address(0)), payable(address(0)), 0, address(0), 0, false, false);
+      return (
+        '',
+        '',
+        '',
+        '',
+        payable(address(0)),
+        payable(address(0)),
+        uint256(0),
+        uint256(0),
+        address(0),
+        false,
+        false
+      );
     }
     PHTLC storage phtlc = commits[commitId];
     return (
       phtlc.dstAddress,
+      phtlc.dstChain,
+      phtlc.dstAsset,
       phtlc.srcAsset,
       phtlc.sender,
       phtlc.srcReceiver,
       phtlc.timelock,
-      phtlc.messenger,
       phtlc.amount,
-      phtlc.uncommitted,
-      phtlc.locked
+      phtlc.messenger,
+      phtlc.locked,
+      phtlc.uncommitted
     );
   }
 
