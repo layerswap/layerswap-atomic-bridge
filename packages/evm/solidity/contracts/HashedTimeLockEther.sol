@@ -22,6 +22,7 @@ contract HashedTimeLockEther {
   error NotFutureTimelock();
   error NotPassedTimelock();
   error LockAlreadyExists();
+  error CommitIdAlreadyExists();
   error LockNotExists();
   error HashlockNotMatch();
   error AlreadyRedeemed();
@@ -143,6 +144,9 @@ contract HashedTimeLockEther {
         messenger
       )
     );
+    if (hasPHTLC(commitId)) {
+      revert CommitIdAlreadyExists();
+    }
     commitIds.push(commitId);
     commits[commitId] = PHTLC(
       dstAddress,

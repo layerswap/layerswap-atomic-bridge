@@ -42,6 +42,7 @@ contract HashedTimeLockERC20 {
   error NotFutureTimelock();
   error NotPassedTimelock();
   error LockAlreadyExists();
+  error CommitIdAlreadyExists();
   error LockNotExists();
   error HashlockNotMatch();
   error AlreadyRedeemed();
@@ -186,8 +187,10 @@ contract HashedTimeLockERC20 {
         tokenContract
       )
     );
+    if (hasPHTLC(commitId)) {
+      revert CommitIdAlreadyExists();
+    }
     commitIds.push(commitId);
-
     commits[commitId] = PHTLC(
       dstAddress,
       dstChain,
