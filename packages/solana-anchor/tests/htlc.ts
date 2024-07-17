@@ -3,7 +3,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Keypair } from "@solana/web3.js";
 import * as spl from '@solana/spl-token';
-import { AnchorHtlc } from '../target/types/solana';
+import { AnchorHtlc } from '../target/types/htlc';
 
 interface PDAParameters {
     htlcWalletKey: anchor.web3.PublicKey;
