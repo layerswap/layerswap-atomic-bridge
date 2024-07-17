@@ -41,7 +41,7 @@ contract HashedTimeLockEther {
     address payable sender;
     address payable srcReceiver;
     bytes32 hashlock;
-    bytes32 secret;
+    uint256 secret;
     uint256 amount;
     uint256 timelock;
     bool redeemed;
@@ -325,7 +325,7 @@ contract HashedTimeLockEther {
     }
   }
 
-  function redeem(bytes32 lockId, bytes32 secret) external _locked(lockId) returns (bool) {
+  function redeem(bytes32 lockId, uint256 secret) external _locked(lockId) returns (bool) {
     HTLC storage htlc = locks[lockId];
 
     bytes32 pre = sha256(abi.encodePacked(secret));
@@ -366,7 +366,7 @@ contract HashedTimeLockEther {
       address payable sender,
       address payable srcReceiver,
       bytes32 hashlock,
-      bytes32 secret,
+      uint256 secret,
       uint256 amount,
       uint256 timelock,
       bool redeemed,
@@ -382,7 +382,7 @@ contract HashedTimeLockEther {
         payable(address(0)),
         payable(address(0)),
         bytes32(0x0),
-        bytes32(0x0),
+        uint256(0),
         uint256(0),
         uint256(0),
         false,
