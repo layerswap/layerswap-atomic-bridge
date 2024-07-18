@@ -1,8 +1,8 @@
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { TonClient, WalletContractV4, Address } from "@ton/ton";
-import { Redeem, RedeemData,HashedTimeLockTON} from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
-import { sleep, toNano } from "../utils/utils"
+import { HashedTimeLockTON,Lock, LockData } from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
+import { toNano, sleep } from "../utils/utils";
 
 export async function run() {
   const endpoint = await getHttpEndpoint({ network: "testnet" });
@@ -23,22 +23,36 @@ export async function run() {
   const newContract = HashedTimeLockTON.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
-  const lockId = BigInt("7621991010947344452180899744448993864955665500331425174040819581377600501749");
-  const secret = BigInt("92154350473372386670992019719489079617"); 
+  const hashlock = BigInt("65525677087904354219725076609943830052605406542526131593322893980241204673175"); 
+  const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600); 
+  const srcReceiver = Address.parse("0QCA5WdfZ_il-bFktDYao5h4zf7sw_64KZRx1Yc2eJrRCzBs"); 
+  const srcAsset = "TON"; 
+  const dstChain = "STARKNET SEPOLIA"; 
+  const dstAddress = "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f"; 
+  const dstAsset = "STARKNET ETH"; 
+  const commitId = BigInt(43215113304368500000862857464194614513775785455721358704763198862103512164787n); 
+  const messenger: Address = Address.parse("EQBIgdusaVOdJbcN9r0O65iCF7KH9aUzS8kK-pDGJKs4ZHc_");
 
-  const redeemData: RedeemData = {
-    lockId: lockId,
-    secret: secret,
-    $$type: "RedeemData"
+  const lockData: LockData = {
+    hashlock: hashlock,
+    timelock: timelock,
+    srcReceiver: srcReceiver,
+    srcAsset: srcAsset,
+    dstChain: dstChain,
+    dstAddress: dstAddress,
+    dstAsset: dstAsset,
+    commitId: commitId,
+    messenger: messenger,
+    $$type: "LockData"
   };
 
-  const redeemMessage: Redeem = {
-    $$type: "Redeem",
-    data: redeemData
+  const lockMessage: Lock = {
+    $$type: "Lock",
+    data: lockData
   };
 
-  console.log("Redeeming HTLC...");
-  await contractProvider.send(walletSender, { value: toNano("1"), bounce: true }, redeemMessage);
+  console.log("Sending Lock message...");
+  await contractProvider.send(walletSender, { value: toNano("0.5"), bounce: true }, lockMessage);
 
   let currentSeqno = seqno;
   while (currentSeqno == seqno) {

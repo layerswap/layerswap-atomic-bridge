@@ -1,10 +1,10 @@
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { TonClient, WalletContractV4, Address } from "@ton/ton";
-import { Redeem, RedeemData,HashedTimeLockTON} from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
-import { sleep, toNano } from "../utils/utils"
+import { LockCommitment, LockCommitmentData ,HashedTimeLockTON} from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
+import { toNano, sleep } from "../utils/utils";
 
-export async function run() {
+async function run() {
   const endpoint = await getHttpEndpoint({ network: "testnet" });
   const client = new TonClient({ endpoint });
 
@@ -22,23 +22,21 @@ export async function run() {
   const contractAddress = Address.parse("EQCJhsfTsoxKKpMBDw8C5z_ZGbljdOLInZNvjFM8NtyyNLk2"); 
   const newContract = HashedTimeLockTON.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
+  const amount = toNano("0.1");
 
-  const lockId = BigInt("7621991010947344452180899744448993864955665500331425174040819581377600501749");
-  const secret = BigInt("92154350473372386670992019719489079617"); 
-
-  const redeemData: RedeemData = {
-    lockId: lockId,
-    secret: secret,
-    $$type: "RedeemData"
+  const lockCommitmentData: LockCommitmentData = {
+    commitId: 28980991593716787793729160457641158411340079193941161001671239997837163559946n,
+    hashlock: 7621991010947344452180899744448993864955665500331425174040819581377600501749n,
+    $$type: "LockCommitmentData"
   };
 
-  const redeemMessage: Redeem = {
-    $$type: "Redeem",
-    data: redeemData
+  const lockCommitmentMessage: LockCommitment = {
+    $$type: "LockCommitment",
+    data: lockCommitmentData
   };
 
-  console.log("Redeeming HTLC...");
-  await contractProvider.send(walletSender, { value: toNano("1"), bounce: true }, redeemMessage);
+  console.log("Sending LockCommitment message...");
+  await contractProvider.send(walletSender, { value: amount, bounce: true }, lockCommitmentMessage);
 
   let currentSeqno = seqno;
   while (currentSeqno == seqno) {
@@ -50,3 +48,4 @@ export async function run() {
 }
 
 run().catch(console.error);
+

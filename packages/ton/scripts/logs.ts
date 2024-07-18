@@ -1,12 +1,12 @@
 import { HttpClient, Api } from 'tonapi-sdk-js';
 import {
-    loadConvertP,
-    loadCreate,
-    loadCreateP,
+    loadLockCommitment,
+    loadLock,
+    loadCommit,
     loadDeploy,
     loadRedeem,
-    loadRefund,
-    loadRefundP,
+    loadUnlock,
+    loadUncommit,
 } from "../wrappers/HashedTimeLockTON";
 import { Cell, Slice } from '@ton/core';
 import { Address } from 'ton';
@@ -17,23 +17,23 @@ type MsgTypeMap = {
 };
 
 const msgTypes: MsgTypeMap = {
-    'befc17a4': 'CreateP',
-    '0fce1278': 'RefundP',
-    'b7ee06c4': 'ConvertP',
-    '80e1900e': 'Create',
-    'cb8c0e08': 'Redeem',
-    '27cc3317': 'Refund',
+    '2f3b56bd': 'Commit',
+    'a958ac23': 'Uncommit',
+    '2fe24f1c': 'LockCommitment',
+    '12e78cb1': 'Lock',
+    '758db085': 'Redeem',
+    'ad821ef9': 'Unlock',
     '946a98b6': 'Deploy'
 };
 
 const functionMap: { [key: string]: (slice: Slice) => any } = {
     'Redeem': loadRedeem,
-    'Create': loadCreate,
-    'Refund': loadRefund,
+    'Lock': loadLock,
+    'Unlock': loadUnlock,
     'Deploy': loadDeploy,
-    'RefundP': loadRefundP,
-    'ConvertP': loadConvertP,
-    'CreateP': loadCreateP,
+    'Uncommit': loadUncommit,
+    'LockCommitment': loadLockCommitment,
+    'Commit': loadCommit,
 };
 
 async function parseTx(address: string, token: string, index: number): Promise<any> {
@@ -64,7 +64,7 @@ async function parseTx(address: string, token: string, index: number): Promise<a
     }
 }
 
-const address = 'EQCRT9EEWE_uqjgPmX-ln-4sZQjIMjIrYEs2qrRIlnrCJoGG'; 
+const address = 'EQCJhsfTsoxKKpMBDw8C5z_ZGbljdOLInZNvjFM8NtyyNLk2'; 
 const token = 'AGVYQVBYQDB6KRAAAAAFWAOS73LJHXPEWONMCFRIRGOBL7WIDI5D5G2GRWOD347TUUFWPUA'; 
 
 parseTx(address, token, 0).then(result => {
@@ -72,8 +72,6 @@ parseTx(address, token, 0).then(result => {
   }).catch(error => {
     console.error('Error:', error);
   });
-
-
 
 
 function findType(inputString: string): string | undefined {

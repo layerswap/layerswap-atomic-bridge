@@ -1,118 +1,123 @@
 import "@stdlib/deploy";
-struct HTLCNotification {
-    htlcID: Int;
+// Messenger notification
+struct Notification {
+    commitId: Int;
+    hashlock: Int;
+    dstChain: String;
+    dstAsset: String;
+    dstAddress: String;
+    srcAsset: String;
     sender: Address;
-    receiver: Address;
+    srcReceiver: Address;
     amount: Int;
     timelock: Int;
-    hashlock: Int;
-    dstAddress: String;
-    phtlcID: Int;
 }
 
-message HTLCNotify {
-    data: HTLCNotification;
+message Notify {
+    data: Notification;
 }
 
+// Commitment object
 struct PHTLC {
     dstAddress: String;
-    srcAssetId: Int;
+    dstChain: String;
+    dstAsset: String;
+    srcAsset: String;
     sender: Address;
-    srcAddress: Address;
+    srcReceiver: Address;
     timelock: Int; 
-    messenger: Address;
     amount: Int;
-    refunded: Bool;
-    converted: Bool;
-    phtlcID: Int;
-}
-
-message CreateP{
-    data: PHTLCData;
-}
-
-struct ConvertPData{
-    phtlcID: Int;
-    hashlock: Int;
-}
-message ConvertP{
-    data: ConvertPData;
-}
-
-struct StringImpl{
-    data: String;
-}
-
-struct PHTLCData{
-    dstChainId: Int;
-    dstAssetId: Int;
-    srcAssetId: Int;
-    timelock: Int; 
-    srcAddress: Address;
     messenger: Address;
-    dstAddress: String;
-    chainIDs: map<Int,Int>;
-    dstAddresses: map<Int,StringImpl>;
+    locked: Bool;
+    uncommitted: Bool;
 }
 
-message RefundP{
-    phtlcID: Int;
-}
-
+// Lock object
 struct HTLC {
+    dstAddress: String;
+    dstChain: String;
+    dstAsset: String;
+    srcAsset: String;
+    sender: Address;
+    srcReceiver: Address;
     hashlock: Int;
     secret: Int;
     amount: Int;
     timelock: Int;
-    sender: Address;
-    srcAddress: Address;
     redeemed: Bool;
-    refunded: Bool;
+    unlocked: Bool;
 }
 
-struct TonTransferInitiated {
-    __hashlock: Int;
-    __amount: Int;
-    __chainId: Int ;
-    __timelock: Int ;
-    __phtlcID: Int;
-    __sender: Address;
-    __srcAddress: Address;
-    __messenger: Address?;
-    __targetCurrencyReceiverAddress: String; 
+// Messages received by contract
+message Commit{
+    data: CommitData;
+}
+struct CommitData{
+    HopChains: map<Int,StringImpl>;
+    HopAssets: map<Int,StringImpl>;
+    HopAddresses: map<Int,StringImpl>;
+    dstChain: String;
+    dstAsset: String;
+    dstAddress: String;
+    srcAsset: String;
+    srcReceiver: Address;
+    timelock: Int; 
+    messenger: Address;
 }
 
-message Create {
-    data: TonTransferInitiated;
+message LockCommitment{
+    data: LockCommitmentData;
+}
+struct LockCommitmentData{
+    commitId: Int;
+    hashlock: Int;
 }
 
-struct TonTransferClaimed {
-    __hashlock: Int;
-    __secret: Int;
+message Uncommit{
+    data: UncommitData;
+}
+struct UncommitData{
+    commitId: Int;
+}
+
+message Lock {
+    data: LockData;
+}
+struct LockData {
+    hashlock: Int;
+    timelock: Int;
+    srcReceiver: Address;
+    srcAsset: String;
+    dstChain: String;
+    dstAddress: String;
+    dstAsset: String;
+    commitId: Int?;
+    messenger: Address?;
 }
 
 message Redeem {
-    data: TonTransferClaimed;
+    data: RedeemData;
+}
+struct RedeemData {
+    lockId: Int;
+    secret: Int;
 }
 
-struct TonTransferRefunded {
-    __hashlock: Int;
+message Unlock {
+    data: UnlockData;
+}
+struct UnlockData {
+    hashlock: Int;
 }
 
-message Refund {
-    data: TonTransferRefunded;
+// Emitted message
+message CommitId {
+    commitId: Int;
 }
 
-message PreHTLCID {
-    phtlcID: Int;
-}
-
-struct ChainIDs {
-    data: map<Int,Int>;
-}
-
-struct DstAddresses {
-    data: map<Int,StringImpl>;
+// String implementation as struct
+struct StringImpl{
+    data: String;
 }
 
 contract HashedTimeLockTON with Deployable {
@@ -120,92 +125,97 @@ contract HashedTimeLockTON with Deployable {
         
     }
 
-    contracts: map<Int, HTLC> ;
-    pContracts: map<Int, PHTLC>;
-    counter: Int = 0;
-    contractLength: Int = 0;
-    pContractLength: Int = 0;
+    locks: map<Int, HTLC> ;
+    commits: map<Int, PHTLC>;
+    commitIdToLockId: map<Int,Int>;
 
-    fun htlcExsits(hashlock: Int): Bool {
-        if(self.contracts.get(hashlock) == null){
+    fun lockExists(hashlock: Int): Bool {
+        if(self.locks.get(hashlock) == null){
             return false;
         }
         return true;
     }
 
-    fun phtlcExists(phtlcID: Int): Bool {
-        if(self.pContracts.get(phtlcID) == null){
+    fun commitExists(commitId: Int): Bool {
+        if(self.commits.get(commitId) == null){
             return false;
         }
         return true;
     }
 
-    receive(msg: CreateP){
+    receive(msg: Commit){
             let ctx: Context = context();
 
             require(ctx.value != 0,"Funds Not Sent");
             require(msg.data.timelock > now(),"Not Future Timelock");
 
-            self.counter +=1;
-            let phtlcID: Int = self.counter;
+            let commitId: Int = beginCell()
+                .storeAddress(myAddress()).storeAddress(ctx.sender).storeUint(ctx.value, 120)
+                .storeRef(beginCell().storeRef(msg.data.dstChain.asSlice().asCell()).storeRef(msg.data.dstAsset.asSlice().asCell())
+                    .storeSlice(msg.data.dstAddress.asSlice()).endCell())
+                .storeRef(beginCell().storeRef(msg.data.srcAsset.asSlice().asCell()).storeAddress(msg.data.srcReceiver)
+                    .storeUint(msg.data.timelock, 64).storeAddress(msg.data.messenger).endCell())
+                .endCell().hash();
 
-            self.pContracts.set(phtlcID, PHTLC {
+            require(self.commitExists(commitId) == false,"Commit Already Exists");
+            self.commits.set(commitId, PHTLC {
                                                 dstAddress: msg.data.dstAddress,
-                                                srcAssetId: msg.data.srcAssetId,
+                                                dstChain: msg.data.dstChain,
+                                                dstAsset: msg.data.dstAsset,
+                                                srcAsset: msg.data.srcAsset,
                                                 sender: ctx.sender,
-                                                srcAddress: msg.data.srcAddress,
+                                                srcReceiver: msg.data.srcReceiver,
                                                 timelock: msg.data.timelock, 
-                                                messenger: msg.data.messenger,
                                                 amount: ctx.value,
-                                                refunded: false,
-                                                converted: false,
-                                                phtlcID: phtlcID
+                                                messenger: msg.data.messenger,
+                                                locked: false,
+                                                uncommitted: false
                                                 });
-            self.pContractLength +=1;
-            emit(PreHTLCID {phtlcID: phtlcID}.toCell());
+            emit(CommitId {commitId: commitId}.toCell());
     }
 
-    receive(msg: RefundP){
-        require(self.phtlcExists(msg.phtlcID) == true,"Contract Does Not Exist");
-        require((self.pContracts.get(msg.phtlcID)!!).refunded == false,"Already Refunded");
-        require((self.pContracts.get(msg.phtlcID)!!).converted == false,"Already Converted");
-        require((self.pContracts.get(msg.phtlcID)!!).timelock <= now(),"Not Passed Timelock");
+    receive(msg: Uncommit){
+        require(self.commitExists(msg.data.commitId) == true,"Commit Does Not Exist");
+        require((self.commits.get(msg.data.commitId)!!).uncommitted == false,"Already Uncommitted");
+        require((self.commits.get(msg.data.commitId)!!).locked == false,"Already Locked");
+        require((self.commits.get(msg.data.commitId)!!).timelock <= now(),"Not Passed Timelock");
 
         let ctx: Context = context();
 
-        self.pContracts.del(msg.phtlcID);
-        self.pContractLength -=1;
+        self.commits.del(msg.data.commitId);
 
-        send(SendParameters{to: (self.pContracts.get(msg.phtlcID)!!).sender,
+        send(SendParameters{to: (self.commits.get(msg.data.commitId)!!).sender,
                             bounce: true,
-                            value: (self.pContracts.get(msg.phtlcID)!!).amount + ctx.value,
+                            value: (self.commits.get(msg.data.commitId)!!).amount + ctx.value,
                             mode: 0}); 
     }
 
-    receive(msg: ConvertP){
+    receive(msg: LockCommitment){
         let ctx: Context = context();
-        let htlcID: Int = msg.data.hashlock;
-        require(self.phtlcExists(msg.phtlcID) == true,"Contract Does Not Exist");
+        let lockId: Int = msg.data.hashlock;
+        require(self.commitExists(msg.data.commitId) == true,"Commit Does Not Exist");
         
-        if(ctx.sender == (self.pContracts.get(msg.data.phtlcID)!!).sender || ctx.sender == (self.pContracts.get(msg.data.phtlcID)!!).messenger){
-                    require(self.htlcExsits(htlcID) == false ,"HTLC With That Hashlock Exists");
-                    require((self.pContracts.get(msg.data.phtlcID)!!).converted == false,"Already Converted To HTLC");
-                    require((self.pContracts.get(msg.data.phtlcID)!!).refunded == false,"Already Refunded");
+        if(ctx.sender == (self.commits.get(msg.data.commitId)!!).sender || ctx.sender == (self.commits.get(msg.data.commitId)!!).messenger){
+                    require(self.lockExists(lockId) == false ,"Lock Already Exists");
+                    require((self.commits.get(msg.data.commitId)!!).locked == false,"Already Locked");
+                    require((self.commits.get(msg.data.commitId)!!).uncommitted == false,"Already Uncommitted");
     
-                    self.contracts.set(htlcID,HTLC{       
+                    self.locks.set(lockId,HTLC{       
+                                                    dstAddress: (self.commits.get(msg.data.commitId)!!).dstAddress,
+                                                    dstChain: (self.commits.get(msg.data.commitId)!!).dstChain,
+                                                    dstAsset: (self.commits.get(msg.data.commitId)!!).dstAsset,
+                                                    srcAsset: (self.commits.get(msg.data.commitId)!!).srcAsset,
+                                                    sender: (self.commits.get(msg.data.commitId)!!).sender,
+                                                    srcReceiver: (self.commits.get(msg.data.commitId)!!).srcReceiver,
                                                     hashlock: msg.data.hashlock,
                                                     secret: 0x0,
-                                                    amount: (self.pContracts.get(msg.data.phtlcID)!!).amount,
-                                                    timelock: (self.pContracts.get(msg.data.phtlcID)!!).timelock,
-                                                    sender: (self.pContracts.get(msg.data.phtlcID)!!).sender,
-                                                    srcAddress: (self.pContracts.get(msg.data.phtlcID)!!).srcAddress,
+                                                    amount: (self.commits.get(msg.data.commitId)!!).amount,
+                                                    timelock: (self.commits.get(msg.data.commitId)!!).timelock,
                                                     redeemed: false,
-                                                    refunded: false
+                                                    unlocked: false
                                                    }); 
 
-                    self.pContracts.del(msg.data.phtlcID);
-                    self.pContractLength -=1;
-                    self.contractLength +=1;
+                    self.commits.del(msg.data.commitId);
 
                     send(SendParameters{to: ctx.sender,
                                         bounce: true,
@@ -217,59 +227,69 @@ contract HashedTimeLockTON with Deployable {
         }
     }
 
-    receive(msg: Create){ 
+    receive(msg: Lock){ 
         let ctx: Context = context();
-        require(self.htlcExsits(msg.data.__hashlock) == false,"Contract Already Exists"); 
-        require(now() <= msg.data.__timelock ,"Not Future Timelock");
+        require(self.lockExists(msg.data.hashlock) == false,"Lock Already Exists"); 
+        require(now() <= msg.data.timelock ,"Not Future Timelock");
         require(ctx.value != 0,"Funds Not Sent");
 
-        self.contracts.set(msg.data.__hashlock,  HTLC  {
-                                                        hashlock: msg.data.__hashlock,
+        self.locks.set(msg.data.hashlock,  HTLC  {
+                                                        dstAddress: msg.data.dstAddress,
+                                                        dstChain: msg.data.dstChain,
+                                                        dstAsset: msg.data.dstAsset,
+                                                        srcAsset: msg.data.srcAsset,
+                                                        sender: sender(),
+                                                        srcReceiver: msg.data.srcReceiver,
+                                                        hashlock: msg.data.hashlock,
                                                         secret: 0x0,
                                                         amount: ctx.value,
-                                                        timelock: msg.data.__timelock,
-                                                        sender: msg.data.__sender,
-                                                        srcAddress: msg.data.__srcAddress,
+                                                        timelock: msg.data.timelock,
                                                         redeemed: false,
-                                                        refunded: false
+                                                        unlocked: false
                                                         });
 
-        if(msg.data.__messenger != null){
-            send(SendParameters{to: msg.data.__messenger!!,
+        if(msg.data.commitId != null){
+            let id: Int = msg.data.commitId!!;
+            self.commitIdToLockId.set(id,msg.data.hashlock);
+        }
+
+        if(msg.data.messenger != null && msg.data.commitId != null){
+            send(SendParameters{to: msg.data.messenger!!,
                                 bounce: true,
                                 value: 20000000,
                                 mode: 0,
-                                body: HTLCNotify {data: HTLCNotification {
-                                                                            htlcID: msg.data.__hashlock,
-                                                                            sender: msg.data.__sender,
-                                                                            receiver: msg.data.__srcAddress,
+                                body: Notify {data: Notification {
+                                                                            commitId: msg.data.commitId!!,
+                                                                            hashlock: msg.data.hashlock,
+                                                                            dstChain: msg.data.dstChain,
+                                                                            dstAsset: msg.data.dstAsset,
+                                                                            dstAddress: msg.data.dstAddress,
+                                                                            srcAsset: msg.data.srcAsset,
+                                                                            sender: sender(),
+                                                                            srcReceiver: msg.data.srcReceiver,
                                                                             amount: ctx.value,
-                                                                            timelock: msg.data.__timelock,
-                                                                            hashlock: msg.data.__hashlock,
-                                                                            dstAddress: msg.data.__targetCurrencyReceiverAddress,
-                                                                            phtlcID: msg.data.__phtlcID
+                                                                            timelock: msg.data.timelock,
                                                                         }}.toCell()});  
         }
  
-        self.contractLength +=1;          
     }
 
     receive(msg: Redeem) {
         let ctx: Context = context();
-        require(self.htlcExsits(msg.data.__hashlock) == true, "Contract Does Not Exist");
+        require(self.lockExists(msg.data.lockId) == true, "Lock Does Not Exist");
 
-        let preSlice: Slice = beginCell().storeUint(msg.data.__secret,256).asSlice();
+        let preSlice: Slice = beginCell().storeUint(msg.data.secret,256).asSlice();
         let pre: Int = sha256(preSlice);
 
         let hashlockFromSecretSlice: Slice = beginCell().storeUint(pre,256).asSlice();
         let hashlockFromSecret: Int = sha256(hashlockFromSecretSlice);
 
-        require((self.contracts.get(msg.data.__hashlock)!!).hashlock == hashlockFromSecret,"Hashlock Not Match");
-        require((self.contracts.get(msg.data.__hashlock)!!).refunded == false,"Already Refunded");
-        require((self.contracts.get(msg.data.__hashlock)!!).redeemed == false,"Already Redeemed");
+        require((self.locks.get(msg.data.lockId)!!).hashlock == hashlockFromSecret,"Hashlock Not Match");
+        require((self.locks.get(msg.data.lockId)!!).unlocked == false,"Already Unlocked");
+        require((self.locks.get(msg.data.lockId)!!).redeemed == false,"Already Redeemed");
 
-        let contractValue: Int = (self.contracts.get(msg.data.__hashlock)!!).amount;
-        let recieverAddr: Address = (self.contracts.get(msg.data.__hashlock)!!).srcAddress;
+        let contractValue: Int = (self.locks.get(msg.data.lockId)!!).amount;
+        let recieverAddr: Address = (self.locks.get(msg.data.lockId)!!).srcReceiver;
 
         if(recieverAddr == sender()){
             send(SendParameters{
@@ -294,43 +314,106 @@ contract HashedTimeLockTON with Deployable {
                     });
         }  
 
-        self.contracts.del(msg.data.__hashlock);
-        self.contractLength -=1;  
+        self.locks.del(msg.data.lockId);
     }
 
-    receive(msg: Refund){
+    receive(msg: Unlock){
         let ctx: Context = context();
-        require(self.htlcExsits(msg.data.__hashlock) == true,"Contract Does Not Exist");
-        require((self.contracts.get(msg.data.__hashlock)!!).refunded == false,"Already Refunded");
-        require((self.contracts.get(msg.data.__hashlock)!!).redeemed == false,"Already Redeemed");
-        require((self.contracts.get(msg.data.__hashlock)!!).timelock < now(), "Not Passed Timelock");
+        require(self.lockExists(msg.data.hashlock) == true,"Lock Does Not Exist");
+        require((self.locks.get(msg.data.hashlock)!!).unlocked == false,"Already Unlocked");
+        require((self.locks.get(msg.data.hashlock)!!).redeemed == false,"Already Redeemed");
+        require((self.locks.get(msg.data.hashlock)!!).timelock < now(), "Not Passed Timelock");
             
-        send(SendParameters{
-                            to: (self.contracts.get(msg.data.__hashlock)!!).sender,
-                            bounce: true,
-                            value: (self.contracts.get(msg.data.__hashlock)!!).amount + ctx.value,
-                            mode: 0
-                           });
+        if((self.locks.get(msg.data.hashlock)!!).sender == sender()){
+            send(SendParameters{
+                                to: sender(),
+                                bounce: true,
+                                value: (self.locks.get(msg.data.hashlock)!!).amount + ctx.value,
+                                mode: 0
+                            });
+        }else{
+            send(SendParameters{
+                    to: (self.locks.get(msg.data.hashlock)!!).sender,
+                    bounce: true,
+                    value: (self.locks.get(msg.data.hashlock)!!).amount,
+                    mode: 0
+                });
+            send(SendParameters{
+                    to: sender(),
+                    bounce: true,
+                    value: ctx.value,
+                    mode: 0
+                });
+        }
 
-        self.contracts.del(msg.data.__hashlock);
-        self.contractLength -=1;  
+        self.locks.del(msg.data.hashlock);
     }
 
-    get fun getHTLCDetails(hashlock: Int): HTLC? {
-        return self.contracts.get(hashlock);
+    get fun getLockCDetails(hashlock: Int): HTLC? {
+        return self.locks.get(hashlock);
     }
 
-    get fun getPHTLCDetails(phtlcID: Int): PHTLC?{
-        return self.pContracts.get(phtlcID);
+    get fun getCommitDetails(commitId: Int): PHTLC?{
+        return self.commits.get(commitId);
     }
 
-    get fun pContractLength(): Int {
-        return self.pContractLength;
+    get fun commitsLength(): Int {
+        let length: Int = 0;
+        foreach(key,value in self.commits){
+            length+=1;
+        }
+        return length;
     }
 
-    get fun contractLength(): Int {
-        return self.contractLength;
+    get fun locksLength(): Int {
+        let length: Int = 0;
+        foreach(key,value in self.locks){
+            length+=1;
+        }
+        return length;
     }
+
+    get fun lockIdToCommitIdLength(): Int{
+        let length: Int = 0;
+        foreach(key,value in self.commitIdToLockId){
+            length+=1;
+        }
+        return length;
+    }
+
+    get fun getCommits(senderAddr: Address): map<Int,Int>{
+        let result: map<Int,Int> = emptyMap();
+        let i: Int = 0;
+        foreach(key,value in self.commits){
+            if(value.sender == senderAddr){
+                result.set(i,key);
+                i+=1;
+            }
+        }
+        return result;
+    }
+
+    get fun getLocks(senderAddr: Address): map<Int,Int>{
+        let result: map<Int,Int> = emptyMap();
+        let i: Int = 0;
+        foreach(key,value in self.locks){
+            if(value.sender == senderAddr){
+                result.set(i,key);
+                i+=1;
+            }
+        }
+        return result;
+    }
+
+    get fun getLockIdByCommitId(commitId: Int): Int?{
+        foreach(key,value in self.commitIdToLockId){
+            if(key == commitId){
+                return value;
+            }
+        }
+        return null;
+    }
+
 }
 
 

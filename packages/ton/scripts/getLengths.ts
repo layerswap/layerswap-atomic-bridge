@@ -12,19 +12,25 @@ async function run(){
     const stack: any[] | undefined = [];
 
     const details = await client.callGetMethod(
-        Address.parse("EQCRT9EEWE_uqjgPmX-ln-4sZQjIMjIrYEs2qrRIlnrCJoGG"),
-        "contractLength",
+        Address.parse("EQCJhsfTsoxKKpMBDw8C5z_ZGbljdOLInZNvjFM8NtyyNLk2"),
+        "locksLength",
         stack
     );
 
-    const pDetails = await client.callGetMethod(
-        Address.parse("EQCRT9EEWE_uqjgPmX-ln-4sZQjIMjIrYEs2qrRIlnrCJoGG"),
-        "pContractLength",
+    const commitDetails = await client.callGetMethod(
+        Address.parse("EQCJhsfTsoxKKpMBDw8C5z_ZGbljdOLInZNvjFM8NtyyNLk2"),
+        "commitsLength",
         stack
     );
 
-    console.log("HTLC contracts list length : ",details.stack[0][1]);
-    console.log("PHTLC contracts list length : ",pDetails.stack[0][1]);
+    const commitIdLockIdLength = await client.callGetMethod(
+        Address.parse("EQCJhsfTsoxKKpMBDw8C5z_ZGbljdOLInZNvjFM8NtyyNLk2"),
+        "lockIdToCommitIdLength",
+        stack
+    );
+    console.log("Locks list length : ",details.stack[0][1]);
+    console.log("Commits list length : ",commitDetails.stack[0][1]);
+    console.log("Commits list length : ",commitIdLockIdLength.stack[0][1]);
 }
 
 run().catch(console.error);
