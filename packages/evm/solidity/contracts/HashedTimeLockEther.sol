@@ -187,7 +187,8 @@ contract HashedTimeLockEther {
     if (phtlc.timelock > block.timestamp) revert NotPassedTimelock();
 
     phtlc.uncommitted = true;
-    phtlc.sender.transfer(phtlc.amount);
+    (bool success, ) = phtlc.sender.call{ value: phtlc.amount }('');
+    require(success, 'Transfer failed');
     emit TokenUncommitted(commitId);
     return true;
   }
@@ -335,7 +336,8 @@ contract HashedTimeLockEther {
 
     htlc.secret = secret;
     htlc.redeemed = true;
-    htlc.srcReceiver.transfer(htlc.amount);
+    (bool success, ) = htlc.srcReceiver.call{ value: htlc.amount }('');
+    require(success, 'Transfer failed');
     emit TokenRedeemed(lockId, msg.sender);
     return true;
   }
@@ -348,112 +350,53 @@ contract HashedTimeLockEther {
     if (htlc.timelock > block.timestamp) revert NotPassedTimelock();
 
     htlc.unlocked = true;
-    htlc.sender.transfer(htlc.amount);
+    (bool success, ) = htlc.sender.call{ value: htlc.amount }('');
+    require(success, 'Transfer failed');
     emit TokenUnlocked(lockId);
     return true;
   }
 
-  function getLockDetails(
-    bytes32 lockId
-  )
-    public
-    view
-    returns (
-      string memory dstAddress,
-      string memory dstChain,
-      string memory dstAsset,
-      string memory srcAsset,
-      address payable sender,
-      address payable srcReceiver,
-      bytes32 hashlock,
-      uint256 secret,
-      uint256 amount,
-      uint256 timelock,
-      bool redeemed,
-      bool unlocked
-    )
-  {
+  function getLockDetails(bytes32 lockId) public view returns (HTLC memory) {
     if (!hasHTLC(lockId)) {
-      return (
-        '',
-        '',
-        '',
-        '',
-        payable(address(0)),
-        payable(address(0)),
-        bytes32(0x0),
-        uint256(0),
-        uint256(0),
-        uint256(0),
-        false,
-        false
-      );
+      HTLC memory emptyHTLC = HTLC({
+        dstAddress: '',
+        dstChain: '',
+        dstAsset: '',
+        srcAsset: '',
+        sender: payable(address(0)),
+        srcReceiver: payable(address(0)),
+        hashlock: bytes32(0x0),
+        secret: uint256(0),
+        amount: uint256(0),
+        timelock: uint256(0),
+        redeemed: false,
+        unlocked: false
+      });
+      return emptyHTLC;
     }
     HTLC storage htlc = locks[lockId];
-    return (
-      htlc.dstAddress,
-      htlc.dstChain,
-      htlc.dstAsset,
-      htlc.srcAsset,
-      htlc.sender,
-      htlc.srcReceiver,
-      htlc.hashlock,
-      htlc.secret,
-      htlc.amount,
-      htlc.timelock,
-      htlc.redeemed,
-      htlc.unlocked
-    );
+    return htlc;
   }
 
-  function getCommitDetails(
-    bytes32 commitId
-  )
-    public
-    view
-    returns (
-      string memory dstAddress,
-      string memory dstChain,
-      string memory dstAsset,
-      string memory srcAsset,
-      address payable sender,
-      address payable srcReceiver,
-      uint timelock,
-      uint amount,
-      address messenger,
-      bool locked,
-      bool uncommitted
-    )
-  {
+  function getCommitDetails(bytes32 commitId) public view returns (PHTLC memory) {
     if (!hasPHTLC(commitId)) {
-      return (
-        '',
-        '',
-        '',
-        '',
-        payable(address(0)),
-        payable(address(0)),
-        uint256(0),
-        uint256(0),
-        address(0),
-        false,
-        false
-      );
+      PHTLC memory emptyPHTLC = PHTLC({
+        dstAddress: '',
+        dstChain: '',
+        dstAsset: '',
+        srcAsset: '',
+        sender: payable(address(0)),
+        srcReceiver: payable(address(0)),
+        timelock: uint256(0),
+        amount: uint256(0),
+        messenger: address(0),
+        locked: false,
+        uncommitted: false
+      });
+      return emptyPHTLC;
     }
     PHTLC storage phtlc = commits[commitId];
-    return (
-      phtlc.dstAddress,
-      phtlc.dstChain,
-      phtlc.dstAsset,
-      phtlc.srcAsset,
-      phtlc.sender,
-      phtlc.srcReceiver,
-      phtlc.timelock,
-      phtlc.amount,
-      phtlc.messenger,
-      phtlc.locked,
-      phtlc.uncommitted
-    );
+    return phtlc;
   }
 
   function hasPHTLC(bytes32 commitId) internal view returns (bool exists) {

@@ -442,113 +442,49 @@ contract HashedTimeLockERC20 {
    * @dev Get contract details.
    * @param lockId HTLC contract id
    */
-  function getLockDetails(
-    bytes32 lockId
-  )
-    external
-    view
-    returns (
-      string memory dstAddress,
-      string memory dstChain,
-      string memory dstAsset,
-      string memory srcAsset,
-      address payable sender,
-      address payable srcReceiver,
-      bytes32 hashlock,
-      uint256 secret,
-      uint256 amount,
-      uint256 timelock,
-      bool redeemed,
-      bool unlocked,
-      address tokenContract
-    )
-  {
+  function getLockDetails(bytes32 lockId) external view returns (HTLC memory) {
     if (hasHTLC(lockId) == false) {
-      return (
-        '',
-        '',
-        '',
-        '',
-        payable(address(0)),
-        payable(address(0)),
-        bytes32(0x0),
-        uint256(0),
-        uint256(0),
-        uint256(0),
-        false,
-        false,
-        address(0)
-      );
+      HTLC memory emptyHTLC = HTLC({
+        dstAddress: '',
+        dstChain: '',
+        dstAsset: '',
+        srcAsset: '',
+        sender: payable(address(0)),
+        srcReceiver: payable(address(0)),
+        hashlock: bytes32(0x0),
+        secret: uint256(0),
+        amount: uint256(0),
+        timelock: uint256(0),
+        redeemed: false,
+        unlocked: false,
+        tokenContract: address(0)
+      });
+      return emptyHTLC;
     }
     HTLC storage htlc = locks[lockId];
-    return (
-      htlc.dstAddress,
-      htlc.dstChain,
-      htlc.dstAsset,
-      htlc.srcAsset,
-      htlc.sender,
-      htlc.srcReceiver,
-      htlc.hashlock,
-      htlc.secret,
-      htlc.amount,
-      htlc.timelock,
-      htlc.redeemed,
-      htlc.unlocked,
-      htlc.tokenContract
-    );
+    return htlc;
   }
 
-  function getCommitDetails(
-    bytes32 commitId
-  )
-    public
-    view
-    returns (
-      string memory dstAddress,
-      string memory dstChain,
-      string memory dstAsset,
-      string memory srcAsset,
-      address payable sender,
-      address payable srcReceiver,
-      uint timelock,
-      uint amount,
-      address messenger,
-      bool locked,
-      bool uncommitted,
-      address tokenContract
-    )
-  {
+ function getCommitDetails(bytes32 commitId) public view returns (PHTLC memory) {
     if (!hasPHTLC(commitId)) {
-      return (
-        '',
-        '',
-        '',
-        '',
-        payable(address(0)),
-        payable(address(0)),
-        uint256(0),
-        uint256(0),
-        address(0),
-        false,
-        false,
-        address(0)
-      );
+      PHTLC memory empyPHTLC = PHTLC({
+        dstAddress: '',
+        dstChain: '',
+        dstAsset: '',
+        srcAsset: '',
+        sender: payable(address(0)),
+        srcReceiver: payable(address(0)),
+        timelock: uint256(0),
+        amount: uint256(0),
+        messenger: address(0),
+        locked: false,
+        uncommitted: false,
+        tokenContract: address(0)
+      });
+      return empyPHTLC;
     }
     PHTLC storage phtlc = commits[commitId];
-    return (
-      phtlc.dstAddress,
-      phtlc.dstChain,
-      phtlc.dstAsset,
-      phtlc.srcAsset,
-      phtlc.sender,
-      phtlc.srcReceiver,
-      phtlc.timelock,
-      phtlc.amount,
-      phtlc.messenger,
-      phtlc.locked,
-      phtlc.uncommitted,
-      phtlc.tokenContract
-    );
+    return phtlc;
   }
 
   /**
