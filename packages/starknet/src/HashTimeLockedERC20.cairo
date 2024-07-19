@@ -53,22 +53,8 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn uncommit(ref self: TContractState, commitId: u256) -> bool;
     fn unlock(ref self: TContractState, lockId: u256) -> bool;
     fn lockCommit(ref self: TContractState, commitId: u256, hashlock: u256) -> u256;
-    fn getCommitDetails(
-        self: @TContractState, commitId: u256
-    ) -> (
-        (ContractAddress, ContractAddress, ContractAddress, ContractAddress),
-        (u256, u256),
-        (felt252, felt252, felt252, felt252),
-        (bool, bool)
-    );
-    fn getLockDetails(
-        self: @TContractState, lockId: u256
-    ) -> (
-        (ContractAddress, ContractAddress, ContractAddress),
-        (u256, u256, u256, u256),
-        (felt252, felt252, felt252, felt252),
-        (bool, bool)
-    );
+    fn getCommitDetails(self: @TContractState, commitId: u256) -> HashedTimelockERC20::PHTLC;
+    fn getLockDetails(self: @TContractState, lockId: u256) -> HashedTimelockERC20::HTLC;
     fn getCommits(self: @TContractState, sender: ContractAddress) -> Span<u256>;
     fn getLocks(self: @TContractState, sender: ContractAddress) -> Span<u256>;
     fn getLockIdByCommitId(self: @TContractState, commitId: u256) -> u256;
@@ -122,7 +108,7 @@ mod HashedTimelockERC20 {
 
     //TDOO: check if this should be public?
     #[derive(Drop, Serde, starknet::Store)]
-    struct HTLC {
+    pub struct HTLC {
         dstAddress: felt252,
         dstChain: felt252,
         dstAsset: felt252,
@@ -138,7 +124,7 @@ mod HashedTimelockERC20 {
         unlocked: bool,
     }
     #[derive(Drop, Serde, starknet::Store)]
-    struct PHTLC {
+    pub struct PHTLC {
         dstAddress: felt252,
         dstChain: felt252,
         dstAsset: felt252,
@@ -621,54 +607,44 @@ mod HashedTimelockERC20 {
 
         /// @dev Get HTLC details.
         /// @param lockId of the HTLC.
-        fn getLockDetails(
-            self: @ContractState, lockId: u256
-        ) -> (
-            (ContractAddress, ContractAddress, ContractAddress),
-            (u256, u256, u256, u256),
-            (felt252, felt252, felt252, felt252),
-            (bool, bool)
-        ) {
+        fn getLockDetails(self: @ContractState, lockId: u256) -> HTLC {
             if !self.hasLockId(lockId) {
-                return (
-                    (Zero::zero(), Zero::zero(), Zero::zero()),
-                    (0, 0, 0, 0),
-                    (0, 0, 0, 0),
-                    (false, false)
-                );
+                return HTLC {
+                    dstAddress: 0,
+                    dstChain: 0,
+                    dstAsset: 0,
+                    srcAsset: 0,
+                    sender: Zero::zero(),
+                    srcReceiver: Zero::zero(),
+                    hashlock: 0,
+                    secret: 0,
+                    amount: 0,
+                    timelock: 0,
+                    tokenContract: Zero::zero(),
+                    redeemed: false,
+                    unlocked: false
+                };
             }
-            let htlc: HTLC = self.locks.read(lockId);
-            (
-                (htlc.sender, htlc.srcReceiver, htlc.tokenContract),
-                (htlc.amount, htlc.secret, htlc.hashlock, htlc.timelock),
-                (htlc.dstChain, htlc.dstAddress, htlc.dstAsset, htlc.srcAsset),
-                (htlc.redeemed, htlc.unlocked),
-            )
+            self.locks.read(lockId)
         }
-
-        fn getCommitDetails(
-            self: @ContractState, commitId: u256
-        ) -> (
-            (ContractAddress, ContractAddress, ContractAddress, ContractAddress),
-            (u256, u256),
-            (felt252, felt252, felt252, felt252),
-            (bool, bool)
-        ) {
-            if commitId > self.commitCounter.read() {
-                return (
-                    (Zero::zero(), Zero::zero(), Zero::zero(), Zero::zero()),
-                    (0, 0),
-                    (0, 0, 0, 0),
-                    (false, false)
-                );
+        fn getCommitDetails(self: @ContractState, commitId: u256) -> PHTLC {
+            if !self.hasCommitId(commitId) {
+                return PHTLC {
+                    dstAddress: 0,
+                    dstChain: 0,
+                    dstAsset: 0,
+                    srcAsset: 0,
+                    sender: Zero::zero(),
+                    srcReceiver: Zero::zero(),
+                    amount: 0,
+                    timelock: 0,
+                    messenger: Zero::zero(),
+                    tokenContract: Zero::zero(),
+                    locked: false,
+                    uncommitted: false,
+                };
             }
-            let phtlc: PHTLC = self.commits.read(commitId);
-            (
-                (phtlc.sender, phtlc.srcReceiver, phtlc.tokenContract, phtlc.messenger),
-                (phtlc.amount, phtlc.timelock),
-                (phtlc.dstChain, phtlc.dstAddress, phtlc.dstAsset, phtlc.srcAsset),
-                (phtlc.uncommitted, phtlc.locked)
-            )
+            self.commits.read(commitId)
         }
         fn getCommits(self: @ContractState, sender: ContractAddress) -> Span<u256> {
             let mut arr: Array<u256> = ArrayTrait::new();
