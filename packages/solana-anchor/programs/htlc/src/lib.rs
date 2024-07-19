@@ -859,64 +859,6 @@ pub struct Convert<'info > {
 
 }
 
-#[derive(Accounts)] 
-#[instruction(phtlc_id: u64, phtlc_bump: u8)]  
-pub struct ConvertP<'info > {
-    #[account(mut,
-    seeds = [
-        phtlc_id.to_le_bytes().as_ref()
-    ],
-    bump,
-    has_one = token_contract @HTLCError::NoToken,
-    constraint = !phtlc.refunded @ HTLCError::AlreadyRefunded,
-    constraint = !phtlc.converted @ HTLCError::AlreadyConverted,
-    constraint = phtlc.sender == user_signing.key() || phtlc.messenger == user_signing.key() @ HTLCError::UnauthorizedAccess,
-    )]
-    pub phtlc: Account<'info,PHTLC>,
-    #[account(
-        mut,
-        seeds = [
-            b"phtlc_account".as_ref(),
-            phtlc_id.to_le_bytes().as_ref()
-        ],
-        bump,
-    )]
-    pub phtlc_token_account: Account<'info, TokenAccount>,
-    #[account(
-        init,
-        payer = user_signing,
-        //space = size_of::<HTLC>() + 8,
-        space = 256,
-        seeds = [
-            b"htlc".as_ref(),
-            phtlc_id.to_le_bytes().as_ref()
-        ],
-        bump,// = htlc_bump,
-    )]
-    pub htlc: Account<'info, HTLC>,
-    #[account(
-        init,
-        payer = user_signing,
-        seeds = [
-            b"htlc_account".as_ref(),
-            phtlc_id.to_le_bytes().as_ref()
-        ],
-        bump,
-        token::mint=token_contract,
-        token::authority=htlc,
-    )]
-    pub htlc_token_account: Account<'info, TokenAccount>,
-
-    #[account(mut)]
-    user_signing: Signer<'info>,               
-    token_contract: Account<'info, Mint>,  
-
-    system_program: Program<'info, System>,
-    token_program: Program<'info, Token>,
-    rent: Sysvar<'info, Rent>,
-
-}
-
 #[derive(Accounts)]
 #[instruction(phtlc_id: u64, phtlc_bump: u8)] 
 pub struct GetPDetails<'info> {
