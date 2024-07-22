@@ -112,9 +112,9 @@ contract HashedTimeLockERC20 {
 
   event TokenCommitted(
     bytes32 commitId,
-    string[] HopChains,
-    string[] HopAssets,
-    string[] HopAdresses,
+    string[] hopChains,
+    string[] hopAssets,
+    string[] hopAdresses,
     string dstChain,
     string dstAddress,
     string dstAsset,
@@ -141,9 +141,9 @@ contract HashedTimeLockERC20 {
   }
 
   function commit(
-    string[] memory HopChains,
-    string[] memory HopAssets,
-    string[] memory HopAddresses,
+    string[] memory hopChains,
+    string[] memory hopAssets,
+    string[] memory hopAddresses,
     string memory dstChain,
     string memory dstAsset,
     string memory dstAddress,
@@ -207,9 +207,9 @@ contract HashedTimeLockERC20 {
     );
     emit TokenCommitted(
       commitId,
-      HopChains,
-      HopAssets,
-      HopAddresses,
+      hopChains,
+      hopAssets,
+      hopAddresses,
       dstChain,
       dstAddress,
       dstAsset,
