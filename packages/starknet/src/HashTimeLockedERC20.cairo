@@ -23,9 +23,9 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn commit(
         ref self: TContractState,
         amount: u256,
-        HopChains: Span<felt252>,
-        HopAssets: Span<felt252>,
-        HopAddress: Span<felt252>,
+        hopChains: Span<felt252>,
+        hopAssets: Span<felt252>,
+        hopAddress: Span<felt252>,
         dstChain: felt252,
         dstAsset: felt252,
         dstAddress: felt252,
@@ -151,9 +151,9 @@ mod HashedTimelockERC20 {
     #[derive(Drop, starknet::Event)]
     struct TokenCommitted {
         commitId: u256,
-        HopChains: Span<felt252>,
-        HopAssets: Span<felt252>,
-        HopAddress: Span<felt252>,
+        hopChains: Span<felt252>,
+        hopAssets: Span<felt252>,
+        hopAddress: Span<felt252>,
         dstChain: felt252,
         dstAddress: felt252,
         dstAsset: felt252,
@@ -217,9 +217,9 @@ mod HashedTimelockERC20 {
         fn commit(
             ref self: ContractState,
             amount: u256,
-            HopChains: Span<felt252>,
-            HopAssets: Span<felt252>,
-            HopAddress: Span<felt252>,
+            hopChains: Span<felt252>,
+            hopAssets: Span<felt252>,
+            hopAddress: Span<felt252>,
             dstChain: felt252,
             dstAsset: felt252,
             dstAddress: felt252,
@@ -282,9 +282,9 @@ mod HashedTimelockERC20 {
                 .emit(
                     TokenCommitted {
                         commitId: commitId,
-                        HopChains: HopChains,
-                        HopAssets: HopAssets,
-                        HopAddress: HopAddress,
+                        hopChains: hopChains,
+                        hopAssets: hopAssets,
+                        hopAddress: hopAddress,
                         dstChain: dstChain,
                         dstAddress: dstAddress,
                         dstAsset: dstAsset,
