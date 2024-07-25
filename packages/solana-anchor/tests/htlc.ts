@@ -22,20 +22,19 @@ describe("safe_pay", () => {
     const program = anchor.workspace.AnchorHtlc as anchor.Program<AnchorHtlc>;
 
     const wallet = provider.wallet as anchor.Wallet;
-    const SECRET = "0x005";
-    const HASHLOCK = "a09fa0c7461b716cee457fd9e2c58ee9ef456386702a9ce3d64abc805ded033a";
-    //const HASHLOCK = "0811a189c16ceadfc5b51f886b3ac267a1810d3";
-    const HTLCID = HASHLOCK.slice(0, 32);
-    console.log(`${HTLCID} ID`);
-    const PHTLCID = new anchor.BN(41);
+    const HASHLOCK = "64367d3200da557e66f794c5c9563f88de7f0dbdda873c8cdf8d6e9740a08b46";
+    const LOCKID = HASHLOCK.slice(0, 32);
+    console.log(`${LOCKID} ID`);
+    const COMMITID = new anchor.BN(19);
+    const SECRET = COMMITID.toString();
     //const TIMELOCK = new anchor.BN(Date.now() - 3);
     const AMOUNT = 1 * anchor.web3.LAMPORTS_PER_SOL;
     const CHAIN = "23";
     const ASSET = "1";
     const vecChain = [CHAIN];
     const vecAsset = [ASSET];
-    const TARGETCURRENCYRECEIVERADDRESS = "0x11";
-    const lpPath = [TARGETCURRENCYRECEIVERADDRESS];
+    const DSTADDRESS = "0x11";
+    const lpPath = [DSTADDRESS];
 
 
     let tokenMint: anchor.web3.PublicKey;
@@ -46,11 +45,11 @@ describe("safe_pay", () => {
     let pda: PDAParameters;
 
     const getPdaParams = async (
-        htlcId: string,
-        phtlcId: anchor.BN,
+        lockId: string,
+        commitId: anchor.BN,
     ): Promise<PDAParameters> => {
-        let seed = Buffer.from(htlcId);
-        let pseed = phtlcId.toBuffer('le', 8);
+        let seed = Buffer.from(lockId);
+        let pseed = commitId.toBuffer('le', 8);
         let [htlc, htlcBump] = await anchor.web3.PublicKey.findProgramAddressSync(
             [seed],
             program.programId
@@ -166,9 +165,9 @@ describe("safe_pay", () => {
         let _rest;
         [bob, ..._rest] = await createUserAndAssociatedWallet();
 
-        pda = await getPdaParams(HTLCID, PHTLCID);
+        pda = await getPdaParams(LOCKID, COMMITID);
     });
-    it("create prehtlc", async () => {
+    it("Create Prehtlc", async () => {
         const [, aliceBalancePre] = await readAccount(aliceWallet, provider);
         assert.equal(aliceBalancePre, "1337000000");
 
@@ -180,12 +179,12 @@ describe("safe_pay", () => {
         const TIMELOCK = new anchor.BN(TIMELOC);
         console.log(`[${TIMELOC * 1000}] the Timelock`);
         const tx1 = await program.methods
-            .createP(PHTLCID, vecChain, vecAsset, lpPath, CHAIN, ASSET, TARGETCURRENCYRECEIVERADDRESS, ASSET, TIMELOCK, pda.phtlcKey, new anchor.BN(AMOUNT), pda.phtlcBump)
+            .commit(COMMITID, vecChain, vecAsset, lpPath, CHAIN, ASSET, DSTADDRESS, ASSET, TIMELOCK, pda.phtlcKey, new anchor.BN(AMOUNT), pda.phtlcBump)
             .accountsPartial({
                 phtlc: pda.phtlcKey,
                 phtlcTokenAccount: pda.phtlcWalletKey,
                 sender: alice.publicKey,
-                receiver: bob.publicKey,
+                srcReceiver: bob.publicKey,
                 tokenContract: tokenMint,
                 senderTokenAccount: aliceWallet
             })
@@ -193,10 +192,18 @@ describe("safe_pay", () => {
             .rpc();
         console.log(`Initialized a new PHTLC. Alice will pay bob 20 tokens`);
 
+        // Assert that 20 tokens were moved from Alice's account to the escrow.
+        const [, aliceBalancePost] = await readAccount(aliceWallet, provider);
+        assert.equal(aliceBalancePost, "337000000");
+        const [, phtlcBalance] = await readAccount(pda.phtlcWalletKey, provider);
+        console.log(`${pda.phtlcWalletKey} PDA htlcWALLET`);
+        console.log(`${phtlcBalance} phtlc Balance after commitment`);
+        assert.equal(phtlcBalance, "1000000000");
+
         // await wait(3000);
         // const CURTIME = new Date().getTime() / 1000;
         // console.log(`[${CURTIME * 1000}] CURRENT TIME`);
-        // const tx2 = await program.methods.refundP(PHTLCID, pda.phtlcBump).
+        // const tx2 = await program.methods.uncommit(COMMITID, pda.phtlcBump).
         //   accountsPartial({
         //     phtlc: pda.phtlcKey,
         //     phtlcTokenAccount: pda.phtlcWalletKey,
@@ -208,9 +215,9 @@ describe("safe_pay", () => {
         //   })
         //   .signers([wallet.payer])
         //   .rpc();
-        // console.log(`can refundp`);
+        // console.log(`can uncommit`);
 
-        const tx2 = await program.methods.convert(PHTLCID, HTLCID, HASHLOCK, pda.phtlcBump).
+        const tx2 = await program.methods.lockCommit(COMMITID, LOCKID, HASHLOCK, pda.phtlcBump).
             accountsPartial({
                 phtlc: pda.phtlcKey,
                 htlc: pda.htlcKey,
@@ -226,7 +233,14 @@ describe("safe_pay", () => {
             //   skipPreflight: true
             // }
         );//.catch(e => console.error(e));
-        console.log(`can convert`);
+        // const [, phtlcBalancePost] = await readAccount(pda.phtlcWalletKey, provider);
+        // console.log(`${pda.phtlcWalletKey} --- phtlcWALLET`);
+        // console.log(`${phtlcBalancePost} phtlc Balance after lockCommit`);
+        // assert.equal(phtlcBalancePost, "1000000000");
+        const [, htlcBalancePost] = await readAccount(pda.htlcWalletKey, provider);
+        console.log(`${pda.htlcWalletKey} --- htlcWALLET`);
+        console.log(`${htlcBalancePost} htlc Balance after lockCommit`);
+        assert.equal(htlcBalancePost, "1000000000");
 
         console.log(`Bob token`);
         // Create a token account for Bob.
@@ -235,29 +249,44 @@ describe("safe_pay", () => {
             tokenMint,
             bob.publicKey
         )
-        const details = await program.methods.getDetails(HTLCID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
+        const details = await program.methods.getDetails(LOCKID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
         console.log(`${details} details`);
-        const tx3 = await program.methods.redeem(HTLCID, SECRET, pda.htlcBump).
+        const tx3 = await program.methods.redeem(LOCKID, SECRET, pda.htlcBump).
             accountsPartial({
                 htlc: pda.htlcKey,
                 htlcTokenAccount: pda.htlcWalletKey,
                 sender: alice.publicKey,
                 userSigning: alice.publicKey,
-                receiver: bob.publicKey,
+                srcReceiver: bob.publicKey,
                 tokenContract: tokenMint,
-                receiverTokenAccount: bobTokenAccount,
+                srcReceiverTokenAccount: bobTokenAccount,
 
             })
             .signers([alice])
             .rpc();
 
+
+        // await wait(2000);
+        // const tx4 = await program.methods.unlock(LOCKID, pda.htlcBump).
+        //   accountsPartial({
+        //     htlc: pda.htlcKey,
+        //     htlcTokenAccount: pda.htlcWalletKey,
+        //     // userSigning: alice.publicKey,
+        //     userSigning: wallet.publicKey,
+        //     sender: alice.publicKey,
+        //     tokenContract: tokenMint,
+        //     senderTokenAccount: aliceWallet,
+        //   })
+        //   .signers([wallet.payer])
+        //   .rpc();
+
         // const tx3 = await program.methods
-        //   .create(HTLCID, HASHLOCK, TIMELOCK, new anchor.BN(AMOUNT), CHAIN, TARGETCURRENCYRECEIVERADDRESS, PHTLCID, pda.htlcKey, pda.htlcBump)
+        //   .lock(LOCKID, HASHLOCK, TIMELOCK, ASSET, CHAIN, DSTADDRESS, ASSET, COMMITID, pda.htlcKey, new anchor.BN(AMOUNT), pda.htlcBump)
         //   .accountsPartial({
         //     htlc: pda.htlcKey,
         //     htlcTokenAccount: pda.htlcWalletKey,
         //     sender: alice.publicKey,
-        //     receiver: bob.publicKey,
+        //     srcReceiver: bob.publicKey,
         //     tokenContract: tokenMint,
         //     senderTokenAccount: aliceWallet
         //   })
@@ -269,7 +298,7 @@ describe("safe_pay", () => {
         // const [, escrowBalancePost] = await readAccount(pda.htlcWalletKey, provider);
         // assert.equal(escrowBalancePost, "1000000000");
 
-        //const details = await program.methods.getDetails(HTLCID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
+        // const details = await program.methods.getDetails(LOCKID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
         // Withdraw the funds back
 
 
@@ -277,7 +306,7 @@ describe("safe_pay", () => {
         // await wait(3000);
         // const CURTIME = new Date().getTime() / 1000;
         // console.log(`[${CURTIME * 1000}] CURRENT TIME`);
-        // const tx2 = await program.methods.refundP(PHTLCID, pda.phtlcBump).
+        // const tx2 = await program.methods.uncommit(COMMITID, pda.phtlcBump).
         //   accountsPartial({
         //     phtlc: pda.phtlcKey,
         //     phtlcTokenAccount: pda.phtlcWalletKey,
@@ -292,10 +321,10 @@ describe("safe_pay", () => {
 
 
         // // Assert that 20 tokens were sent back.
-        // const postdetails = await program.methods.getDetails(HTLCID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
+        // const postdetails = await program.methods.getDetails(LOCKID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
 
-        // const [, aliceBalanceRefund] = await readAccount(aliceWallet, provider);
-        // assert.equal(aliceBalanceRefund, "1337000000");
+        // const [, aliceBalanceunlock] = await readAccount(aliceWallet, provider);
+        // assert.equal(aliceBalanceunlock, "1337000000");
 
         // // Assert that escrow was correctly closed.
         // try {
@@ -319,10 +348,10 @@ describe("safe_pay", () => {
     //   const TIMELOCK = new anchor.BN(TIMELOC);
     //   console.log(`[${TIMELOC * 1000}] the Timelock`);
     //   const tx1 = await program.methods
-    //     .create(HTLCID, HASHLOCK, TIMELOCK, new anchor.BN(AMOUNT), CHAIN, TARGETCURRENCYRECEIVERADDRESS, PHTLCID, alice.publicKey, pda.htlcBump)
+    //     .lock(LOCKID, HASHLOCK, TIMELOCK, ASSET, CHAIN, DSTADDRESS, ASSET, COMMITID, pda.htlcKey, new anchor.BN(AMOUNT), pda.htlcBump)
     //     .accounts({
     //       sender: alice.publicKey,
-    //       receiver: bob.publicKey,
+    //       srcReceiver: bob.publicKey,
     //       tokenContract: tokenMint,
     //       senderTokenAccount: aliceWallet
     //     })
@@ -345,22 +374,22 @@ describe("safe_pay", () => {
     //     tokenMint,
     //     bob.publicKey
     //   )
-    //   const details = await program.methods.getDetails(HTLCID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
+    //   const details = await program.methods.getDetails(LOCKID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
     //   console.log(`${details} details`);
-    //   const tx2 = await program.methods.redeem(HTLCID, SECRET, pda.htlcBump).
+    //   const tx2 = await program.methods.redeem(LOCKID, SECRET, pda.htlcBump).
     //     accountsPartial({
     //       htlc: pda.htlcKey,
     //       htlcTokenAccount: pda.htlcWalletKey,
     //       sender: alice.publicKey,
     //       userSigning: alice.publicKey,
-    //       receiver: bob.publicKey,
+    //       srcReceiver: bob.publicKey,
     //       tokenContract: tokenMint,
-    //       receiverTokenAccount: bobTokenAccount,
+    //       srcReceiverTokenAccount: bobTokenAccount,
 
     //     })
     //     .signers([alice])
     //     .rpc();
-    //   const postDetails = await program.methods.getDetails(HTLCID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
+    //   const postDetails = await program.methods.getDetails(LOCKID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
     //   console.log(`${postDetails} postdetails`);
     //   // Assert that 20 tokens were sent back.
     //   const [, bobBalance] = await readAccount(bobTokenAccount, provider);
@@ -380,70 +409,70 @@ describe("safe_pay", () => {
 
 
     // it("can pull back funds once they are deposited", async () => {
-    //   const [, aliceBalancePre] = await readAccount(aliceWallet, provider);
-    //   assert.equal(aliceBalancePre, "1337000000");
+    //     const [, aliceBalancePre] = await readAccount(aliceWallet, provider);
+    //     assert.equal(aliceBalancePre, "1337000000");
 
-    //   const amount = new anchor.BN(20000000);
+    //     const amount = new anchor.BN(20000000);
 
-    //   // Initialize mint account and fund the account
-    //   const TIME = new Date().getTime();
-    //   const TIMELOC = (TIME + 2500) / 1000;
-    //   const TIMELOCK = new anchor.BN(TIMELOC);
-    //   console.log(`[${TIMELOC * 1000}] the Timelock`);
-    //   const tx1 = await program.methods
-    //     .create(HTLCID, HASHLOCK, TIMELOCK, new anchor.BN(AMOUNT), CHAIN, TARGETCURRENCYRECEIVERADDRESS, PHTLCID, pda.htlcKey, pda.htlcBump)
-    //     .accountsPartial({
-    //       htlc: pda.htlcKey,
-    //       htlcTokenAccount: pda.htlcWalletKey,
-    //       sender: alice.publicKey,
-    //       receiver: bob.publicKey,
-    //       tokenContract: tokenMint,
-    //       senderTokenAccount: aliceWallet
-    //     })
-    //     .signers([alice])
-    //     .rpc();
-    //   console.log(`Initialized a new Safe Pay instance. Alice will pay bob 20 tokens`);
+    //     // Initialize mint account and fund the account
+    //     const TIME = new Date().getTime();
+    //     const TIMELOC = (TIME + 2500) / 1000;
+    //     const TIMELOCK = new anchor.BN(TIMELOC);
+    //     console.log(`[${TIMELOC * 1000}] the Timelock`);
+    //     const tx1 = await program.methods
+    //         .lock(LOCKID, HASHLOCK, TIMELOCK, ASSET, CHAIN, DSTADDRESS, ASSET, COMMITID, pda.htlcKey, new anchor.BN(AMOUNT), pda.htlcBump)
+    //         .accountsPartial({
+    //             htlc: pda.htlcKey,
+    //             htlcTokenAccount: pda.htlcWalletKey,
+    //             sender: alice.publicKey,
+    //             srcReceiver: bob.publicKey,
+    //             tokenContract: tokenMint,
+    //             senderTokenAccount: aliceWallet
+    //         })
+    //         .signers([alice])
+    //         .rpc();
+    //     console.log(`Initialized a new Safe Pay instance. Alice will pay bob 20 tokens`);
 
-    //   // Assert that 20 tokens were moved from Alice's account to the escrow.
-    //   const [, aliceBalancePost] = await readAccount(aliceWallet, provider);
-    //   assert.equal(aliceBalancePost, "337000000");
-    //   const [, escrowBalancePost] = await readAccount(pda.htlcWalletKey, provider);
-    //   assert.equal(escrowBalancePost, "1000000000");
+    //     // Assert that 20 tokens were moved from Alice's account to the escrow.
+    //     const [, aliceBalancePost] = await readAccount(aliceWallet, provider);
+    //     assert.equal(aliceBalancePost, "337000000");
+    //     const [, escrowBalancePost] = await readAccount(pda.htlcWalletKey, provider);
+    //     assert.equal(escrowBalancePost, "1000000000");
 
-    //   const details = await program.methods.getDetails(HTLCID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
-    //   // Withdraw the funds back
-    //   await wait(2000);
-    //   const CURTIME = new Date().getTime() / 1000;
-    //   console.log(`[${CURTIME * 1000}] CURRENT TIME`);
-    //   const tx2 = await program.methods.refund(HTLCID, pda.htlcBump).
-    //     accountsPartial({
-    //       htlc: pda.htlcKey,
-    //       htlcTokenAccount: pda.htlcWalletKey,
-    //       // userSigning: alice.publicKey,
-    //       userSigning: wallet.publicKey,
-    //       sender: alice.publicKey,
-    //       tokenContract: tokenMint,
-    //       senderTokenAccount: aliceWallet,
-    //     })
-    //     .signers([wallet.payer])
-    //     .rpc();
-    //   // Assert that 20 tokens were sent back.
-    //   const postdetails = await program.methods.getDetails(HTLCID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
+    //     const details = await program.methods.getDetails(LOCKID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
+    //     // Withdraw the funds back
+    //     await wait(2000);
+    //     const CURTIME = new Date().getTime() / 1000;
+    //     console.log(`[${CURTIME * 1000}] CURRENT TIME`);
+    //     const tx2 = await program.methods.unlock(LOCKID, pda.htlcBump).
+    //         accountsPartial({
+    //             htlc: pda.htlcKey,
+    //             htlcTokenAccount: pda.htlcWalletKey,
+    //             // userSigning: alice.publicKey,
+    //             userSigning: wallet.publicKey,
+    //             sender: alice.publicKey,
+    //             tokenContract: tokenMint,
+    //             senderTokenAccount: aliceWallet,
+    //         })
+    //         .signers([wallet.payer])
+    //         .rpc();
+    //     // Assert that 20 tokens were sent back.
+    //     const postdetails = await program.methods.getDetails(LOCKID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
 
-    //   const [, aliceBalanceRefund] = await readAccount(aliceWallet, provider);
-    //   assert.equal(aliceBalanceRefund, "1337000000");
+    //     const [, aliceBalanceunlock] = await readAccount(aliceWallet, provider);
+    //     assert.equal(aliceBalanceunlock, "1337000000");
 
-    //   // Assert that escrow was correctly closed.
-    //   try {
-    //     await readAccount(pda.htlcWalletKey, provider);
-    //     return assert.fail("Account should be closed");
-    //   } catch (e) {
-    //     assert.equal(e.message, "Cannot read properties of null (reading 'data')");
-    //   }
+    //     // Assert that escrow was correctly closed.
+    //     try {
+    //         await readAccount(pda.htlcWalletKey, provider);
+    //         return assert.fail("Account should be closed");
+    //     } catch (e) {
+    //         assert.equal(e.message, "Cannot read properties of null (reading 'data')");
+    //     }
 
-    //   // const state = await program.account.state.fetch(pda.stateKey);
-    //   // assert.equal(state.amountTokens.toString(), "20000000");
-    //   // assert.equal(state.stage.toString(), "3");
+    //     // const state = await program.account.state.fetch(pda.stateKey);
+    //     // assert.equal(state.amountTokens.toString(), "20000000");
+    //     // assert.equal(state.stage.toString(), "3");
 
     // });
 
