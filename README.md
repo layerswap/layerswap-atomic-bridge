@@ -11,7 +11,7 @@ An Ideal bridging solution ❌ **SHOULD NOT**:
 
 It **SHOULD** be trustless, open to any participant, and free of external dependencies. This is where the concept of Atomic Swaps comes into play. Atomic Swaps allow for permissionless, trustless asset exchange between two parties without relying on any external verification.
 
-Read full article [here](https://layerswap.notion.site/Layerswap-V2-Atomic-Bridging-Protocol-58944b7ddce54b838a23feee3aebebf5).
+Read full article [here](https://layerswap.notion.site).
 
 ## Disclaimer: Development in Progress
 
