@@ -2,7 +2,7 @@ import { HttpClient, Api } from 'tonapi-sdk-js';
 import { Cell } from '@ton/core';
 import { Address } from 'ton';
 import { hexToBase64 } from '../utils/utils';
-import { loadPreHTLCID } from '../wrappers/HashedTimeLockTON';
+import { loadCommitId } from '../wrappers/HashedTimeLockTON';
 
 async function parseEmit(address: string, token: string, index: number) {
     const httpClient = new HttpClient({
@@ -20,10 +20,10 @@ async function parseEmit(address: string, token: string, index: number) {
     try {
         const tx = await client.blockchain.getBlockchainAccountTransactions(Address.parse(address).toString());
         for (let i = 0; i < tx.transactions[index].out_msgs.length; i++) {
-            if (tx.transactions[index].out_msgs[i].msg_type === 'ext_out_msg' && tx.transactions[index].out_msgs[i].op_code === '0x70a8d9a3' ) {
+            if (tx.transactions[index].out_msgs[i].msg_type === 'ext_out_msg' && tx.transactions[index].out_msgs[i].op_code === '0x2eec4b61' ) {
                 let rawBody = tx.transactions[index].out_msgs[i].raw_body??"";
                 let slc = Cell.fromBase64(hexToBase64(rawBody)).beginParse();
-                return loadPreHTLCID(slc)
+                return loadCommitId(slc)
             }
         }
     } catch (error) {
@@ -31,7 +31,7 @@ async function parseEmit(address: string, token: string, index: number) {
     }
 }
 
-const address = 'EQCRT9EEWE_uqjgPmX-ln-4sZQjIMjIrYEs2qrRIlnrCJoGG'; 
+const address = 'EQCJhsfTsoxKKpMBDw8C5z_ZGbljdOLInZNvjFM8NtyyNLk2'; 
 const token = 'AGVYQVBYQDB6KRAAAAAFWAOS73LJHXPEWONMCFRIRGOBL7WIDI5D5G2GRWOD347TUUFWPUA'; 
 
 parseEmit(address, token, 0)

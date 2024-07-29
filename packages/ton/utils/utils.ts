@@ -1,5 +1,5 @@
 import { Dictionary} from "@ton/core";
-import { ChainIDs, DstAddresses, StringImpl } from "../wrappers/HashedTimeLockTON";
+import {  StringImpl } from "../wrappers/HashedTimeLockTON";
 import { Address } from "@ton/ton";
 
 function delay(ms: number): Promise<void> {
@@ -44,26 +44,6 @@ function createAddrMap(initialData: [bigint, Address][]): Dictionary<bigint, Add
     return dict;
 }
 
-function createChainIDMap(initialData: [bigint, ChainIDs][]): Dictionary<bigint, ChainIDs> {
-    const dict = Dictionary.empty<bigint, ChainIDs>();
-
-    initialData.forEach(([key, value]) => {
-        dict.set(key, value);
-    });
-
-    return dict;
-}
-
-function createDstAddrMap(initialData: [bigint, DstAddresses][]): Dictionary<bigint, DstAddresses> {
-    const dict = Dictionary.empty<bigint, DstAddresses>();
-
-    initialData.forEach(([key, value]) => {
-        dict.set(key, value);
-    });
-
-    return dict;
-}
-
 const hexToBase64 = (hex: string) =>
     btoa(
       String.fromCharCode(
@@ -72,5 +52,5 @@ const hexToBase64 = (hex: string) =>
     );
 
       
-export { delay,toNano,sleep,createIntMap,createStrMap,createAddrMap,createChainIDMap,createDstAddrMap,hexToBase64 };
+export { delay,toNano,sleep,createIntMap,createStrMap,createAddrMap,hexToBase64 };
 

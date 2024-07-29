@@ -23,7 +23,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 interface IMessenger {
   function notify(
-    uint256 commitId,
+    bytes32 commitId,
     bytes32 hashlock,
     string memory dstChain,
     string memory dstAsset,
@@ -42,6 +42,7 @@ contract HashedTimeLockERC20 {
   error NotFutureTimelock();
   error NotPassedTimelock();
   error LockAlreadyExists();
+  error CommitIdAlreadyExists();
   error LockNotExists();
   error HashlockNotMatch();
   error AlreadyRedeemed();
@@ -62,7 +63,7 @@ contract HashedTimeLockERC20 {
     address payable sender;
     address payable srcReceiver;
     bytes32 hashlock;
-    bytes32 secret;
+    uint256 secret;
     uint256 amount;
     uint256 timelock;
     bool redeemed;
@@ -87,9 +88,10 @@ contract HashedTimeLockERC20 {
 
   using SafeERC20 for IERC20;
   mapping(bytes32 => HTLC) locks;
-  mapping(uint256 => PHTLC) commits;
+  mapping(bytes32 => PHTLC) commits;
+  mapping(bytes32 => bytes32) commitIdToLockId;
   bytes32[] lockIds;
-  uint256 id = 0;
+  bytes32[] commitIds;
 
   event TokenLocked(
     bytes32 indexed hashlock,
@@ -102,17 +104,17 @@ contract HashedTimeLockERC20 {
     uint amount,
     uint timelock,
     address messenger,
-    uint commitId,
+    bytes32 commitId,
     address tokenContract
   );
   event TokenRedeemed(bytes32 indexed lockId, address redeemAddress);
   event TokenUnlocked(bytes32 indexed lockId);
 
   event TokenCommitted(
-    uint commitId,
-    string[] HopChains,
-    string[] HopAssets,
-    string[] HopAdresses,
+    bytes32 commitId,
+    string[] hopChains,
+    string[] hopAssets,
+    string[] hopAdresses,
     string dstChain,
     string dstAddress,
     string dstAsset,
@@ -126,10 +128,10 @@ contract HashedTimeLockERC20 {
   );
 
   event LowLevelErrorOccurred(bytes lowLevelData);
-  event TokenUncommitted(uint indexed commitId);
+  event TokenUncommitted(bytes32 indexed commitId);
 
-  modifier _committed(uint _commitId) {
-    if (!hasPHTLC(_commitId)) revert CommitmentNotExists();
+  modifier _committed(bytes32 commitId) {
+    if (!hasPHTLC(commitId)) revert CommitmentNotExists();
     _;
   }
 
@@ -139,9 +141,9 @@ contract HashedTimeLockERC20 {
   }
 
   function commit(
-    string[] memory HopChains,
-    string[] memory HopAssets,
-    string[] memory HopAddresses,
+    string[] memory hopChains,
+    string[] memory hopAssets,
+    string[] memory hopAddresses,
     string memory dstChain,
     string memory dstAsset,
     string memory dstAddress,
@@ -151,7 +153,7 @@ contract HashedTimeLockERC20 {
     address messenger,
     uint amount,
     address tokenContract
-  ) external payable returns (uint commitId) {
+  ) external payable returns (bytes32 commitId) {
     if (amount == 0) {
       revert FundsNotSent();
     }
@@ -160,8 +162,6 @@ contract HashedTimeLockERC20 {
     }
 
     IERC20 token = IERC20(tokenContract);
-    id += 1;
-    commitId = id;
 
     if (token.balanceOf(msg.sender) < amount) {
       revert InsufficientBalance();
@@ -172,7 +172,25 @@ contract HashedTimeLockERC20 {
     }
 
     token.safeTransferFrom(msg.sender, address(this), amount);
-
+    commitId = sha256(
+      abi.encodePacked(
+        address(this),
+        msg.sender,
+        dstChain,
+        dstAsset,
+        dstAddress,
+        srcAsset,
+        srcReceiver,
+        timelock,
+        messenger,
+        amount,
+        tokenContract
+      )
+    );
+    if (hasPHTLC(commitId)) {
+      revert CommitIdAlreadyExists();
+    }
+    commitIds.push(commitId);
     commits[commitId] = PHTLC(
       dstAddress,
       dstChain,
@@ -189,9 +207,9 @@ contract HashedTimeLockERC20 {
     );
     emit TokenCommitted(
       commitId,
-      HopChains,
-      HopAssets,
-      HopAddresses,
+      hopChains,
+      hopAssets,
+      hopAddresses,
       dstChain,
       dstAddress,
       dstAsset,
@@ -205,7 +223,7 @@ contract HashedTimeLockERC20 {
     );
   }
 
-  function lockCommitment(uint commitId, bytes32 hashlock) external _committed(commitId) returns (bytes32 lockId) {
+  function lockCommitment(bytes32 commitId, bytes32 hashlock) external _committed(commitId) returns (bytes32 lockId) {
     lockId = hashlock;
     if (commits[commitId].uncommitted == true) {
       revert AlreadyUncommitted();
@@ -273,7 +291,7 @@ contract HashedTimeLockERC20 {
     string memory dstChain,
     string memory dstAddress,
     string memory dstAsset,
-    uint256 commitId,
+    bytes32 commitId,
     address messenger,
     uint256 amount,
     address tokenContract
@@ -316,6 +334,7 @@ contract HashedTimeLockERC20 {
       tokenContract
     );
     lockIds.push(hashlock);
+    commitIdToLockId[commitId] = lockId;
     emit TokenLocked(
       hashlock,
       dstChain,
@@ -372,7 +391,7 @@ contract HashedTimeLockERC20 {
    * @param secret sha256(secret) should equal the contract hashlock.
    * @return bool true on success
    */
-  function redeem(bytes32 lockId, bytes32 secret) external _locked(lockId) returns (bool) {
+  function redeem(bytes32 lockId, uint256 secret) external _locked(lockId) returns (bool) {
     HTLC storage htlc = locks[lockId];
 
     bytes32 pre = sha256(abi.encodePacked(secret));
@@ -406,7 +425,7 @@ contract HashedTimeLockERC20 {
     return true;
   }
 
-  function uncommit(uint commitId) external _committed(commitId) returns (bool) {
+  function uncommit(bytes32 commitId) external _committed(commitId) returns (bool) {
     PHTLC storage phtlc = commits[commitId];
 
     if (phtlc.uncommitted) revert AlreadyUncommitted();
@@ -423,74 +442,49 @@ contract HashedTimeLockERC20 {
    * @dev Get contract details.
    * @param lockId HTLC contract id
    */
-  function getLockDetails(
-    bytes32 lockId
-  )
-    external
-    view
-    returns (
-      address sender,
-      address srcReceiver,
-      address tokenContract,
-      uint256 amount,
-      bytes32 hashlock,
-      uint256 timelock,
-      bool redeemed,
-      bool unlocked,
-      bytes32 secret
-    )
-  {
+  function getLockDetails(bytes32 lockId) external view returns (HTLC memory) {
     if (hasHTLC(lockId) == false) {
-      return (address(0), address(0), address(0), 0, 0, 0, false, false, 0);
+      HTLC memory emptyHTLC = HTLC({
+        dstAddress: '',
+        dstChain: '',
+        dstAsset: '',
+        srcAsset: '',
+        sender: payable(address(0)),
+        srcReceiver: payable(address(0)),
+        hashlock: bytes32(0x0),
+        secret: uint256(0),
+        amount: uint256(0),
+        timelock: uint256(0),
+        redeemed: false,
+        unlocked: false,
+        tokenContract: address(0)
+      });
+      return emptyHTLC;
     }
     HTLC storage htlc = locks[lockId];
-    return (
-      htlc.sender,
-      htlc.srcReceiver,
-      htlc.tokenContract,
-      htlc.amount,
-      htlc.hashlock,
-      htlc.timelock,
-      htlc.redeemed,
-      htlc.unlocked,
-      htlc.secret
-    );
+    return htlc;
   }
 
-  function getCommitDetails(
-    uint commitId
-  )
-    public
-    view
-    returns (
-      string memory dstAddress,
-      string memory srcAsset,
-      address payable sender,
-      address payable srcReceiver,
-      uint timelock,
-      address messenger,
-      uint amount,
-      bool unlocked,
-      bool locked,
-      address tokenContract
-    )
-  {
+ function getCommitDetails(bytes32 commitId) public view returns (PHTLC memory) {
     if (!hasPHTLC(commitId)) {
-      return ('0', '0', payable(address(0)), payable(address(0)), 0, address(0), 0, false, false, address(0));
+      PHTLC memory empyPHTLC = PHTLC({
+        dstAddress: '',
+        dstChain: '',
+        dstAsset: '',
+        srcAsset: '',
+        sender: payable(address(0)),
+        srcReceiver: payable(address(0)),
+        timelock: uint256(0),
+        amount: uint256(0),
+        messenger: address(0),
+        locked: false,
+        uncommitted: false,
+        tokenContract: address(0)
+      });
+      return empyPHTLC;
     }
     PHTLC storage phtlc = commits[commitId];
-    return (
-      phtlc.dstAddress,
-      phtlc.srcAsset,
-      phtlc.sender,
-      phtlc.srcReceiver,
-      phtlc.timelock,
-      phtlc.messenger,
-      phtlc.amount,
-      phtlc.uncommitted,
-      phtlc.locked,
-      phtlc.tokenContract
-    );
+    return phtlc;
   }
 
   /**
@@ -501,16 +495,16 @@ contract HashedTimeLockERC20 {
     exists = (locks[lockId].sender != address(0));
   }
 
-  function hasPHTLC(uint commitId) internal view returns (bool exists) {
-    exists = (commitId <= id);
+  function hasPHTLC(bytes32 commitId) internal view returns (bool exists) {
+    exists = (commits[commitId].sender != address(0));
   }
 
-  function getLocks(address addr) public view returns (bytes32[] memory) {
+  function getLocks(address senderAddr) public view returns (bytes32[] memory) {
     uint count = 0;
 
     for (uint i = 0; i < lockIds.length; i++) {
       HTLC memory htlc = locks[lockIds[i]];
-      if (htlc.sender == addr) {
+      if (htlc.sender == senderAddr) {
         count++;
       }
     }
@@ -519,7 +513,7 @@ contract HashedTimeLockERC20 {
     uint j = 0;
 
     for (uint i = 0; i < lockIds.length; i++) {
-      if (locks[lockIds[i]].sender == addr) {
+      if (locks[lockIds[i]].sender == senderAddr) {
         result[j] = lockIds[i];
         j++;
       }
@@ -528,26 +522,30 @@ contract HashedTimeLockERC20 {
     return result;
   }
 
-  function getCommits(address addr) public view returns (uint[] memory) {
+  function getCommits(address senderAddr) public view returns (bytes32[] memory) {
     uint count = 0;
 
-    for (uint i = 1; i < id + 1; i++) {
-      PHTLC memory phtlc = commits[i];
-      if (phtlc.sender == addr) {
+    for (uint i = 0; i < commitIds.length; i++) {
+      PHTLC memory phtlc = commits[commitIds[i]];
+      if (phtlc.sender == senderAddr) {
         count++;
       }
     }
 
-    uint[] memory result = new uint[](count);
+    bytes32[] memory result = new bytes32[](count);
     uint j = 0;
 
-    for (uint i = 1; i < id + 1; i++) {
-      if (commits[i].sender == addr) {
-        result[j] = i;
+    for (uint i = 0; i < commitIds.length; i++) {
+      if (commits[commitIds[i]].sender == senderAddr) {
+        result[j] = commitIds[i];
         j++;
       }
     }
 
     return result;
+  }
+
+  function getLockIdByCommitId(bytes32 commitId) public view returns (bytes32) {
+    return commitIdToLockId[commitId];
   }
 }
