@@ -66,9 +66,9 @@ contract HashedTimeLockERC20 {
     uint256 secret;
     uint256 amount;
     uint256 timelock;
+    address tokenContract;
     bool redeemed;
     bool unlocked;
-    address tokenContract;
   }
 
   struct PHTLC {
@@ -81,9 +81,9 @@ contract HashedTimeLockERC20 {
     uint timelock;
     uint amount;
     address messenger;
+    address tokenContract;
     bool locked;
     bool uncommitted;
-    address tokenContract;
   }
 
   using SafeERC20 for IERC20;
@@ -114,7 +114,7 @@ contract HashedTimeLockERC20 {
     bytes32 commitId,
     string[] hopChains,
     string[] hopAssets,
-    string[] hopAdresses,
+    string[] hopAddresses,
     string dstChain,
     string dstAddress,
     string dstAsset,
@@ -201,9 +201,9 @@ contract HashedTimeLockERC20 {
       timelock,
       amount,
       messenger,
+      tokenContract,
       false,
-      false,
-      tokenContract
+      false
     );
     emit TokenCommitted(
       commitId,
@@ -248,9 +248,9 @@ contract HashedTimeLockERC20 {
         0x0,
         commits[commitId].amount,
         commits[commitId].timelock,
+        commits[commitId].tokenContract,
         false,
-        false,
-        commits[commitId].tokenContract
+        false
       );
       lockIds.push(hashlock);
       emit TokenLocked(
@@ -329,9 +329,9 @@ contract HashedTimeLockERC20 {
       0x0,
       amount,
       timelock,
+      tokenContract,
       false,
-      false,
-      tokenContract
+      false
     );
     lockIds.push(hashlock);
     commitIdToLockId[commitId] = lockId;
@@ -455,9 +455,9 @@ contract HashedTimeLockERC20 {
         secret: uint256(0),
         amount: uint256(0),
         timelock: uint256(0),
+        tokenContract: address(0),
         redeemed: false,
-        unlocked: false,
-        tokenContract: address(0)
+        unlocked: false
       });
       return emptyHTLC;
     }
@@ -477,9 +477,9 @@ contract HashedTimeLockERC20 {
         timelock: uint256(0),
         amount: uint256(0),
         messenger: address(0),
+        tokenContract: address(0),
         locked: false,
-        uncommitted: false,
-        tokenContract: address(0)
+        uncommitted: false
       });
       return empyPHTLC;
     }
