@@ -23,6 +23,18 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn commit(
         ref self: TContractState,
         amount: u256,
+        dstChain: felt252,
+        dstAsset: felt252,
+        dstAddress: felt252,
+        srcAsset: felt252,
+        srcReceiver: ContractAddress,
+        timelock: u256,
+        messenger: ContractAddress,
+        tokenContract: ContractAddress,
+    ) -> u256;
+    fn commit_hop(
+        ref self: TContractState,
+        amount: u256,
         hopChains: Span<felt252>,
         hopAssets: Span<felt252>,
         hopAddress: Span<felt252>,
@@ -215,6 +227,95 @@ mod HashedTimelockERC20 {
         ///                  Refunds can be made after this time.
         /// @return Id of the new PHTLC. This is needed for subsequent calls.
         fn commit(
+            ref self: ContractState,
+            amount: u256,
+            dstChain: felt252,
+            dstAsset: felt252,
+            dstAddress: felt252,
+            srcAsset: felt252,
+            srcReceiver: ContractAddress,
+            timelock: u256,
+            messenger: ContractAddress,
+            tokenContract: ContractAddress,
+        ) -> u256 {
+            assert!(timelock > get_block_timestamp().into(), "Not Future TimeLock");
+            assert!(amount != 0, "Funds Can Not Be Zero");
+
+            let srcChain: felt252 = 'STARKNET_SEPOLIA';
+
+            let mut bytes: Bytes = BytesTrait::new(0, array![]);
+            bytes.append_felt252(srcChain);
+            bytes.append_address(get_contract_address());
+            bytes.append_address(get_caller_address());
+            bytes.append_u256(amount);
+            bytes.append_felt252(dstChain);
+            bytes.append_felt252(dstAsset);
+            bytes.append_felt252(dstAddress);
+            bytes.append_felt252(srcAsset);
+            bytes.append_address(srcReceiver);
+            bytes.append_u256(timelock);
+            bytes.append_address(messenger);
+            bytes.append_address(tokenContract);
+
+            let commitId = bytes.sha256();
+            assert!(!self.hasCommitId(commitId), "Commitment Already Exists");
+
+            let token: IERC20Dispatcher = IERC20Dispatcher { contract_address: tokenContract };
+            assert!(token.balance_of(get_caller_address()) >= amount, "Insufficient Balance");
+            assert!(
+                token.allowance(get_caller_address(), get_contract_address()) >= amount,
+                "No Enough Allowence"
+            );
+
+            token.transfer_from(get_caller_address(), get_contract_address(), amount);
+            let hop_chains = array!['null'].span();
+            let hop_assets = array!['null'].span();
+            let hop_addresses = array!['null'].span();
+            self
+                .commits
+                .write(
+                    commitId,
+                    PHTLC {
+                        dstAddress: dstAddress,
+                        dstChain: dstChain,
+                        dstAsset: dstAsset,
+                        srcAsset: srcAsset,
+                        sender: get_caller_address(),
+                        srcReceiver: srcReceiver,
+                        amount: amount,
+                        timelock: timelock,
+                        messenger: messenger,
+                        tokenContract: tokenContract,
+                        locked: false,
+                        uncommitted: false,
+                    }
+                );
+            self
+                .emit(
+                    TokenCommitted {
+                        commitId: commitId,
+                        hopChains: hop_chains,
+                        hopAssets: hop_assets,
+                        hopAddress: hop_addresses,
+                        dstChain: dstChain,
+                        dstAddress: dstAddress,
+                        dstAsset: dstAsset,
+                        sender: get_caller_address(),
+                        srcReceiver: srcReceiver,
+                        srcAsset: srcAsset,
+                        amount: amount,
+                        timelock: timelock,
+                        messenger: messenger,
+                        tokenContract: tokenContract,
+                    }
+                );
+            let curId = self.commitCounter.read() + 1;
+            self.commitCounter.write(curId);
+            self.commitIds.write(curId, commitId);
+            commitId
+        }
+
+        fn commit_hop(
             ref self: ContractState,
             amount: u256,
             hopChains: Span<felt252>,
