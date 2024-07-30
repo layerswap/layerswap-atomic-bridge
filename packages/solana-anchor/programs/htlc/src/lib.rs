@@ -4,8 +4,6 @@ use std::mem::size_of;
 use sha2::{Sha256, Digest};
 declare_id!("8Es48Lsg4VEqG1wuUSXDx9QzDCado261CV4Qxx8NzHT1");
 
-const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
-
 /// @title Pre Hashed Timelock Contracts (PHTLCs) on Solana SPL tokens.
 ///
 /// This contract provides a way to lock and keep PHTLCs for SPL tokens.
@@ -13,42 +11,40 @@ const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 /// Protocol:
 ///
 ///  1) commit(srcReceiver, timelock, tokenContract, amount) - a
-///      sender calls this to lock a new PHTLC on a given token (tokenContract)
-///      for a given amount. A u64 phtlcId is returned.
+///      sender calls this to create a new PHTLC on a given token (tokenContract)
+///      for the given amount. A String commitId is returned.
 ///  2) lock(srcReceiver, hashlock, timelock, tokenContract, amount) - a
-///      sender calls this to lock a new HTLC on a given token (tokenContract)
-///      for a given amount. A String htlcId is returned.
-///  3) lockCommit(phtlcId, hashlock) - the messenger calls this function
-///      to lockCommit the PHTLC to HTLC with the given hashlock.
-///  4) redeem(htlcId, secret) - once the srcReceiver knows the secret of
+///      sender calls this to create a new HTLC on a given token (tokenContract)
+///      for the given amount. A String lockId is returned.
+///  3) lockCommit(commitId, hashlock) - the messenger calls this function
+///      to convert the PHTLC to HTLC with the given hashlock.
+///  4) redeem(lockId, secret) - once the srcReceiver knows the secret of
 ///      the hashlock hash they can claim the tokens with this function
-///  5) unlock(htlcId) - after timelock has expired and if the srcReceiver did not
+///  5) unlock(lockId) - after timelock has expired and if the srcReceiver did not
 ///      redeem the tokens the sender / creator of the HTLC can get their tokens
 ///      back with this function.
-///  6) uncommit(phtlcId) - after timelock has expired and if the messenger did not
+///  6) uncommit(commitId) - after timelock has expired and if the messenger did not
 ///      lockCommit the PHTLC, then the sender can get their tokens
 ///      back with this function.
 
 
 
-/// A small utility function that allows us to transfer funds out of the htlc.
+/// @dev A small utility function that allows us to transfer funds out of the htlc / phtlc.
 ///
-/// # Arguments
-///
-/// * `sender` - Alice's account
+/// * `sender` - htlc/phtlc creator's account
 /// * `lockId` - The index of the htlc
-/// * `htlc` - the htlc public key (PDA)
-/// * `htlc_bump` - the application state public key (PDA) bump
-/// * `htlc_wallet` - The htlc Token account
+/// * `htlc` - the htlc/phtlc public key (PDA)
+/// * `htlc_bump` - the htlc/phtlc public key (PDA) bump
+/// * `htlc_token_account` - The htlc/phtlc Token account
 /// * `token_program` - the token program address
 /// * `destination_wallet` - The public key of the destination address (where to send funds)
-/// * `amount` - the amount of token that is sent from `htlc_wallet` to `destination_wallet`
+/// * `amount` - the amount of token that is sent from `htlc_token_account` to `destination_wallet`
 fn transfer_htlc_out<'info>(
     sender: AccountInfo<'info>,
     lockId: String,
     htlc: AccountInfo<'info>,
     htlc_bump: u8,
-    htlc_wallet: &mut Account<'info, TokenAccount>,
+    htlc_token_account: &mut Account<'info, TokenAccount>,
     token_program: AccountInfo<'info>,
     destination_wallet: AccountInfo<'info>,
     amount: u64
@@ -62,7 +58,7 @@ fn transfer_htlc_out<'info>(
 
     // Perform the actual transfer
     let transfer_instruction = Transfer{
-        from: htlc_wallet.to_account_info(),
+        from: htlc_token_account.to_account_info(),
         to: destination_wallet,
         authority: htlc.to_account_info(),
     };
@@ -77,84 +73,16 @@ fn transfer_htlc_out<'info>(
     // Use the `reload()` function on an account to reload it's state. Since we performed the
     // transfer, we are expecting the `amount` field to have changed.
     let should_close = {
-        htlc_wallet.reload()?;
-        htlc_wallet.amount == 0
+        htlc_token_account.reload()?;
+        htlc_token_account.amount == 0
     };
 
     // If token account has no more tokens, it should be wiped out since it has no other use case.
     if should_close {
         let ca = CloseAccount{
-            account: htlc_wallet.to_account_info(),
+            account: htlc_token_account.to_account_info(),
             destination: sender.to_account_info(),
             authority: htlc.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(
-            token_program.to_account_info(),
-            ca,
-            outer.as_slice(),
-        );
-        anchor_spl::token::close_account(cpi_ctx)?;
-    }
-
-    Ok(())
-}
-/// A small utility function that allows us to transfer funds out of the phtlc.
-///
-/// # Arguments
-///
-/// * `sender` - Alice's account
-/// * `commitId` - The index of the phtlc
-/// * `phtlc` - the phtlc public key (PDA)
-/// * `phtlc_bump` - the application state public key (PDA) bump
-/// * `phtlc_wallet` - The phtlc Token account
-/// * `token_program` - the token program address
-/// * `destination_wallet` - The public key of the destination address (where to send funds)
-/// * `amount` - the amount of token that is sent from `phtlc_wallet` to `destination_wallet`
-fn transfer_phtlc_out<'info>(
-    sender: AccountInfo<'info>,
-    commitId: u64,
-    phtlc: AccountInfo<'info>,
-    phtlc_bump: u8,
-    phtlc_wallet: &mut Account<'info, TokenAccount>,
-    token_program: AccountInfo<'info>,
-    destination_wallet: AccountInfo<'info>,
-    amount: u64
-) -> Result<()> {
-    let bump_vector = phtlc_bump.to_le_bytes();
-    let commit_id_bytes = commitId.to_le_bytes();
-    let inner = vec![
-        commit_id_bytes.as_ref(),
-        bump_vector.as_ref(),
-    ];
-    let outer = vec![inner.as_slice()];
-
-    // Perform the actual transfer
-    let transfer_instruction = Transfer{
-        from: phtlc_wallet.to_account_info(),
-        to: destination_wallet,
-        authority: phtlc.to_account_info(),
-    };
-    let cpi_ctx = CpiContext::new_with_signer(
-        token_program.to_account_info(),
-        transfer_instruction,
-        outer.as_slice(),
-    );
-    anchor_spl::token::transfer(cpi_ctx, amount)?;
-
-
-    // Use the `reload()` function on an account to reload it's state. Since we performed the
-    // transfer, we are expecting the `amount` field to have changed.
-    let should_close = {
-        phtlc_wallet.reload()?;
-        phtlc_wallet.amount == 0
-    };
-
-    // If token account has no more tokens, it should be wiped out since it has no other use case.
-    if should_close {
-        let ca = CloseAccount{
-            account: phtlc_wallet.to_account_info(),
-            destination: sender.to_account_info(),
-            authority: phtlc.to_account_info(),
         };
         let cpi_ctx = CpiContext::new_with_signer(
             token_program.to_account_info(),
@@ -173,26 +101,60 @@ pub mod anchor_htlc {
     use anchor_spl::token::Transfer;
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        require_keys_eq!(
-            ctx.accounts.user.key(),
-            OWNER.parse::<Pubkey>().unwrap(),
-            HTLCError::NotOwner
-        );
-        let counter = &mut ctx.accounts.counter;
-        counter.count = 0;
-        Ok(())
+    /// @dev Called by the Sender to get the commitId from the given parameters.
+    ///
+    /// @param lockId of the HTLC.
+    /// @param secret sha256(secret) should equal the contract hashlock.
+    pub fn calculate_commit_id(
+        ctx: Context<Calculate_commit_id>,  
+        dst_chain: String,
+        dst_asset: String,
+        dst_address: String,
+        src_asset: String,
+        srcReceiver: Pubkey,
+        timelock: u64,
+        messenger: Pubkey,
+        amount: u64
+        ) -> Result<String>{
+
+        let src_chain = "SOLANA DEVNET";
+        let contract_address = ctx.program_id;
+        msg!("contract address: {}", contract_address);
+        let signer = *ctx.accounts.signer.to_account_info().key;
+        msg!("signer: {}", signer);
+        let token_contract = *ctx.accounts.token_contract.to_account_info().key;
+        msg!("token contract: {}", token_contract);
+        
+        let mut hasher = Sha256::new();
+        hasher.update(src_chain.clone());
+        hasher.update(contract_address);
+        hasher.update(signer);
+        hasher.update(&amount.to_be_bytes());
+        hasher.update(dst_chain.clone());
+        hasher.update(dst_address.clone());
+        hasher.update(dst_asset.clone());
+        hasher.update(src_asset.clone());
+        hasher.update(srcReceiver);
+        hasher.update(&timelock.to_be_bytes());
+        hasher.update(messenger);
+        hasher.update(token_contract);
+        
+        let hash = hasher.finalize();
+        let commitId = hex::encode(hash);
+        msg!("commit id: {}", commitId);
+
+        Ok(commitId)
     }
 
     /// @dev Sender / Payer sets up a new pre-hash time lock contract depositing the
     /// funds and providing the reciever/srcReceiver and terms.
-    /// @param _srcReceiver reciever/srcReceiver of the funds.
+    /// @param srcReceiver reciever of the funds.
     /// @param timelock UNIX epoch seconds time that the lock expires at.
     ///                  Refunds can be made after this time.
     /// @return Id of the new PHTLC. This is needed for subsequent calls.
     pub fn commit(
         ctx: Context<Commit>,
-        commitId: u64,
+        commitId: String,
         hopChains: Vec<String>,
         hopAssets: Vec<String>, 
         hopAddress: Vec<String>,
@@ -200,6 +162,7 @@ pub mod anchor_htlc {
         dst_asset: String,
         dst_address: String,
         src_asset: String,
+        srcReceiver: Pubkey,
         timelock: u64,
         messenger: Pubkey,
         amount: u64,
@@ -209,10 +172,9 @@ pub mod anchor_htlc {
         require!(timelock > clock.unix_timestamp.try_into().unwrap(), HTLCError::NotFutureTimeLock);
         require!(amount != 0, HTLCError::FundsNotSent);
         let phtlc = &mut ctx.accounts.phtlc;
-        let commit_id_bytes = commitId.to_le_bytes();
         let bump_vector = phtlc_bump.to_le_bytes();
         let inner = vec![
-            commit_id_bytes.as_ref(),
+            commitId.as_ref(),
             bump_vector.as_ref(),
         ];
         let outer = vec![inner.as_slice()];
@@ -232,7 +194,7 @@ pub mod anchor_htlc {
         phtlc.dst_asset = dst_asset.clone();
         phtlc.src_asset = src_asset.clone();
         phtlc.sender = *ctx.accounts.sender.to_account_info().key;
-        phtlc.srcReceiver =  *ctx.accounts.srcReceiver.to_account_info().key;
+        phtlc.srcReceiver =  srcReceiver;
         phtlc.amount = amount;
         phtlc.timelock = timelock;
         phtlc.messenger = messenger;
@@ -250,7 +212,7 @@ pub mod anchor_htlc {
             dst_address: dst_address,
             dst_asset: dst_asset,
             sender: *ctx.accounts.sender.to_account_info().key,
-            srcReceiver: *ctx.accounts.srcReceiver.to_account_info().key,
+            srcReceiver: srcReceiver,
             src_asset: src_asset,
             amount: amount,
             timelock: timelock,
@@ -262,7 +224,7 @@ pub mod anchor_htlc {
     
     /// @dev Sender / Payer sets up a new hash time lock contract depositing the
     /// funds and providing the reciever and terms.
-    /// @param _srcReceiver srcReceiver of the funds.
+    /// @param srcReceiver receiver of the funds.
     /// @param _hashlock A sha-256 hash hashlock.
     /// @param timelock UNIX epoch seconds time that the lock expires at.
     ///                  Refunds can be made after this time.
@@ -272,16 +234,16 @@ pub mod anchor_htlc {
         lockId: String,
         hashlock: String,
         timelock: u64,
-        src_asset: String,
         dst_chain: String,
         dst_address: String,
         dst_asset: String,
-        commitId: u64,
+        src_asset: String,
+        srcReceiver: Pubkey,
+        commitId: String,
         messenger: Pubkey,
         amount: u64,
         htlc_bump: u8,
     ) -> Result<()> {
-        //TODO: The unix timestamp is i64 instead of u64
         let clock = Clock::get().unwrap();
         require!(timelock > clock.unix_timestamp.try_into().unwrap(), HTLCError::NotFutureTimeLock);
         require!(amount != 0, HTLCError::FundsNotSent);
@@ -305,16 +267,16 @@ pub mod anchor_htlc {
             outer.as_slice(),
         );
         anchor_spl::token::transfer(transfer_context, amount)?;
-        msg!("after transfer");
+
         htlc.dst_address = dst_address.clone();
         htlc.dst_chain = dst_chain.clone();
         htlc.dst_asset = dst_asset.clone();
         htlc.src_asset = src_asset.clone();
         htlc.sender = *ctx.accounts.sender.to_account_info().key;
         //htlc.sender = ctx.accounts.sender.key().clone();
-        htlc.srcReceiver =  *ctx.accounts.srcReceiver.to_account_info().key;
+        htlc.srcReceiver = srcReceiver;
         htlc.hashlock = hashlock.clone();
-        htlc.secret = String::new();//"0".to_string();
+        htlc.secret = String::new();
         htlc.amount = amount;
         htlc.timelock = timelock;
         htlc.token_contract = *ctx.accounts.token_contract.to_account_info().key;
@@ -328,7 +290,7 @@ pub mod anchor_htlc {
             dst_address: dst_address,
             dst_asset: dst_asset,
             sender: *ctx.accounts.sender.to_account_info().key,
-            srcReceiver: *ctx.accounts.srcReceiver.to_account_info().key,
+            srcReceiver: srcReceiver,
             src_asset: src_asset,
             amount: amount,
             timelock: timelock,
@@ -336,19 +298,18 @@ pub mod anchor_htlc {
             commitId: commitId,
             token_contract:  *ctx.accounts.token_contract.to_account_info().key,
         });
-        if messenger != Pubkey::default(){
+        if messenger != Pubkey::default(){}
 
-        }
         Ok(())
     }
 
-    /// @dev Called by the messenger to lockCommit the PHTLC to HTLC
+    /// @dev Called by the messenger to convert the PHTLC to HTLC
     ///
-    /// @param phtlcId of the PHTLC to lockCommit.
-    /// @param hashlock of the HTLC to be locked.
+    /// @param commitId of the PHTLC to lockCommit.
+    /// @param hashlock of the HTLC to be created.
     pub fn lockCommit(
         ctx: Context<LockCommit>,
-        commitId: u64,
+        commitId: String,
         lockId: String,
         hashlock: String,
         phtlc_bump: u8,
@@ -357,15 +318,15 @@ pub mod anchor_htlc {
 
         phtlc.locked = true;
         let amount = phtlc.amount;
-        transfer_phtlc_out(
+        transfer_htlc_out(
             ctx.accounts.user_signing.to_account_info(),
-            commitId,
+            commitId.clone(),
             phtlc.to_account_info(),
             phtlc_bump,
             &mut ctx.accounts.phtlc_token_account,
             ctx.accounts.token_program.to_account_info(),
             ctx.accounts.htlc_token_account.to_account_info(),
-            amount,//ctx.accounts.phtlc.amount
+            amount,
         )?;
         
         let htlc = &mut ctx.accounts.htlc;
@@ -396,7 +357,7 @@ pub mod anchor_htlc {
             amount: amount,
             timelock: phtlc.timelock,
             messenger: phtlc.messenger,
-            commitId: commitId,
+            commitId: commitId.clone(),
             token_contract:  *ctx.accounts.token_contract.to_account_info().key,
         });
 
@@ -406,7 +367,7 @@ pub mod anchor_htlc {
     /// @dev Called by the srcReceiver once they know the secret of the hashlock.
     /// This will transfer the locked funds to the HTLC's srcReceiver's address.
     ///
-    /// @param htlcId of the HTLC.
+    /// @param lockId of the HTLC.
     /// @param secret sha256(secret) should equal the contract hashlock.
     pub fn redeem(ctx: Context<Redeem>, lockId: String, secret: String, htlc_bump: u8) -> Result<bool>{
         let htlc = &mut ctx.accounts.htlc;
@@ -446,16 +407,16 @@ pub mod anchor_htlc {
     /// @dev Called by the sender if there was no redeem OR lockCommit AND the time lock has
     /// expired. This will unlock the contract amount.
     ///
-    /// @param _phtlcId of the PHTLC to unlock from.
+    /// @param commitId of the PHTLC to unlock from.
     /// @return bool true on success
-    pub fn uncommit(ctx: Context<UnCommit>, commitId: u64, phtlc_bump: u8) -> Result<bool> {
+    pub fn uncommit(ctx: Context<UnCommit>, commitId: String, phtlc_bump: u8) -> Result<bool> {
         let phtlc = &mut ctx.accounts.phtlc;
 
         phtlc.uncommitted = true;
 
-        transfer_phtlc_out(
+        transfer_htlc_out(
             ctx.accounts.sender.to_account_info(),
-            commitId,
+            commitId.clone(),
             phtlc.to_account_info(),
             phtlc_bump,
             &mut ctx.accounts.phtlc_token_account,
@@ -464,14 +425,14 @@ pub mod anchor_htlc {
             ctx.accounts.phtlc.amount
         )?;
 
-        emit!(TokenUncommited{ commitId: commitId });
+        emit!(TokenUncommited{ commitId: commitId.clone() });
         Ok(true)
     }
 
     /// @dev Called by the sender if there was no redeem AND the time lock has
     /// expired. This will unlock the contract amount.
     ///
-    /// @param _htlcId of the HTLC to unlock from.
+    /// @param commitId of the HTLC to unlock from.
     pub fn unlock(ctx: Context<UnLock>, lockId: String, htlc_bump: u8) -> Result<bool> {
         let htlc = &mut ctx.accounts.htlc;
 
@@ -494,8 +455,8 @@ pub mod anchor_htlc {
     }
 
     /// @dev Get PHTLC details.
-    /// @param phtlcId of the PHTLC.
-    pub fn get_pdetails(ctx: Context<GetPDetails>, commitId: u64, phtlc_bump: u8) -> Result<PHTLC> {
+    /// @param lockId of the PHTLC.
+    pub fn getCommitDetails(ctx: Context<GetCommitDetails>, commitId: String, phtlc_bump: u8) -> Result<PHTLC> {
         let phtlc = &ctx.accounts.phtlc;
         Ok(PHTLC {
             dst_address: phtlc.dst_address.clone(),
@@ -515,8 +476,8 @@ pub mod anchor_htlc {
     }
 
     /// @dev Get HTLC details.
-    /// @param htlcId of the HTLC.
-    // pub fn get_details(ctx: Context<GetDetails>, lockId: String, htlc_bump: u8) -> Result<HTLC> {
+    /// @param lockId of the HTLC.
+    // pub fn getLockDetails(ctx: Context<GetLockDetails>, lockId: String, htlc_bump: u8) -> Result<HTLC> {
     //     let htlc = &ctx.accounts.htlc;
     //     Ok(HTLC {
     //         hashlock: htlc.hashlock.clone(),
@@ -531,7 +492,7 @@ pub mod anchor_htlc {
     //         unlocked: htlc.unlocked
     //     })
     // }
-    pub fn get_details(ctx: Context<GetDetails>, lockId: String, htlc_bump: u8) -> Result<String> {
+    pub fn getLockDetails(ctx: Context<GetLockDetails>, lockId: String, htlc_bump: u8) -> Result<String> {
         let htlc = &ctx.accounts.htlc;
         Ok(htlc.secret.clone())
     }
@@ -557,11 +518,6 @@ pub struct PHTLC{
 }
 
 #[account]
-#[derive(InitSpace)]
-pub struct Counter {
-    pub count: u64,// 8 bytes
-}
-#[account]
 #[derive(Default)]
 pub struct HTLC{
     pub dst_address: String,
@@ -580,30 +536,25 @@ pub struct HTLC{
     pub unlocked: bool,
 }
 
-#[derive(Accounts)]
-pub struct Initialize<'info> {
+#[derive(Accounts)]         
+pub struct Calculate_commit_id<'info > {
     #[account(mut)]
-    pub user: Signer<'info>,
-    #[account(
-        init,
-        seeds = [b"counter"],
-        bump,
-        payer = user,
-        space = 8 + Counter::INIT_SPACE
-    )]
-    pub counter: Account<'info, Counter>,
+    pub signer: Signer<'info>,
+    pub token_contract: Account<'info, Mint>,
+
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]   
-#[instruction(commitId: u64, phtlc_bump: u8)]         
+#[instruction(commitId: String, phtlc_bump: u8)]         
 pub struct Commit<'info > {
     #[account(
         init,
         payer = sender,
         space = size_of::<PHTLC>() + 8,
         seeds = [
-            commitId.to_le_bytes().as_ref()
+            commitId.as_ref()
         ],
         bump,
     )]
@@ -612,8 +563,8 @@ pub struct Commit<'info > {
         init,
         payer = sender,
         seeds = [
-            b"phtlc_account".as_ref(),
-            commitId.to_le_bytes().as_ref()
+            b"phtlc_token_account".as_ref(),
+            commitId.as_ref()
         ],
         bump,
         token::mint=token_contract,
@@ -623,10 +574,7 @@ pub struct Commit<'info > {
 
     #[account(mut)]
     pub sender: Signer<'info>,
-    ///CHECK: The reciever
-    pub srcReceiver: UncheckedAccount<'info>,
     pub token_contract: Account<'info, Mint>,
-
     #[account(
         mut,
         constraint=sender_token_account.owner == sender.key() @HTLCError::NotSender,
@@ -657,7 +605,7 @@ pub struct Lock<'info > {
         init,
         payer = sender,
         seeds = [
-            b"htlc_account".as_ref(),
+            b"htlc_token_account".as_ref(),
             lockId.as_ref()
         ],
         bump,
@@ -668,10 +616,7 @@ pub struct Lock<'info > {
 
     #[account(mut)]
     pub sender: Signer<'info>,
-    ///CHECK: The reciever
-    pub srcReceiver: UncheckedAccount<'info>,
     pub token_contract: Account<'info, Mint>,
-
     #[account(
         mut,
         constraint=sender_token_account.owner == sender.key() @HTLCError::NotSender,
@@ -698,13 +643,12 @@ pub struct Redeem<'info > {
         has_one = token_contract @HTLCError::NoToken,
         constraint = !htlc.redeemed @ HTLCError::AlreadyRedeemed,
         constraint = !htlc.unlocked @ HTLCError::AlreadyUnlocked,
-        //constraint = htlc.srcReceiver == *srcReceiver_token_account.owner @ HTLCError::UnauthorizedAccess
     )]
     pub htlc: Box<Account<'info, HTLC>>,
     #[account(
         mut,
         seeds = [
-            b"htlc_account".as_ref(),
+            b"htlc_token_account".as_ref(),
             lockId.as_ref()
         ],
         bump,
@@ -734,11 +678,11 @@ pub struct Redeem<'info > {
 }
 
 #[derive(Accounts)] 
-#[instruction(commitId: u64, phtlc_bump: u8)]  
+#[instruction(commitId: String, phtlc_bump: u8)]  
 pub struct UnCommit<'info > {
     #[account(mut,
     seeds = [
-        commitId.to_le_bytes().as_ref()
+        commitId.as_ref()
     ],
     bump = phtlc_bump,
     has_one = sender @HTLCError::NotSender,
@@ -752,8 +696,8 @@ pub struct UnCommit<'info > {
     #[account(
         mut,
         seeds = [
-            b"phtlc_account".as_ref(),
-            commitId.to_le_bytes().as_ref()
+            b"phtlc_token_account".as_ref(),
+            commitId.as_ref()
         ],
         bump,
     )]
@@ -762,7 +706,7 @@ pub struct UnCommit<'info > {
     #[account(mut)]
     user_signing: Signer<'info>,
     ///CHECK: The sender
-    #[account(mut)]//TODO: check if this should be mutable
+    #[account(mut)]
     sender: UncheckedAccount<'info>,                   
     token_contract: Account<'info, Mint>,  
     #[account(
@@ -791,13 +735,12 @@ pub struct UnLock<'info > {
     constraint = !htlc.unlocked @ HTLCError::AlreadyUnlocked,
     constraint = !htlc.redeemed @ HTLCError::AlreadyRedeemed,
     constraint = Clock::get().unwrap().unix_timestamp >= htlc.timelock.try_into().unwrap() @ HTLCError::NotPastTimeLock,
-    //constraint = htlc.sender == *sender_token_account.owner @ HTLCError::UnauthorizedAccess
     )]
     pub htlc: Box<Account<'info,HTLC>>,
     #[account(
         mut,
         seeds = [
-            b"htlc_account".as_ref(),
+            b"htlc_token_account".as_ref(),
             lockId.as_ref()
         ],
         bump,
@@ -807,7 +750,7 @@ pub struct UnLock<'info > {
     #[account(mut)]
     user_signing: Signer<'info>,
     ///CHECK: The sender
-    #[account(mut)]//TODO: check if this should be mutable
+    #[account(mut)]
     sender: UncheckedAccount<'info>,                   
     token_contract: Account<'info, Mint>,  
 
@@ -825,11 +768,11 @@ pub struct UnLock<'info > {
 
 
 #[derive(Accounts)] 
-#[instruction(commitId: u64, lockId: String, phtlc_bump: u8)]  
+#[instruction(commitId: String, lockId: String, phtlc_bump: u8)]  
 pub struct LockCommit<'info > {
     #[account(mut,
     seeds = [
-        commitId.to_le_bytes().as_ref()
+        commitId.as_ref()
     ],
     bump,
     has_one = token_contract @HTLCError::NoToken,
@@ -852,8 +795,8 @@ pub struct LockCommit<'info > {
     #[account(
         mut,
         seeds = [
-            b"phtlc_account".as_ref(),
-            commitId.to_le_bytes().as_ref()
+            b"phtlc_token_account".as_ref(),
+            commitId.as_ref()
         ],
         bump,
     )]
@@ -862,7 +805,7 @@ pub struct LockCommit<'info > {
     init,
     payer = user_signing,
     seeds = [
-        b"htlc_account".as_ref(),
+        b"htlc_token_account".as_ref(),
         lockId.as_ref()
     ],
     bump,
@@ -883,20 +826,21 @@ pub struct LockCommit<'info > {
 }
 
 #[derive(Accounts)]
-#[instruction(commitId: u64, phtlc_bump: u8)] 
-pub struct GetPDetails<'info> {
+#[instruction(commitId: String, phtlc_bump: u8)] 
+pub struct GetCommitDetails<'info> {
     #[account(
         seeds = [
-            commitId.to_le_bytes().as_ref()
+            commitId.as_ref()
         ],
         bump,// = htlc_bump,
     )]
     pub phtlc: Box<Account<'info, PHTLC>>,
 }
 
+
 #[derive(Accounts)]
 #[instruction(lockId: String, htlc_bump: u8)] 
-pub struct GetDetails<'info> {
+pub struct GetLockDetails<'info> {
     #[account(
         seeds = [
             lockId.as_ref()
@@ -908,7 +852,7 @@ pub struct GetDetails<'info> {
 
 #[event]
 pub struct TokenCommitted{
-    pub commitId: u64,
+    pub commitId: String,
     pub hopChains: Vec<String>,
     pub hopAssets: Vec<String>,
     pub hopAddress: Vec<String>,
@@ -938,8 +882,8 @@ pub struct TokenLocked{
     amount: u64,//TODO: check if this should be u256
     timelock: u64,//TODO: check if this should be u256
     messenger: Pubkey,
-    commitId: u64,
-    token_contract: Pubkey,//TODO: check what type is token
+    commitId: String,
+    token_contract: Pubkey,
 }
 
 #[event]
@@ -951,12 +895,12 @@ pub struct TokenRedeemed{
 #[event]
 pub struct TokenUnlocked{
     #[index]
-    lockId: String,//Check the type
+    lockId: String,
 }
 #[event]
 pub struct TokenUncommited{
     #[index]
-    commitId: u64,
+    commitId: String,
 }
 #[error_code]
 pub enum HTLCError {
