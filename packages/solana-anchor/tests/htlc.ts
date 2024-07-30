@@ -1,7 +1,7 @@
 import assert from "assert";
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import * as spl from '@solana/spl-token';
 //import { TOKEN_2022_PROGRAM_ID, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { AnchorHtlc } from '../target/types/anchor_htlc';
@@ -20,11 +20,12 @@ describe("safe_pay", () => {
     anchor.setProvider(provider);
     const program = anchor.workspace.AnchorHtlc as anchor.Program<AnchorHtlc>;
     const wallet = provider.wallet as anchor.Wallet;
+    const tokenMint = new PublicKey("9ZP28ycX1bkQzwJ4H1ZJdsMtKtuXg6z3wEE41564yUfG");
 
     //const COMMITID = new anchor.BN(24);
-    const SECRET = "10";
+    const SECRET = "12";
     const COMMITID = SECRET;
-    const HASHLOCK = "fcfc282496b4d1c0f46d166d828dd9ea3c5ce2e1245af10baa97f121ea5433b2";
+    const HASHLOCK = "778cd1ef949ae90bddcffbb0143f043a086641c8d768a83ff0881d7fcdbfab3c";
     const LOCKID = HASHLOCK.slice(0, 32);
     console.log(`${LOCKID} ID`);
     //const TIMELOCK = new anchor.BN(Date.now() - 3);
@@ -38,7 +39,7 @@ describe("safe_pay", () => {
     const HOPADDRESSES = [DSTADDRESS];
 
 
-    let tokenMint: anchor.web3.PublicKey;
+    // let tokenMint: anchor.web3.PublicKey;
     let alice: anchor.web3.Keypair;
     let aliceWallet: anchor.web3.PublicKey;
     let bob: anchor.web3.Keypair;
@@ -161,7 +162,8 @@ describe("safe_pay", () => {
     }
 
     before(async () => {
-        tokenMint = await createMint();
+        // tokenMint = await createMint();
+        // tokenMint = new PublicKey("9ZP28ycX1bkQzwJ4H1ZJdsMtKtuXg6z3wEE41564yUfG");
         [alice, aliceWallet] = await createUserAndAssociatedWallet(tokenMint);
 
         let _rest;
@@ -341,7 +343,9 @@ describe("safe_pay", () => {
         console.log(`[${TIMELOC * 1000}] the Timelock`);
         const tx1 = await program.methods
             .lock(LOCKID, HASHLOCK, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, COMMITID, alice.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
-            .accounts({
+            .accountsPartial({
+                htlc: pda.htlcKey,
+                htlcTokenAccount: pda.htlcTokenAccount,
                 sender: alice.publicKey,
                 tokenContract: tokenMint,
                 senderTokenAccount: aliceWallet
