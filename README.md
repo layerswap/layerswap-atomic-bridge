@@ -1,4 +1,4 @@
-# Layerswap Atomic Bridge
+# Layerswap V8 Atomic Bridge
 Permissionless, trustless cross-chain bridging protocol without Oracles
 
 ## The Motivation
