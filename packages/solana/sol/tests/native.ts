@@ -2,7 +2,7 @@ import assert from "assert";
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Keypair } from "@solana/web3.js";
-import { NativeHtlc } from '../target/types/native';
+import { NativeHtlc } from '../target/types/sol';
 
 interface PDAParameters {
   htlcKey: anchor.web3.PublicKey;
