@@ -29,7 +29,7 @@ As we continue to experiment and test new ideas, expect significant changes to t
 ## Supported Networks
 
 - [Bitcoin](./packages/bitcoin/README.md)
-- [Ethereum](./packages/evm/README.md)
+- [EVM](./packages/evm/README.md)
 - [Starknet](./packages/starknet/README.md)
 - [TON](./packages/ton/README.md)
 - [Solana](./packages/solana/README.md)
