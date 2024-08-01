@@ -20,19 +20,11 @@ As we continue to experiment and test new ideas, expect significant changes to t
 
 ## Supported Networks
 
-- Bitcoin
-  - [Learn more about Bitcoin](https://bitcoin.org/)
-  - Bitcoin HTLC package can be found [here](./packages/bitcoin/README.md)
-- Ethereum
-  - [Learn more about Ethereum](https://ethereum.org/)
-  - Ethereum PHTLC package can be found [here](./packages/evm/README.md)
-- Starknet
-  - [Learn more about Starknet](https://www.starknet.io/en/)
-  - Starknet PHTLC package can be found [here](./packages/starknet/README.md)
-- TON
-  - [Learn more about TON](https://ton.org/)
-  - TON PHTLC package can be found [here](./packages/ton/README.md)
-- Solana (in progress)
+- [Bitcoin](./packages/bitcoin/README.md)
+- [Ethereum](./packages/evm/README.md)
+- [Starknet](./packages/starknet/README.md)
+- [TON](./packages/ton/README.md)
+- [Solana](./packages/solana/README.md)
 - Aptos/Sui (in progress)
 - Stacks (in progress)
 
