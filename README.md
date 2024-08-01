@@ -13,6 +13,14 @@ It **SHOULD** be trustless, open to any participant, and free of external depend
 
 Read full article [here](https://layerswap.notion.site).
 
+## Core concept
+
+The network-adding process in the Layerswap protocol is similar to adding an ERC20 token to the Uniswap protocol, making bridging trustless and permissionless.
+
+## Architecture
+
+![image](https://github.com/user-attachments/assets/b9ce1642-179a-4cc2-b1c2-b137153ad66b)
+
 ## Disclaimer: Development in Progress
 
 Please note that this project is actively under development. It is not ready for deployment on any mainnet environments.
@@ -29,40 +37,6 @@ As we continue to experiment and test new ideas, expect significant changes to t
 - Stacks (in progress)
 
 ---
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js and npm installed on your machine.
-- Basic understanding of Bitcoin transactions, Smart Contracts, HTLC
-
-### Building the project
-
-Clone the repository to your local machine:
-
-```bash
-git clone git@github.com:layerswap/layerswap-atomic-bridge.git
-
-# navigate to the project directory
-cd layerswap-atomic-bridge
-
-# install dependencies
-npm install
-```
-
-Once you have cloned the repository and installed all dependencies, you can build the project by running the build command. This command will compile the TypeScript files and make sure everything is set up correctly.
-
-```bash
-npm run build
-```
-
-This command executes the build scripts defined in the `package.json` file. It sequentially builds each package defined within the monorepo, ensuring that all necessary components are compiled and ready for use.
-
-> If you are working on a specific package, such as the `bitcoin` package, and wish to only build that package, you can do so by running:
-> ```bash
-> npm run build:bitcoin
-> ```
 
 ## Acknowledgements
 
