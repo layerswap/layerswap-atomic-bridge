@@ -53,9 +53,9 @@ message Commit{
     data: CommitData;
 }
 struct CommitData{
-    HopChains: map<Int,StringImpl>;
-    HopAssets: map<Int,StringImpl>;
-    HopAddresses: map<Int,StringImpl>;
+    hopChains: map<Int,StringImpl>;
+    hopAssets: map<Int,StringImpl>;
+    hopAddresses: map<Int,StringImpl>;
     dstChain: String;
     dstAsset: String;
     dstAddress: String;
@@ -182,12 +182,12 @@ contract HashedTimeLockTON with Deployable {
 
         let ctx: Context = context();
 
-        self.commits.del(msg.data.commitId);
-
         send(SendParameters{to: (self.commits.get(msg.data.commitId)!!).sender,
                             bounce: true,
                             value: (self.commits.get(msg.data.commitId)!!).amount + ctx.value,
-                            mode: 0}); 
+                            mode: 64}); 
+
+        self.commits.del(msg.data.commitId);
     }
 
     receive(msg: LockCommitment){
@@ -220,7 +220,7 @@ contract HashedTimeLockTON with Deployable {
                     send(SendParameters{to: ctx.sender,
                                         bounce: true,
                                         value: ctx.value,
-                                        mode: 0});
+                                        mode: 64});
                                     
         }else{
             require(false,"No Allowance");
@@ -296,7 +296,7 @@ contract HashedTimeLockTON with Deployable {
                     to: sender(),
                     bounce: true,
                     value: contractValue + ctx.value,
-                    mode: 0
+                    mode: 64
                     }); 
         }else{
             send(SendParameters{
@@ -310,7 +310,7 @@ contract HashedTimeLockTON with Deployable {
                     to: sender(),
                     bounce: true,
                     value: ctx.value,
-                    mode: 0
+                    mode: 64
                     });
         }  
 
@@ -319,30 +319,31 @@ contract HashedTimeLockTON with Deployable {
 
     receive(msg: Unlock){
         let ctx: Context = context();
+        let lock: HTLC = self.locks.get(msg.data.hashlock)!!;
         require(self.lockExists(msg.data.hashlock) == true,"Lock Does Not Exist");
-        require((self.locks.get(msg.data.hashlock)!!).unlocked == false,"Already Unlocked");
-        require((self.locks.get(msg.data.hashlock)!!).redeemed == false,"Already Redeemed");
-        require((self.locks.get(msg.data.hashlock)!!).timelock < now(), "Not Passed Timelock");
+        require(lock.unlocked == false,"Already Unlocked");
+        require(lock.redeemed == false,"Already Redeemed");
+        require(lock.timelock < now(), "Not Passed Timelock");
             
-        if((self.locks.get(msg.data.hashlock)!!).sender == sender()){
+        if(lock.sender == ctx.sender){
             send(SendParameters{
-                                to: sender(),
+                                to: ctx.sender,
                                 bounce: true,
-                                value: (self.locks.get(msg.data.hashlock)!!).amount + ctx.value,
-                                mode: 0
+                                value: lock.amount + ctx.value,
+                                mode: 64
                             });
         }else{
             send(SendParameters{
-                    to: (self.locks.get(msg.data.hashlock)!!).sender,
+                    to: lock.sender,
                     bounce: true,
-                    value: (self.locks.get(msg.data.hashlock)!!).amount,
+                    value: lock.amount,
                     mode: 0
                 });
             send(SendParameters{
-                    to: sender(),
+                    to: ctx.sender,
                     bounce: true,
                     value: ctx.value,
-                    mode: 0
+                    mode: 64
                 });
         }
 

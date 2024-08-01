@@ -754,7 +754,7 @@ mod HashedTimelockERC20 {
                 .commitCounter
                 .read() {
                     let commitId = self.commitIds.read(i);
-                    let phtlc: PHTLC = self.commits.read(i);
+                    let phtlc: PHTLC = self.commits.read(commitId);
                     if phtlc.sender == sender {
                         arr.append(commitId);
                     }
