@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::{associated_token::AssociatedToken, token::{CloseAccount, Mint, Token, TokenAccount, Transfer}};
 use std::mem::size_of;
 use sha2::{Sha256, Digest};
-declare_id!("7rSdbahjGcNb64qjwZ5bxFDh7TJGTqNVVJN4oiKTG1CA");
+declare_id!("GkNW6o5oes4KzDEJhDd7aJyEDgYzRmjC2fQTQwVc7rV");
 
 /// @title Pre Hashed Timelock Contracts (PHTLCs) on Solana SPL tokens.
 ///

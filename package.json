@@ -36,5 +36,6 @@
     "test": "run-s test:*",
     "test:evm": "npm run pre-build -w packages/evm",
     "test:bitcoin": "npm run pre-build -w packages/bitcoin"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
