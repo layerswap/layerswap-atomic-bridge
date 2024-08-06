@@ -21,18 +21,14 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
-    
-    - name: Navigate to evm folder
-      run: cd packages/evm
 
     - name: Install dependencies
       run: npm ci
-    
-    - name: Navigate to solidity folder
-      run: cd solidity
+      working-directory: packages/evm
 
     - name: Compile contracts
       run: npx hardhat compile
+      working-directory: packages/evm/solidity
       
     # - name: Run tests
     #   run: npx hardhat test
@@ -40,18 +36,24 @@ jobs:
     # deploy eth contracts
     - name: Deploy to Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network sepolia
+      working-directory: packages/evm/solidity
     
     - name: Deploy to Optimism Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network optimismSepolia
+      working-directory: packages/evm/solidity
     
     - name: Deploy to Arbitrum Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network arbitrumSepolia
-    
+      working-directory: packages/evm/solidity
+
     - name: Deploy to Linea Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network lineaSepolia
-    
+      working-directory: packages/evm/solidity
+
     - name: Deploy to Taiko Hekla testnet
       run: npx hardhat run scripts/deployETH.js --network taikoHekla
+      working-directory: packages/evm/solidity
     
     - name: Deploy to Immutable Testnet
       run: npx hardhat run scripts/deployETH.js --network immutableTestnet
+      working-directory: packages/evm/solidity
