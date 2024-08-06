@@ -1,0 +1,57 @@
+name: Deploy Solidity Smart Contract
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16.x]
+        
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - name: Navigate to evm folder
+      run: cd packages/evm
+
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Navigate to evm folder
+      run: cd packages/evm/solidity
+
+    - name: Compile contracts
+      run: npx hardhat compile
+      
+    # - name: Run tests
+    #   run: npx hardhat test
+    
+    # deploy eth contracts
+    - name: Deploy to Sepolia testnet
+      run: npx hardhat run scripts/deployETH.js --network sepolia
+    
+    - name: Deploy to Optimism Sepolia testnet
+      run: npx hardhat run scripts/deployETH.js --network optimismSepolia
+    
+    - name: Deploy to Arbitrum Sepolia testnet
+      run: npx hardhat run scripts/deployETH.js --network arbitrumSepolia
+    
+    - name: Deploy to Linea Sepolia testnet
+      run: npx hardhat run scripts/deployETH.js --network lineaSepolia
+    
+    - name: Deploy to Taiko Hekla testnet
+      run: npx hardhat run scripts/deployETH.js --network taikoHekla
+    
+    - name: Deploy to Immutable Testnet
+      run: npx hardhat run scripts/deployETH.js --network immutableTestnet
