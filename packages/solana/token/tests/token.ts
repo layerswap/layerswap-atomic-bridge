@@ -24,7 +24,8 @@ describe("safe_pay", () => {
 
   //const COMMITID = new anchor.BN(24);
   const SECRET = "12";
-  const COMMITID = SECRET;
+  const COMMITMENT = "abdcd1ef949ae12bddcffbb0143f043a086641c8d068a83ff0881d7fcdbfaed5";
+  const COMMITID = COMMITMENT.slice(0, 32);
   const HASHLOCK = "778cd1ef949ae90bddcffbb0143f043a086641c8d768a83ff0881d7fcdbfab3c";
   const LOCKID = HASHLOCK.slice(0, 32);
   console.log(`${LOCKID} ID`);
