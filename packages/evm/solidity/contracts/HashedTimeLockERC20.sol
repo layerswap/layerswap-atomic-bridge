@@ -1,3 +1,13 @@
+/*
+_                                                 __     _____ 
+| |    __ _ _   _  ___ _ __ _____      ____ _ _ __ \ \   / ( _ )
+| |   / _` | | | |/ _ \ '__/ __\ \ /\ / / _` | '_ \ \ \ / // _ \
+| |__| (_| | |_| |  __/ |  \__ \\ V  V / (_| | |_) | \ V /| (_) |
+|_____\__,_|\__, |\___|_|  |___/ \_/\_/ \__,_| .__/   \_/  \___/
+            |___/                            |_|
+
+*/
+
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
@@ -78,6 +88,7 @@ contract HashedTimeLockERC20 {
     string srcAsset;
     address payable sender;
     address payable srcReceiver;
+    bytes32 lockId;
     uint timelock;
     uint amount;
     address messenger;
@@ -175,6 +186,7 @@ contract HashedTimeLockERC20 {
     }
 
     token.safeTransferFrom(msg.sender, address(this), amount);
+
     contractNonce+=1;
     commitId = bytes32(blockHashAsUint ^ contractNonce);
     if (hasPHTLC(commitId)) {
@@ -188,6 +200,7 @@ contract HashedTimeLockERC20 {
       srcAsset,
       payable(msg.sender),
       payable(srcReceiver),
+      bytes32(0),
       timelock,
       amount,
       messenger,
@@ -226,7 +239,7 @@ contract HashedTimeLockERC20 {
     }
     if (msg.sender == commits[commitId].sender || msg.sender == commits[commitId].messenger) {
       commits[commitId].locked = true;
-
+      commits[commitId].lockId = hashlock;
       locks[lockId] = HTLC(
         commits[commitId].dstAddress,
         commits[commitId].dstChain,
@@ -463,6 +476,7 @@ contract HashedTimeLockERC20 {
         srcAsset: '',
         sender: payable(address(0)),
         srcReceiver: payable(address(0)),
+        lockId: bytes32(0),
         timelock: uint256(0),
         amount: uint256(0),
         messenger: address(0),
