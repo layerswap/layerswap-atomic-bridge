@@ -41,32 +41,63 @@ jobs:
     #   run: npx hardhat test
     
     # deploy eth contracts
-    - name: Deploy to Sepolia testnet
+    - name: Deploy ETH to Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network sepolia
       working-directory: packages/evm/solidity
       continue-on-error: true
     
-    - name: Deploy to Optimism Sepolia testnet
+    - name: Deploy ETH to Optimism Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network optimismSepolia
       working-directory: packages/evm/solidity
       continue-on-error: true
 
-    - name: Deploy to Arbitrum Sepolia testnet
+    - name: Deploy ETH to Arbitrum Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network arbitrumSepolia
       working-directory: packages/evm/solidity
       continue-on-error: true
 
-    - name: Deploy to Linea Sepolia testnet
+    - name: Deploy ETH to Linea Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network lineaSepolia
       working-directory: packages/evm/solidity
       continue-on-error: true
 
-    - name: Deploy to Taiko Hekla testnet
+    - name: Deploy ETH to Taiko Hekla testnet
       run: npx hardhat run scripts/deployETH.js --network taikoHekla
       working-directory: packages/evm/solidity
       continue-on-error: true
     
-    - name: Deploy to Immutable Testnet
+    - name: Deploy ETH to Immutable Testnet
       run: npx hardhat run scripts/deployETH.js --network immutableTestnet
+      working-directory: packages/evm/solidity
+      continue-on-error: true
+
+    # deploy erc20 contracts
+    - name: Deploy ERC20 to Sepolia testnet
+      run: npx hardhat run scripts/deployERC20.js --network sepolia
+      working-directory: packages/evm/solidity
+      continue-on-error: true
+    
+    - name: Deploy ERC20 to Optimism Sepolia testnet
+      run: npx hardhat run scripts/deployERC20.js --network optimismSepolia
+      working-directory: packages/evm/solidity
+      continue-on-error: true
+
+    - name: Deploy ERC20 to Arbitrum Sepolia testnet
+      run: npx hardhat run scripts/deployERC20.js --network arbitrumSepolia
+      working-directory: packages/evm/solidity
+      continue-on-error: true
+
+    - name: Deploy ERC20 to Linea Sepolia testnet
+      run: npx hardhat run scripts/deployERC20.js --network lineaSepolia
+      working-directory: packages/evm/solidity
+      continue-on-error: true
+
+    - name: Deploy ERC20 to Taiko Hekla testnet
+      run: npx hardhat run scripts/deployERC20.js --network taikoHekla
+      working-directory: packages/evm/solidity
+      continue-on-error: true
+    
+    - name: Deploy ERC20 to Immutable Testnet
+      run: npx hardhat run scripts/deployERC20.js --network immutableTestnet
       working-directory: packages/evm/solidity
       continue-on-error: true
