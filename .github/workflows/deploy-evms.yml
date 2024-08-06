@@ -26,6 +26,10 @@ jobs:
       run: npm ci
       working-directory: packages/evm
 
+    - name: Install dependencies
+      run: npm ci
+      working-directory: packages/evm/solidity
+
     - name: Compile contracts
       run: npx hardhat compile
       working-directory: packages/evm/solidity
