@@ -3,6 +3,9 @@ name: Deploy Solidity Smart Contract
 on:
   push:
     branches: [ main ]
+    paths:
+      - packages/evm/solidity/**
+      - .github/workflows/deploy-evms.yml
   pull_request:
     branches: [ main ]
 
@@ -41,23 +44,29 @@ jobs:
     - name: Deploy to Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network sepolia
       working-directory: packages/evm/solidity
+      continue-on-error: true
     
     - name: Deploy to Optimism Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network optimismSepolia
       working-directory: packages/evm/solidity
-    
+      continue-on-error: true
+
     - name: Deploy to Arbitrum Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network arbitrumSepolia
       working-directory: packages/evm/solidity
+      continue-on-error: true
 
     - name: Deploy to Linea Sepolia testnet
       run: npx hardhat run scripts/deployETH.js --network lineaSepolia
       working-directory: packages/evm/solidity
+      continue-on-error: true
 
     - name: Deploy to Taiko Hekla testnet
       run: npx hardhat run scripts/deployETH.js --network taikoHekla
       working-directory: packages/evm/solidity
+      continue-on-error: true
     
     - name: Deploy to Immutable Testnet
       run: npx hardhat run scripts/deployETH.js --network immutableTestnet
       working-directory: packages/evm/solidity
+      continue-on-error: true
