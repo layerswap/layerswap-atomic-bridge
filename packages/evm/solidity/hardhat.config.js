@@ -1,133 +1,92 @@
-require('dotenv').config();
-
-require('@nomicfoundation/hardhat-toolbox');
-
-task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
-  const accounts = await hre.ethers.getSigners();
-
-  for (const account of accounts) {
-    console.log(account.address);
-  }
-});
-
+require("@nomicfoundation/hardhat-toolbox");
+require("dotenv").config();
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: '0.8.23',
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
+        version: '0.8.23',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+          viaIR: true
+        },
       },
-      viaIR: true
-    },
-  },
   networks: {
-    bscTestnet: {
-      url: process.env.BSC_TESTNET_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545/',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    bscMain: {
-      url: process.env.BSC_TESTNET_RPC_URL || 'https://bsc-dataseed.binance.org/',
-      accounts: [process.env.PRIVATE_KEY],
-      chainId: 56,
-      gas: 2000000,
-      gasPrice: 10000000000, // 10 gwei
-      timeout: 1000000,
-    },
-    fastex: {
-      url: process.env.FASTEX_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    oasis: {
-      url: process.env.OASIS_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    bahamut: {
-      url: process.env.BAHAMUT_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    goerli: {
-      url: process.env.GOERLI_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    arbitrumSepolia: {
+      url: 'https://arbitrum-sepolia.drpc.org',
+      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
     },
     sepolia: {
-      url: process.env.SEPOLIA_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: `https://sepolia.infura.io/v3/775081a490784e709d3457ed0e413b21`,
+      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
     },
-    konsta: {
-      url: process.env.KONSTA_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    mainnet: {
-      url: process.env.MAINNET_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    arbitrum: {
-      url: process.env.ARBITRUM_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    arbitrumSepolia: {
-      url: process.env.ARBITRUM_SEPOLIA_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    },
-    optimism: {
-      url: process.env.OPTIMISM_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    lineaSepolia: {
+      url: "https://rpc.sepolia.linea.build",
+      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      chainId: 59141,
     },
     optimismSepolia: {
-      url: process.env.OPTIMISM_SEPOLIA_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: "https://optimism-sepolia.drpc.org",
+      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      chainId: 11155420,
     },
-    mumbai: {
-      url: process.env.MUMBAI_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    taikoHekla: {
+      url: "https://rpc.hekla.taiko.xyz.",
+      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      chainId: 167009,
     },
-    polygon: {
-      url: process.env.POLYGON_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    immutableTestnet: {
+      url: "https://rpc.testnet.immutable.com",
+      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      chainId: 13473,
     },
   },
-  gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined,
-    currency: 'USD',
-  },
   etherscan: {
-    apiKey: process.env.MUMBAI_API_KEY,
-  },
-  etherscan: {
-    apiKey: process.env.ARBITRUM_API_KEY,
-  },
-  etherscan: {
-    apiKey: process.env.OPTIMISM_API_KEY,
-  },
-  etherscan: {
-    apiKey: process.env.BSC_API_KEY,
-  },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
-  },
-  customChains: [
-    {
-      network: 'fastex',
-      chainId: 424242,
-      urls: {
-        apiURL: process.env.FASTEX_URL || '',
+    apiKey: {
+      immutableTestnet: "pk_imapik-test-$JSr2xVyP--QDkeRDm@t",
+      optimismSepolia: "UM3DM9U5BE55IYGI656ET7VWI5PZJEHIS3",
+      lineaSepolia: "KRPGHKNVEKJVSA3NG8XGMAAS3ZQIZYFKNV",
+      taikoHekla: "XTMX6XTKPD8VCWD58AEPEKYTQB6QW5W1T8",
+      arbitrumSepolia: "J3J5B7TVWIDGV5236BHRGAUD9YJV5T33AH",
+      sepolia: "Q7JD6R5A6S8B3KXIZFS5NBP13MJI9C74YH",
+    },
+    customChains: [
+      {
+        network: "lineaSepolia",
+        chainId: 59141,
+        urls: {
+          apiURL: "https://api-sepolia.lineascan.build/api",
+          browserURL: "https://sepolia.lineascan.build",
+        },
       },
-    },
-    {
-      network: 'oasis',
-      chainId: 4090,
-      urls: {
-        apiURL: process.env.OASIS_URL || '',
+      {
+        network: "optimismSepolia",
+        chainId: 11155420,
+        urls: {
+          apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
+          browserURL: "https://sepolia-optimism.etherscan.io/"
+        },
       },
-    },
-    {
-      network: 'bahamut',
-      chainId: 5165,
-      urls: {
-        apiURL: process.env.BAHAMUT_URL || '',
+      {
+        network: "taikoHekla",
+        chainId: 167009,
+        urls: {
+          apiURL: "https://blockscoutapi.hekla.taiko.xyz/api",
+          browserURL: "https://blockscoutapi.hekla.taiko.xyz/"
+        },
       },
-    },
-  ],
+      {
+        network: "immutableTestnet",
+        chainId: 13473,
+        urls: {
+          apiURL: "https://explorer.testnet.immutable.com/api",
+          browserURL: "https://explorer.testnet.immutable.com/"
+        },
+      },
+    ]
+  },
+  sourcify: {
+    enabled: false
+  }
 };

@@ -110,6 +110,9 @@ contract HashedTimeLockEther {
   mapping(bytes32 => bytes32) commitIdToLockId;
   bytes32[] lockIds;
   bytes32[] commitIds;
+  bytes32 blockHash = blockhash(block.number - 1);
+  uint256 blockHashAsUint = uint256(blockHash);
+  uint256 contractNonce = 0;
 
   function commit(
     string[] memory hopChains,
@@ -129,21 +132,8 @@ contract HashedTimeLockEther {
     if (timelock <= block.timestamp) {
       revert NotFutureTimelock();
     }
-
-    commitId = sha256(
-      abi.encodePacked(
-        address(this),
-        msg.sender,
-        msg.value,
-        dstChain,
-        dstAsset,
-        dstAddress,
-        srcAsset,
-        srcReceiver,
-        timelock,
-        messenger
-      )
-    );
+    contractNonce+=1;
+    commitId = bytes32(blockHashAsUint ^ contractNonce);
     if (hasPHTLC(commitId)) {
       revert CommitIdAlreadyExists();
     }
@@ -329,8 +319,7 @@ contract HashedTimeLockEther {
   function redeem(bytes32 lockId, uint256 secret) external _locked(lockId) returns (bool) {
     HTLC storage htlc = locks[lockId];
 
-    bytes32 pre = sha256(abi.encodePacked(secret));
-    if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
+    if (htlc.hashlock != sha256(abi.encodePacked(secret))) revert HashlockNotMatch();
     if (htlc.unlocked) revert AlreadyUnlocked();
     if (htlc.redeemed) revert AlreadyRedeemed();
 

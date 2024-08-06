@@ -92,6 +92,9 @@ contract HashedTimeLockERC20 {
   mapping(bytes32 => bytes32) commitIdToLockId;
   bytes32[] lockIds;
   bytes32[] commitIds;
+  bytes32 blockHash = blockhash(block.number - 1);
+  uint256 blockHashAsUint = uint256(blockHash);
+  uint256 contractNonce = 0;
 
   event TokenLocked(
     bytes32 indexed hashlock,
@@ -172,21 +175,8 @@ contract HashedTimeLockERC20 {
     }
 
     token.safeTransferFrom(msg.sender, address(this), amount);
-    commitId = sha256(
-      abi.encodePacked(
-        address(this),
-        msg.sender,
-        dstChain,
-        dstAsset,
-        dstAddress,
-        srcAsset,
-        srcReceiver,
-        timelock,
-        messenger,
-        amount,
-        tokenContract
-      )
-    );
+    contractNonce+=1;
+    commitId = bytes32(blockHashAsUint ^ contractNonce);
     if (hasPHTLC(commitId)) {
       revert CommitIdAlreadyExists();
     }
@@ -394,8 +384,7 @@ contract HashedTimeLockERC20 {
   function redeem(bytes32 lockId, uint256 secret) external _locked(lockId) returns (bool) {
     HTLC storage htlc = locks[lockId];
 
-    bytes32 pre = sha256(abi.encodePacked(secret));
-    if (htlc.hashlock != sha256(abi.encodePacked(pre))) revert HashlockNotMatch();
+    if (htlc.hashlock != sha256(abi.encodePacked(secret))) revert HashlockNotMatch();
     if (htlc.redeemed) revert AlreadyRedeemed();
     if (htlc.unlocked) revert AlreadyUnlocked();
 
