@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 use sha2::{Digest, Sha256};
 use std::mem::size_of;
-declare_id!("FHNm9iB3sE6rJ2kFyj4URGS3FGpYim6vjGtd1kdc5Mws");
+declare_id!("BUDQ4TaX83EvokZ3653oacdUvcYBuMXSxN9yZhjCi8fy");
 
 const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 
