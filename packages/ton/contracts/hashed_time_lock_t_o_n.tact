@@ -122,13 +122,15 @@ struct StringImpl{
 
 contract HashedTimeLockTON with Deployable {
     init() {
-        
+    self.seed = random(10000000000000000000000000000000000000000000000000000000000000000000000000000,99999999999999999999999999999999999999999999999999999999999999999999999999999);
     }
 
     locks: map<Int, HTLC> ;
     commits: map<Int, PHTLC>;
     commitIdToLockId: map<Int,Int>;
-
+    contractNonce: Int = 0;
+    seed: Int;
+    
     fun lockExists(hashlock: Int): Bool {
         if(self.locks.get(hashlock) == null){
             return false;
@@ -148,14 +150,8 @@ contract HashedTimeLockTON with Deployable {
 
             require(ctx.value != 0,"Funds Not Sent");
             require(msg.data.timelock > now(),"Not Future Timelock");
-
-            let commitId: Int = beginCell()
-                .storeAddress(myAddress()).storeAddress(ctx.sender).storeUint(ctx.value, 120)
-                .storeRef(beginCell().storeRef(msg.data.dstChain.asSlice().asCell()).storeRef(msg.data.dstAsset.asSlice().asCell())
-                    .storeSlice(msg.data.dstAddress.asSlice()).endCell())
-                .storeRef(beginCell().storeRef(msg.data.srcAsset.asSlice().asCell()).storeAddress(msg.data.srcReceiver)
-                    .storeUint(msg.data.timelock, 64).storeAddress(msg.data.messenger).endCell())
-                .endCell().hash();
+            self.contractNonce +=1;
+            let commitId: Int = self.seed ^ self.contractNonce; 
 
             require(self.commitExists(commitId) == false,"Commit Already Exists");
             self.commits.set(commitId, PHTLC {
@@ -278,10 +274,7 @@ contract HashedTimeLockTON with Deployable {
         let ctx: Context = context();
         require(self.lockExists(msg.data.lockId) == true, "Lock Does Not Exist");
 
-        let preSlice: Slice = beginCell().storeUint(msg.data.secret,256).asSlice();
-        let pre: Int = sha256(preSlice);
-
-        let hashlockFromSecretSlice: Slice = beginCell().storeUint(pre,256).asSlice();
+        let hashlockFromSecretSlice: Slice = beginCell().storeUint(msg.data.secret,256).asSlice();
         let hashlockFromSecret: Int = sha256(hashlockFromSecretSlice);
 
         require((self.locks.get(msg.data.lockId)!!).hashlock == hashlockFromSecret,"Hashlock Not Match");
