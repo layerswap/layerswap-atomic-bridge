@@ -18,7 +18,8 @@ interface PDAParameters {
   lockIdStruct: anchor.web3.PublicKey;
 }
 
-describe("safe_pay", () => {
+
+describe("HTLC", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
   const program = anchor.workspace.AnchorHtlc as anchor.Program<AnchorHtlc>;
@@ -44,7 +45,6 @@ describe("safe_pay", () => {
   const HOPASSETS = [DSTASSET];
   const DSTADDRESS = "0x11";
   const HOPADDRESSES = [DSTADDRESS];
-
 
   let tokenMint: anchor.web3.PublicKey;
   let alice: anchor.web3.Keypair;
@@ -131,7 +131,7 @@ describe("safe_pay", () => {
     const user = new anchor.web3.Keypair();
     let userAssociatedTokenAccount: anchor.web3.PublicKey | undefined = undefined;
 
-    // Fund user with some SOL
+    // Fund user with SOL
     let txFund = new anchor.web3.Transaction();
     txFund.add(
       anchor.web3.SystemProgram.transfer({
@@ -352,7 +352,7 @@ describe("safe_pay", () => {
 
 
 
-  it("Bob can redeem", async () => {
+  it("Create new HTLC and then redeem tokens", async () => {
     const [, aliceBalancePre] = await readAccount(aliceWallet, provider);
     assert.equal(aliceBalancePre, "1337000000");
 
@@ -361,8 +361,25 @@ describe("safe_pay", () => {
     const TIMELOC = (TIME + 2500) / 1000;
     const TIMELOCK = new anchor.BN(TIMELOC);
     console.log(`[${TIMELOC * 1000}] the Timelock`);
+    const listenerTokenLocked = program.addEventListener('tokenLocked', (event, slot) => {
+      console.log(`slot ${slot}`);
+      console.log(`tokenLocked hashlock ${event.hashlock}`);
+      console.log(`tokenLocked dstChain ${event.dstChain}`);
+      console.log(`tokenLocked dstAddress ${event.dstAddress}`);
+      console.log(`tokenLocked dstAsset ${event.dstAsset}`);
+      console.log(`tokenLocked sender ${event.sender}`);
+      console.log(`tokenLocked srcReceiver ${event.srcReceiver}`);
+      console.log(`tokenLocked srcAsset ${event.srcAsset}`);
+      console.log(`tokenLocked amount ${event.amount}`);
+      console.log(`tokenLocked timelock ${event.timelock}`);
+      console.log(`tokenLocked messenger ${event.messenger}`);
+      console.log(`tokenLocked commitId ${event.commitId}`);
+      console.log(`tokenLocked tokenContract ${event.tokenContract}`);
+    });
+    const LOCKIDArray: number[] = Array.from(LOCKID);
+    const COMMITIDArray: number[] = Array.from(COMMITID);
     const tx1 = await program.methods
-      .lock(LOCKID, COMMITID, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, alice.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
+      .lock(LOCKIDArray, COMMITIDArray, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, alice.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
       .accountsPartial({
         htlc: pda.htlcKey,
         htlcTokenAccount: pda.htlcTokenAccount,
@@ -370,23 +387,26 @@ describe("safe_pay", () => {
         tokenContract: tokenMint,
         senderTokenAccount: aliceWallet
       })
-      .signers([alice]).transaction();
-    console.log(`Initialized a new Safe Pay instance. Alice will pay bob 100 tokens`);
+      .transaction();
+    console.log(`Created a new HTLC. Alice will pay bob 100 tokens`);
     const setTx = await program.methods.setLockIdByCommitId(COMMITID, LOCKID).
       accountsPartial({
         lockIdStruct: pda.lockIdStruct,
         userSigning: alice.publicKey,
-      }).signers([alice]).transaction();
+      }).transaction();
 
     let transaction = new anchor.web3.Transaction();
     transaction.add(tx1);
     transaction.add(setTx);
 
     await anchor.web3.sendAndConfirmTransaction(anchor.getProvider().connection, transaction, [alice]);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    program.removeEventListener(listenerTokenLocked);
 
     const lock_id = await program.methods.getLockIdByCommitId(COMMITID).accountsPartial({ lockIdStruct: pda.lockIdStruct }).rpc();
 
-    // Assert that 100 tokens were moved from Alice's account to the escrow.
+    // Assert that 100 tokens were moved from Alice's account to the HTLC Token Account.
     const [, aliceBalancePost] = await readAccount(aliceWallet, provider);
     assert.equal(aliceBalancePost, "337000000");
     const [, escrowBalancePost] = await readAccount(pda.htlcTokenAccount, provider);
@@ -422,7 +442,7 @@ describe("safe_pay", () => {
     const [, bobBalance] = await readAccount(bobTokenAccount, provider);
     assert.equal(bobBalance, "1000000000");
 
-    // Assert that escrow was correctly closed.
+    // Assert that HTLC Token Account was correctly closed.
     try {
       await readAccount(pda.htlcTokenAccount, provider);
       return assert.fail("Account should be closed");
@@ -435,11 +455,9 @@ describe("safe_pay", () => {
 
 
 
-  // it("can pull back funds once they are deposited", async () => {
+  // it("Refund tokens after the timelock is expired", async () => {
   //   const [, aliceBalancePre] = await readAccount(aliceWallet, provider);
   //   assert.equal(aliceBalancePre, "1337000000");
-
-  //   const amount = new anchor.BN(20000000);
 
   //   // Initialize mint account and fund the account
   //   const TIME = new Date().getTime();
@@ -459,7 +477,7 @@ describe("safe_pay", () => {
   //     .rpc();
   //   console.log(`Initialized a new Safe Pay instance. Alice will pay bob 100 tokens`);
 
-  //   // Assert that 100 tokens were moved from Alice's account to the escrow.
+  //   // Assert that 100 tokens were moved from Alice's account to the HTLC Token Account.
   //   const [, aliceBalancePost] = await readAccount(aliceWallet, provider);
   //   assert.equal(aliceBalancePost, "337000000");
   //   const [, escrowBalancePost] = await readAccount(pda.htlcTokenAccount, provider);
@@ -488,7 +506,7 @@ describe("safe_pay", () => {
   //   const [, aliceBalanceunlock] = await readAccount(aliceWallet, provider);
   //   assert.equal(aliceBalanceunlock, "1337000000");
 
-  //   // Assert that escrow was correctly closed.
+  //    // Assert that HTLC Token Account was correctly closed.
   //   try {
   //     await readAccount(pda.htlcTokenAccount, provider);
   //     return assert.fail("Account should be closed");
