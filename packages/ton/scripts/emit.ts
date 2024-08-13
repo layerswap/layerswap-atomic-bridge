@@ -31,7 +31,7 @@ async function parseEmit(address: string, token: string, index: number) {
     }
 }
 
-const address = 'EQCJhsfTsoxKKpMBDw8C5z_ZGbljdOLInZNvjFM8NtyyNLk2'; 
+const address = 'kQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFTsp'; 
 const token = 'AGVYQVBYQDB6KRAAAAAFWAOS73LJHXPEWONMCFRIRGOBL7WIDI5D5G2GRWOD347TUUFWPUA'; 
 
 parseEmit(address, token, 0)

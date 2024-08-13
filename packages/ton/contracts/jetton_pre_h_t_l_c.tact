@@ -7,14 +7,14 @@ message(0xf8a7ea5) TokenTransfer {
     response_destination: Address;
     custom_payload: Cell?;
     forward_ton_amount: Int as coins;
-    forward_payload: Slice as remaining; // Comment Text message when Transfer the jetton
+    forward_payload: Slice as remaining; 
 }
 
 message(0x7362d09c) TokenNotification {
     queryId: Int as uint64;
     amount: Int as coins;
     from: Address;
-    forward_payload: Slice as remaining; // Comment Text message when Transfer the jetton 
+    forward_payload: Slice as remaining;
 }
 
 // Messenger notification
@@ -49,7 +49,22 @@ struct PHTLC {
     locked: Bool;
     uncommitted: Bool;
     jettonMasterAddress: Slice;
-    jettonWalletCode: Slice;
+    htlcJettonWalletAddress: Slice;  
+}
+
+struct CommitData{
+    hopChains: map<Int,StringImpl>;
+    hopAssets: map<Int,StringImpl>;
+    hopAddresses: map<Int,StringImpl>;
+    dstChain: String;
+    dstAsset: String;
+    dstAddress: String;
+    srcAsset: String;
+    srcReceiver: Address;
+    timelock: Int; 
+    messenger: Address;
+    jettonMasterAddress: Slice;
+    htlcJettonWalletAddress: Slice;  
 }
 
 // Lock object
@@ -67,29 +82,24 @@ struct HTLC {
     redeemed: Bool;
     unlocked: Bool;
     jettonMasterAddress: Slice;
-    jettonWalletCode: Slice;
+    htlcJettonWalletAddress: Slice;  
+}
+
+struct LockData {
+    hashlock: Int;
+    timelock: Int;
+    srcReceiver: Address;
+    srcAsset: String;
+    dstChain: String;
+    dstAddress: String;
+    dstAsset: String;
+    commitId: Int?;
+    messenger: Address?;
+    jettonMasterAddress: Slice;
+    htlcJettonWalletAddress: Slice;  
 }
 
 // Messages received by contract
-message Commit{
-    data: CommitData;
-}
-struct CommitData{
-    hopChains: map<Int,StringImpl>;
-    hopAssets: map<Int,StringImpl>;
-    hopAddresses: map<Int,StringImpl>;
-    dstChain: String;
-    dstAsset: String;
-    dstAddress: String;
-    srcAsset: String;
-    srcReceiver: Address;
-    timelock: Int; 
-    messenger: Address;
-    jettonMasterAddress: Slice;
-    jettonWalletCode: Slice;  
-    amount: Int; 
-}
-
 message LockCommitment{
     data: LockCommitmentData;
 }
@@ -105,31 +115,12 @@ struct UncommitData{
     commitId: Int;
 }
 
-message Lock {
-    data: LockData;
-}
-struct LockData {
-    hashlock: Int;
-    timelock: Int;
-    srcReceiver: Address;
-    srcAsset: String;
-    dstChain: String;
-    dstAddress: String;
-    dstAsset: String;
-    commitId: Int?;
-    messenger: Address?;
-    jettonMasterAddress: Slice;
-    jettonWalletCode: Slice;
-}
-
 message Redeem {
     data: RedeemData;
 }
 struct RedeemData {
     lockId: Int;
     secret: Int;
-    initCode: Cell?; // check if data can be gained off chain
-    initData: Cell?;
 }
 
 message Unlock {
@@ -176,19 +167,25 @@ contract HashedTimeLockTON with Deployable {
 
     receive(msg: TokenNotification){
         let ctx: Context = context();
-        let data: Slice = msg.forward_payload.loadRef().asSlice();
-        let op_code: Int = data.asSlice().preloadUint(32);
-        
+
+        let slice = msg.forward_payload.asCell().beginParse(); 
+        let flag = slice.loadUint(1);  
+        let refCell = slice.loadRef();  
+        let refSlice = refCell.beginParse();
+        let op_code = refSlice.loadUint(32);  
+
         if (op_code == 1734998782){
-            self._commit(CommitData.fromSlice(data), ctx);
+            self._commit(refSlice, msg.from,msg.amount);
         }
-        // if (op_code == 3995289619){
-        //     self._lock(LockData.fromSlice(msg.forward_payload), ctx);
-        // }
+        if (op_code == 3995289619){
+            self._lock(refSlice, msg.from,msg.amount);
+        }
     }
 
-    fun _commit(msg: CommitData,ctx: Context){
-            require(ctx.value != 0,"Funds Not Sent");
+    fun _commit(msgSlc: Slice,sender: Address,value: Int){
+            let msg: CommitData = CommitData.fromSlice(msgSlc);
+
+            require(value != 0,"Funds Not Sent");
             require(msg.timelock > now(),"Not Future Timelock");
             self.contractNonce +=1;
             let commitId: Int = self.seed ^ self.contractNonce; 
@@ -199,42 +196,43 @@ contract HashedTimeLockTON with Deployable {
                                                 dstChain: msg.dstChain,
                                                 dstAsset: msg.dstAsset,
                                                 srcAsset: msg.srcAsset,
-                                                sender: ctx.sender,
+                                                sender: sender,
                                                 srcReceiver: msg.srcReceiver,
                                                 timelock: msg.timelock, 
-                                                amount: msg.amount,
+                                                amount: value,
                                                 messenger: msg.messenger,
                                                 locked: false,
                                                 uncommitted: false,
                                                 jettonMasterAddress: msg.jettonMasterAddress,
-                                                jettonWalletCode: msg.jettonWalletCode
+                                                htlcJettonWalletAddress: msg.htlcJettonWalletAddress
                                                 });
             emit(CommitId {commitId: commitId}.toCell());
-    
     }
 
     receive(msg: Uncommit){
         require(self.commitExists(msg.data.commitId) == true,"Commit Does Not Exist");
-        require((self.commits.get(msg.data.commitId)!!).uncommitted == false,"Already Uncommitted");
-        require((self.commits.get(msg.data.commitId)!!).locked == false,"Already Locked");
-        require((self.commits.get(msg.data.commitId)!!).timelock <= now(),"Not Passed Timelock");
+        let commitObj: PHTLC = (self.commits.get(msg.data.commitId)!!);
+        require(commitObj.timelock <= now(),"Not Passed Timelock");
+        //these checks can be skipped as after modification PHTLC object is deleted
+        require(commitObj.uncommitted == false,"Already Uncommitted");
+        require(commitObj.locked == false,"Already Locked");
 
         let ctx: Context = context();
         let queryHash: Int = beginCell().storeAddress(ctx.sender).storeInt(now(),48).endCell().hash();
         let queryIndex: Int =  (0x000000000000000 & queryHash);
 
         send(SendParameters{
-                to: calculateUserJettonWalletAddress(myAddress().asSlice(),(self.commits.get(msg.data.commitId)!!).jettonMasterAddress,(self.commits.get(msg.data.commitId)!!).jettonWalletCode.asCell()).loadAddress(),
-                value: ctx.value/2,
+                to: commitObj.htlcJettonWalletAddress.loadAddress(),
+                value: ctx.value,
                 bounce: true,
                 mode: 0,
                 body: TokenTransfer {
                                     queryId: queryIndex,
-                                    amount: (self.commits.get(msg.data.commitId)!!).amount,
-                                    destination: (self.commits.get(msg.data.commitId)!!).sender,
+                                    amount: commitObj.amount,
+                                    destination: commitObj.sender,
                                     response_destination: myAddress(),
                                     custom_payload: null,
-                                    forward_ton_amount: ctx.value/2,
+                                    forward_ton_amount: 1,
                                     forward_payload: ("Uncommitted").asSlice(), 
                                 }.toCell(),
             }
@@ -247,27 +245,29 @@ contract HashedTimeLockTON with Deployable {
         let ctx: Context = context();
         let lockId: Int = msg.data.hashlock;
         require(self.commitExists(msg.data.commitId) == true,"Commit Does Not Exist");
-        
-        if(ctx.sender == (self.commits.get(msg.data.commitId)!!).sender || ctx.sender == (self.commits.get(msg.data.commitId)!!).messenger){
+        let commitObj: PHTLC = (self.commits.get(msg.data.commitId)!!);
+
+        if(ctx.sender == commitObj.sender || ctx.sender == commitObj.messenger){
                     require(self.lockExists(lockId) == false ,"Lock Already Exists");
-                    require((self.commits.get(msg.data.commitId)!!).locked == false,"Already Locked");
-                    require((self.commits.get(msg.data.commitId)!!).uncommitted == false,"Already Uncommitted");
+                    // these checks can be skipped as commit object after modification(uncommit or lockCommitment) is deleted
+                    require(commitObj.locked == false,"Already Locked");
+                    require(commitObj.uncommitted == false,"Already Uncommitted");
     
                     self.locks.set(lockId,HTLC{       
-                                                    dstAddress: (self.commits.get(msg.data.commitId)!!).dstAddress,
-                                                    dstChain: (self.commits.get(msg.data.commitId)!!).dstChain,
-                                                    dstAsset: (self.commits.get(msg.data.commitId)!!).dstAsset,
-                                                    srcAsset: (self.commits.get(msg.data.commitId)!!).srcAsset,
-                                                    sender: (self.commits.get(msg.data.commitId)!!).sender,
-                                                    srcReceiver: (self.commits.get(msg.data.commitId)!!).srcReceiver,
+                                                    dstAddress: commitObj.dstAddress,
+                                                    dstChain: commitObj.dstChain,
+                                                    dstAsset: commitObj.dstAsset,
+                                                    srcAsset: commitObj.srcAsset,
+                                                    sender: commitObj.sender,
+                                                    srcReceiver: commitObj.srcReceiver,
                                                     hashlock: msg.data.hashlock,
                                                     secret: 0x0,
-                                                    amount: (self.commits.get(msg.data.commitId)!!).amount,
-                                                    timelock: (self.commits.get(msg.data.commitId)!!).timelock,
+                                                    amount: commitObj.amount,
+                                                    timelock: commitObj.timelock,
                                                     redeemed: false,
                                                     unlocked: false,
-                                                    jettonMasterAddress: (self.commits.get(msg.data.commitId)!!).jettonMasterAddress,
-                                                    jettonWalletCode: (self.commits.get(msg.data.commitId)!!).jettonWalletCode
+                                                    jettonMasterAddress: commitObj.jettonMasterAddress,
+                                                    htlcJettonWalletAddress: commitObj.htlcJettonWalletAddress
                                                    }); 
 
                     self.commits.del(msg.data.commitId);
@@ -276,26 +276,27 @@ contract HashedTimeLockTON with Deployable {
         }
     }
 
-    fun _lock(msg: LockData,ctx: Context){
+    fun _lock(msgSlc: Slice,sender: Address,value: Int){
+        let msg: LockData = LockData.fromSlice(msgSlc);
         require(self.lockExists(msg.hashlock) == false,"Lock Already Exists"); 
         require(now() <= msg.timelock ,"Not Future Timelock");
-        require(ctx.value != 0,"Funds Not Sent");
+        require(value != 0,"Funds Not Sent");
 
         self.locks.set(msg.hashlock,  HTLC  {
                                                         dstAddress: msg.dstAddress,
                                                         dstChain: msg.dstChain,
                                                         dstAsset: msg.dstAsset,
                                                         srcAsset: msg.srcAsset,
-                                                        sender: sender(),
+                                                        sender: sender,
                                                         srcReceiver: msg.srcReceiver,
                                                         hashlock: msg.hashlock,
                                                         secret: 0x0,
-                                                        amount: ctx.value, 
+                                                        amount: value, 
                                                         timelock: msg.timelock,
                                                         redeemed: false,
                                                         unlocked: false,
                                                         jettonMasterAddress: msg.jettonMasterAddress,
-                                                        jettonWalletCode: msg.jettonWalletCode
+                                                        htlcJettonWalletAddress: msg.htlcJettonWalletAddress
                                                         });
 
         if(msg.commitId != null){
@@ -315,9 +316,9 @@ contract HashedTimeLockTON with Deployable {
                                                                             dstAsset: msg.dstAsset,
                                                                             dstAddress: msg.dstAddress,
                                                                             srcAsset: msg.srcAsset,
-                                                                            sender: sender(),
+                                                                            sender: sender,
                                                                             srcReceiver: msg.srcReceiver,
-                                                                            amount: ctx.value,
+                                                                            amount: value,
                                                                             timelock: msg.timelock,
                                                                         }}.toCell()});  
         }
@@ -325,65 +326,64 @@ contract HashedTimeLockTON with Deployable {
 
     receive(msg: Redeem) {
         let ctx: Context = context();
+
         require(self.lockExists(msg.data.lockId) == true, "Lock Does Not Exist");
+        let lockObj: HTLC = (self.locks.get(msg.data.lockId)!!);
 
         let hashlockFromSecretSlice: Slice = beginCell().storeUint(msg.data.secret,256).asSlice();
         let hashlockFromSecret: Int = sha256(hashlockFromSecretSlice);
+        require(lockObj.hashlock == hashlockFromSecret,"Hashlock Not Match");
 
-        require((self.locks.get(msg.data.lockId)!!).hashlock == hashlockFromSecret,"Hashlock Not Match");
-        require((self.locks.get(msg.data.lockId)!!).unlocked == false,"Already Unlocked");
-        require((self.locks.get(msg.data.lockId)!!).redeemed == false,"Already Redeemed");
-
-        let contractValue: Int = (self.locks.get(msg.data.lockId)!!).amount;
-        let recieverAddr: Address = (self.locks.get(msg.data.lockId)!!).srcReceiver;
+        //these checks can be skipped as after modification HTLC object is deleted
+        require(lockObj.unlocked == false,"Already Unlocked");
+        require(lockObj.redeemed == false,"Already Redeemed");
 
         let queryHash: Int = beginCell().storeAddress(ctx.sender).storeInt(now(),48).endCell().hash();
         let queryIndex: Int =  (0x000000000000000 & queryHash);
 
         send(SendParameters{
-                            to: calculateUserJettonWalletAddress((self.locks.get(msg.data.lockId)!!).srcReceiver.asSlice(),(self.locks.get(msg.data.lockId)!!).jettonMasterAddress,(self.locks.get(msg.data.lockId)!!).jettonWalletCode.asCell()).loadAddress(),
-                            value: ctx.value/2,
+                            to: lockObj.htlcJettonWalletAddress.loadAddress(),
+                            value: ctx.value,
                             bounce: true,
                             mode: 0,
                             body: TokenTransfer {
                                                 queryId: queryIndex,
-                                                amount: (self.locks.get(msg.data.lockId)!!).amount,
-                                                destination: (self.locks.get(msg.data.lockId)!!).srcReceiver,
-                                                response_destination: myAddress(),
+                                                amount: lockObj.amount,
+                                                destination: lockObj.srcReceiver,
+                                                response_destination: sender(),
                                                 custom_payload: null,
-                                                forward_ton_amount: ctx.value/2,
+                                                forward_ton_amount: 1,
                                                 forward_payload: ("Redeemed").asSlice(), 
-                                            }.toCell(),
-                            code: msg.data.initCode,
-                            data: msg.data.initData,                                 
+                                            }.toCell(),                                
             }
         ); 
-
         self.locks.del(msg.data.lockId);
     }
 
     receive(msg: Unlock){
         let ctx: Context = context();
         require(self.lockExists(msg.data.hashlock) == true,"Lock Does Not Exist");
-        require((self.locks.get(msg.data.hashlock)!!).unlocked == false,"Already Unlocked");
-        require((self.locks.get(msg.data.hashlock)!!).redeemed == false,"Already Redeemed");
-        require((self.locks.get(msg.data.hashlock)!!).timelock < now(), "Not Passed Timelock");
+        let lockObj: HTLC = (self.locks.get(msg.data.hashlock)!!);
+        require(lockObj.timelock < now(), "Not Passed Timelock");
+        //these checks can be skipped as after modification HTLC object is deleted
+        require(lockObj.unlocked == false,"Already Unlocked");
+        require(lockObj.redeemed == false,"Already Redeemed");
 
         let queryHash: Int = beginCell().storeAddress(ctx.sender).storeInt(now(),48).endCell().hash();
         let queryIndex: Int =  (0x000000000000000 & queryHash);
 
         send(SendParameters{
-                    to: calculateUserJettonWalletAddress((self.locks.get(msg.data.hashlock)!!).sender.asSlice(),(self.locks.get(msg.data.hashlock)!!).jettonMasterAddress,(self.locks.get(msg.data.hashlock)!!).jettonWalletCode.asCell()).loadAddress(),
-                    value: ctx.value/2,
+                    to: lockObj.htlcJettonWalletAddress.loadAddress(),
+                    value: ctx.value,
                     bounce: true,
                     mode: 0,
                     body: TokenTransfer {
                                         queryId: queryIndex,
-                                        amount: (self.locks.get(msg.data.hashlock)!!).amount,
-                                        destination: (self.locks.get(msg.data.hashlock)!!).sender,
-                                        response_destination: myAddress(),
+                                        amount: lockObj.amount,
+                                        destination: lockObj.sender,
+                                        response_destination: sender(),
                                         custom_payload: null,
-                                        forward_ton_amount: ctx.value/2,
+                                        forward_ton_amount: 1,
                                         forward_payload: ("Unlocked").asSlice(),
                                     }.toCell(),                            
                 }
@@ -456,36 +456,4 @@ contract HashedTimeLockTON with Deployable {
         }
         return null;
     }
-
 }
-
-fun packJettonWalletData(balance: Int, ownerAddress: Slice, jettonMasterAddress: Slice, jettonWalletCode: Cell): Cell {
-   return  beginCell()
-            .storeCoins(balance)
-            .storeSlice(ownerAddress)
-            .storeSlice(jettonMasterAddress)
-            .storeRef(jettonWalletCode)
-           .endCell();
-}
-
-fun calculateJettonWalletStateInit(balance: Int, ownerAddress: Slice, jettonMasterAddress: Slice, jettonWalletCode: Cell): Cell{
-      return beginCell()          
-          .storeUint(0, 2)
-          .storeRef(jettonWalletCode)
-          .storeRef(packJettonWalletData(0, ownerAddress, jettonMasterAddress, jettonWalletCode))
-          .storeUint(0, 1)
-         .endCell();
-}
-
-fun calculateJettonWalletAddress( stateInit: Cell): Slice{
-      return beginCell().storeUint(4, 3)
-                     .storeInt(0, 8)
-                     .storeUint(stateInit.hash(), 256)
-                     .endCell()
-                     .beginParse();
-}
-
-fun calculateUserJettonWalletAddress(ownerAddress: Slice, jettonMasterAddress: Slice, jettonWalletCode: Cell): Slice{
-  return calculateJettonWalletAddress(calculateJettonWalletStateInit(0,ownerAddress, jettonMasterAddress, jettonWalletCode));
-}
-

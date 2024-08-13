@@ -28,59 +28,41 @@ export async function run() {
   const contractProvider = client.open(newContract);
 
   const queryId = BigInt(Date.now()); 
-  const amount = 5n; 
-  const destination = Address.parse("EQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFYCj"); 
-  const response_destination = Address.parse("kQAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B9D3"); 
+  const amount = 3n;
+  const destination = Address.parse("kQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFTsp");
+  const response_destination = Address.parse("kQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFTsp");
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell(); 
   const forward_ton_amount = toNano("0.1"); 
-const hopChains = createStrMap([
-    [0n, { $$type: 'StringImpl', data: "chain 1" }],
-    [1n, { $$type: 'StringImpl', data: "chain 2" }],
-    [2n, { $$type: 'StringImpl', data: "chain 3" }]
-  ]);
   
-  const hopAssets = createStrMap([
-    [0n, { $$type: 'StringImpl', data: "asset 1" }],
-    [1n, { $$type: 'StringImpl', data: "asset 2" }],
-    [2n, { $$type: 'StringImpl', data: "asset 3" }]
-  ]);
-  
-  const hopAddresses = createStrMap([
-    [0n, { $$type: 'StringImpl', data: "address 1" }],
-    [1n, { $$type: 'StringImpl', data: "address 2" }],
-    [2n, { $$type: 'StringImpl', data: "address 3" }]
-  ]);
-  
-  const dstChain: string = "STARKNET SEPOLIA";
-  const dstAsset: string = "STARKNET SEPOLIA";
+  const hashlock = BigInt("29530252093357890898834521861622343027915865536417638551712283177493");
+  const commitId = BigInt(100n); 
+  const dstChain: string = "ETH SEPOLIA";
+  const dstAsset: string = "STARKNET SEPOLIA ETH";
   const dstAddress: string = "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f";
-  const srcAsset: string = "Jetton V8";
-  const srcReceiver: Address = Address.parse("UQCA5WdfZ_il-bFktDYao5h4zf7sw_64KZRx1Yc2eJrRC4vm");
-  const timelock = BigInt(Math.floor(Date.now() / 1000) + 1000); 
-  const messenger: Address = Address.parse("EQBIgdusaVOdJbcN9r0O65iCF7KH9aUzS8kK-pDGJKs4ZHc_");
+  const asset: string = "Jetton V8";
+  const receiver: Address = Address.parse("UQCA5WdfZ_il-bFktDYao5h4zf7sw_64KZRx1Yc2eJrRC4vm");
+  const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600); 
+  const messenger: Address = Address.parse("kQD-7i2sk54ZpbykeBppW9OO2KojNVzR5XEfmne-lHlk0byp");
   
   const jettonMasterAddress = beginCell().storeAddress(Address.parse("kQCdbtPwe4P8eF_rH-o0vu4Plfqrhmr9MR-pKkzH487BLJOQ")).endCell();
   const htlcJettonWalletAddress = beginCell().storeAddress(Address.parse("0:fcf3a7b27feceddbef0672ed56f301dfda5fa3fdd020b9fe3dcb72986cd080b7")).endCell();;
 
   let b_0 = new Builder();
-  b_0.storeDict(hopChains, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-  b_0.storeDict(hopAssets, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
+  b_0.storeInt(hashlock, 257);
+  b_0.storeInt(timelock, 257);
+  b_0.storeAddress(receiver);
+  b_0.storeStringRefTail(asset);
+  b_0.storeStringRefTail(dstChain);
   let b_1 = new Builder();
-  b_1.storeDict(hopAddresses, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-  b_1.storeStringRefTail(dstChain);
+  b_1.storeStringRefTail(dstAddress);
   b_1.storeStringRefTail(dstAsset);
-  let b_2 = new Builder();
-  b_2.storeStringRefTail(dstAddress);
-  b_2.storeStringRefTail(srcAsset);
-  b_2.storeAddress(srcReceiver);
-  b_2.storeInt(timelock, 257);
-  b_2.storeAddress(messenger);
-  b_2.storeRef(jettonMasterAddress);
-  b_2.storeRef(htlcJettonWalletAddress);
-  b_1.storeRef(b_2.endCell());
+  if (commitId !== null && commitId !== undefined) { b_1.storeBit(true).storeInt(commitId, 257); } else { b_1.storeBit(false); }
+  b_1.storeAddress(messenger);
+  b_1.storeRef(jettonMasterAddress);
+  b_1.storeRef(htlcJettonWalletAddress);
   b_0.storeRef(b_1.endCell());
   
-  const forward_payload = beginCell().storeUint(1, 1).storeRef(beginCell().storeUint(1734998782, 32).storeBuilder(b_0).endCell()).endCell();
+  const forward_payload = beginCell().storeUint(1, 1).storeRef(beginCell().storeUint(3995289619, 32).storeBuilder(b_0).endCell()).endCell();
 
   const tokenTransferMessage: TokenTransfer = {
     $$type: 'TokenTransfer',

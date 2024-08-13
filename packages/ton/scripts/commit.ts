@@ -29,13 +29,13 @@ const srcAsset: string = "TON";
 const srcReceiver: Address = Address.parse("0QCA5WdfZ_il-bFktDYao5h4zf7sw_64KZRx1Yc2eJrRCzBs");
 const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600); 
 const messenger: Address = Address.parse("EQBIgdusaVOdJbcN9r0O65iCF7KH9aUzS8kK-pDGJKs4ZHc_");
-const amount = toNano("0.7");
+const amount = toNano("0.01");
 
 async function run() {
   const endpoint = await getHttpEndpoint({ network: "testnet" });
   const client = new TonClient({ endpoint });
 
-  const mnemonic = "thunder ignore ankle edit height leader drip motor leave expect dune online favorite ankle tail spoon detail glory flush inform estate field swear"; 
+  const mnemonic = "thunder ignore ankle edit height leader drip motor leave expect dune online favorite ankle tail spoon detail glory flush inform estate field swear reason"; 
   const key = await mnemonicToWalletKey(mnemonic.split(" "));
   const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
   if (!await client.isContractDeployed(wallet.address)) {
@@ -46,15 +46,15 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQCJhsfTsoxKKpMBDw8C5z_ZGbljdOLInZNvjFM8NtyyNLk2"); 
+  const contractAddress = Address.parse("EQCLyV4wxLzxRqXUdG2UZipJeQI-JKhQr8Hkhs45SdgKxsVi"); 
 
   const newContract = HashedTimeLockTON.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
   const commitData: CommitData = {
-    HopChains: hopChains,
-    HopAssets: hopAssets,
-    HopAddresses: hopAddresses,
+    hopChains: hopChains,
+    hopAssets: hopAssets,
+    hopAddresses: hopAddresses,
     dstChain: dstChain,
     dstAsset: dstAsset,
     dstAddress: dstAddress,
