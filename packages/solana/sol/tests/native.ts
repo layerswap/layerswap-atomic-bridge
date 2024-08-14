@@ -122,9 +122,9 @@ describe("safe_pay", () => {
     const tx1 = await program.methods
       .commit(COMMITID, HOPCHAINS, HOPASSETS, HOPADDRESSES, DSTCHAIN, DSTASSET, DSTADDRESS, SRCASSET, bob.publicKey, TIMELOCK, alice.publicKey, new anchor.BN(AMOUNT), pda.phtlcBump)
       .accountsPartial({
+        sender: alice.publicKey,
         phtlc: pda.phtlcKey,
         commitCounter: pda.commitCounter,
-        sender: alice.publicKey,
       })
       .signers([alice])
       .rpc();
@@ -135,21 +135,21 @@ describe("safe_pay", () => {
     // console.log(`[${CURTIME * 1000}] CURRENT TIME`);
     // const tx2 = await program.methods.uncommit(COMMITID, pda.phtlcBump).
     //   accountsPartial({
+    //     userSigning: wallet.publicKey,
     //     phtlc: pda.phtlcKey,
     //     // userSigning: alice.publicKey,
-    //     userSigning: wallet.publicKey,
     //     sender: alice.publicKey,
     //   })
     //   .signers([wallet.payer])
     //   .rpc();
     // console.log(`can uncommit`);
 
-    const tx3 = await program.methods.lockCommit(COMMITID, LOCKID).
+    const tx3 = await program.methods.lockCommit(COMMITID, LOCKID, TIMELOCK).
       accountsPartial({
+        messenger: alice.publicKey,
         phtlc: pda.phtlcKey,
         htlc: pda.htlcKey,
-        // userSigning: alice.publicKey,
-        userSigning: alice.publicKey,
+        // messenger: alice.publicKey,
       })
       .signers([alice])
       .rpc();//.catch(e => console.error(e));
@@ -159,8 +159,8 @@ describe("safe_pay", () => {
     // console.log(`${details} details`);
     // const tx4 = await program.methods.redeem(LOCKID, SECRET).
     //   accountsPartial({
-    //     htlc: pda.htlcKey,
     //     userSigning: alice.publicKey,
+    //     htlc: pda.htlcKey,
     //     srcReceiver: bob.publicKey,
     //   })
     //   .signers([alice])
@@ -170,9 +170,9 @@ describe("safe_pay", () => {
     await wait(4000);
     const tx5 = await program.methods.unlock(LOCKID, pda.htlcBump).
       accountsPartial({
+        userSigning: wallet.publicKey,
         htlc: pda.htlcKey,
         // userSigning: alice.publicKey,
-        userSigning: wallet.publicKey,
         sender: alice.publicKey,
       })
       .signers([wallet.payer])
@@ -181,8 +181,8 @@ describe("safe_pay", () => {
     // const tx0 = await program.methods
     //   .lock(LOCKID, COMMITID, TIMELOCK, new anchor.BN(AMOUNT), DSTASSET, DSTCHAIN, DSTADDRESS, SRCASSET, bob.publicKey, pda.htlcKey, pda.htlcBump)
     //   .accountsPartial({
-    //     htlc: pda.htlcKey,
     //     sender: alice.publicKey,
+    //     htlc: pda.htlcKey,
     //   })
     //   .signers([alice])
     //   .rpc();
@@ -206,9 +206,9 @@ describe("safe_pay", () => {
   //   const tx1 = await program.methods
   //     .lock(LOCKID, COMMITID, TIMELOCK, new anchor.BN(AMOUNT), DSTASSET, DSTCHAIN, DSTADDRESS, SRCASSET, bob.publicKey, pda.htlcKey, pda.htlcBump)
   //     .accountsPartial({
+  //       sender: alice.publicKey,
   //       htlc: pda.htlcKey,
   //       lockIdStruct: pda.lockIdStruct,
-  //       sender: alice.publicKey,
   //     })
   //     .signers([alice])
   //     .rpc();//.catch(e => console.error(e));
@@ -231,8 +231,8 @@ describe("safe_pay", () => {
   //     await anchor.getProvider().connection.getBalance(bob.publicKey));
   //   const tx2 = await program.methods.redeem(LOCKID, SECRET).
   //     accountsPartial({
-  //       htlc: pda.htlcKey,
   //       userSigning: alice.publicKey,
+  //       htlc: pda.htlcKey,
   //       srcReceiver: bob.publicKey
   //     })
   //     .signers([alice])
@@ -255,9 +255,9 @@ describe("safe_pay", () => {
   //   // console.log(`[${CURTIME * 1000}] CURRENT TIME`);
   //   // const tx2 = await program.methods.unlock(LOCKID, pda.htlcBump).
   //   //   accountsPartial({
+  //   //     userSigning: alice.publicKey,
   //   //     htlc: pda.htlcKey,
   //   //     // userSigning: alice.publicKey,
-  //   //     userSigning: alice.publicKey,
   //   //     sender: alice.publicKey,
   //   //   })
   //   //   .signers([alice])
@@ -283,9 +283,9 @@ describe("safe_pay", () => {
   //   const tx1 = await program.methods
   //     .lock(LOCKID, COMMITID, TIMELOCK, new anchor.BN(AMOUNT), DSTASSET, DSTCHAIN, DSTADDRESS, SRCASSET, bob.publicKey, pda.htlcKey, pda.htlcBump)
   //     .accountsPartial({
+  //       sender: alice.publicKey,
   //       htlc: pda.htlcKey,
   //       lockIdStruct: pda.lockIdStruct,
-  //       sender: alice.publicKey,
   //     })
   //     .signers([alice])
   //     .rpc();//.catch(e => console.error(e));
@@ -300,9 +300,9 @@ describe("safe_pay", () => {
   //   console.log(`[${CURTIME * 1000}] CURRENT TIME`);
   //   const tx2 = await program.methods.unlock(LOCKID, pda.htlcBump).
   //     accountsPartial({
+  //       userSigning: wallet.publicKey,
   //       htlc: pda.htlcKey,
   //       // userSigning: alice.publicKey,
-  //       userSigning: wallet.publicKey,
   //       sender: alice.publicKey,
   //     })
   //     .signers([wallet.payer])
