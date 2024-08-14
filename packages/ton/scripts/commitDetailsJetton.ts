@@ -10,7 +10,7 @@ async function run(){
 
     const client = new TonClient({ endpoint });
 
-    const bigIntValue = 75754520303391817819233684492399585389976366445663327549799038628433830244630n;
+    const bigIntValue = 24716356531191335585328661435771043996539443399925688399959468269084770915966n;
     const bigIntString = bigIntValue.toString();
 
     const stack = [
@@ -18,7 +18,7 @@ async function run(){
     ];
 
     const details = await client.callGetMethod(
-        Address.parse("kQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFTsp"),
+        Address.parse("kQDUdA1NLqaognvWvgk--471bY09NIc2qf7qYxmpi-CgrJcD"),
         "getCommitDetails",
         stack
     );

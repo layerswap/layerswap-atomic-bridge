@@ -19,14 +19,15 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFTsp"); 
+  const contractAddress = Address.parse("kQDUdA1NLqaognvWvgk--471bY09NIc2qf7qYxmpi-CgrJcD"); 
   const newContract = HashedTimeLockTON.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
   const amount = toNano("0.1");
 
   const lockCommitmentData: LockCommitmentData = {
-    commitId: 75754520303391817819233684492399585389976366445663327549799038628433830244624n,
+    commitId: 24716356531191335585328661435771043996539443399925688399959468269084770915966n,
     hashlock: 86063709575516430416322238016776016577783477821483564045133774829893108097467n,
+    timelock: BigInt(Math.floor(Date.now() / 1000) + 3600),
     $$type: "LockCommitmentData"
   };
 

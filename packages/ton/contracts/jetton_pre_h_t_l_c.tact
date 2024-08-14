@@ -106,6 +106,7 @@ message LockCommitment{
 struct LockCommitmentData{
     commitId: Int;
     hashlock: Int;
+    timelock: Int;
 }
 
 message Uncommit{
@@ -263,7 +264,7 @@ contract HashedTimeLockTON with Deployable {
                                                     hashlock: msg.data.hashlock,
                                                     secret: 0x0,
                                                     amount: commitObj.amount,
-                                                    timelock: commitObj.timelock,
+                                                    timelock: msg.data.timelock,
                                                     redeemed: false,
                                                     unlocked: false,
                                                     jettonMasterAddress: commitObj.jettonMasterAddress,

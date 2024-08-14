@@ -10,7 +10,7 @@ async function run(){
 
     const client = new TonClient({ endpoint });
 
-    const bigIntValue = 29530252093357890898834521861622343027915865536417638551712283177493n;
+    const bigIntValue = 86063709575516430416322238016776016577783477821483564045133774829893108097467n;
     const bigIntString = bigIntValue.toString();
 
     const stack = [
@@ -18,7 +18,7 @@ async function run(){
     ];
 
     const details = await client.callGetMethod(
-        Address.parse("kQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFTsp"),
+        Address.parse("kQDUdA1NLqaognvWvgk--471bY09NIc2qf7qYxmpi-CgrJcD"),
         "getLockCDetails",
         stack
     );

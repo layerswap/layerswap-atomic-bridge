@@ -11,7 +11,7 @@ type MsgTypeMap = {
 const msgTypes: MsgTypeMap = {
     '7362d09c': 'TokenNotification',
     'a958ac23': 'Uncommit',
-    '2fe24f1c': 'LockCommitment',
+    '5cdd41d9': 'LockCommitment',
     '758db085': 'Redeem',
     'ad821ef9': 'Unlock',
     '946a98b6': 'Deploy'

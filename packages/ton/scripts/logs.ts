@@ -19,7 +19,7 @@ type MsgTypeMap = {
 const msgTypes: MsgTypeMap = {
     '2f3b56bd': 'Commit',
     'a958ac23': 'Uncommit',
-    '2fe24f1c': 'LockCommitment',
+    '5cdd41d9': 'LockCommitment',
     '12e78cb1': 'Lock',
     '758db085': 'Redeem',
     'ad821ef9': 'Unlock',
@@ -64,7 +64,7 @@ async function parseTx(address: string, token: string, index: number): Promise<a
     }
 }
 
-const address = 'EQCJhsfTsoxKKpMBDw8C5z_ZGbljdOLInZNvjFM8NtyyNLk2'; 
+const address = 'EQDaRJ4kpwOh9_2uJIe4lH7jlACPwYtDpXFdRxlOOsyDCgOm'; 
 const token = 'AGVYQVBYQDB6KRAAAAAFWAOS73LJHXPEWONMCFRIRGOBL7WIDI5D5G2GRWOD347TUUFWPUA'; 
 
 parseTx(address, token, 0).then(result => {

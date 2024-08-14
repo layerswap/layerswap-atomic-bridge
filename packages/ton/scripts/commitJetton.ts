@@ -29,7 +29,7 @@ export async function run() {
 
   const queryId = BigInt(Date.now()); 
   const amount = 5n; 
-  const destination = Address.parse("EQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFYCj"); 
+  const destination = Address.parse("EQDUdA1NLqaognvWvgk--471bY09NIc2qf7qYxmpi-CgrCyJ"); 
   const response_destination = Address.parse("kQAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B9D3"); 
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell(); 
   const forward_ton_amount = toNano("0.1"); 
