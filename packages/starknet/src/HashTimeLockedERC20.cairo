@@ -70,7 +70,7 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn redeem(ref self: TContractState, lockId: u256, secret: u256) -> bool;
     fn uncommit(ref self: TContractState, commitId: u256) -> bool;
     fn unlock(ref self: TContractState, lockId: u256) -> bool;
-    fn lockCommit(ref self: TContractState, commitId: u256, hashlock: u256) -> u256;
+    fn lockCommit(ref self: TContractState, commitId: u256, hashlock: u256, timelock: u256) -> u256;
     fn getCommitDetails(self: @TContractState, commitId: u256) -> HashedTimelockERC20::PHTLC;
     fn getLockDetails(self: @TContractState, lockId: u256) -> HashedTimelockERC20::HTLC;
     fn getCommits(self: @TContractState, sender: ContractAddress) -> Span<u256>;
@@ -613,7 +613,10 @@ mod HashedTimelockERC20 {
         /// @param commitId of the PHTLC to lockCommit.
         /// @param hashlock of the HTLC to be locked.
         /// @return lockId of the locked HTLC
-        fn lockCommit(ref self: ContractState, commitId: u256, hashlock: u256) -> u256 {
+        fn lockCommit(
+            ref self: ContractState, commitId: u256, hashlock: u256, timelock: u256
+        ) -> u256 {
+            assert!(timelock > get_block_timestamp().into(), "Not Future TimeLock");
             assert!(self.hasCommitId(commitId), "Commitment Id Does Not Exist");
             let lockId = hashlock;
             let phtlc: PHTLC = self.commits.read(commitId);
@@ -658,7 +661,7 @@ mod HashedTimelockERC20 {
                         hashlock: hashlock,
                         secret: 0,
                         amount: phtlc.amount,
-                        timelock: phtlc.timelock,
+                        timelock: timelock,
                         tokenContract: phtlc.tokenContract,
                         redeemed: false,
                         unlocked: false
@@ -675,7 +678,7 @@ mod HashedTimelockERC20 {
                         srcReceiver: phtlc.srcReceiver,
                         srcAsset: phtlc.srcAsset,
                         amount: phtlc.amount,
-                        timelock: phtlc.timelock,
+                        timelock: timelock,
                         messenger: phtlc.messenger,
                         tokenContract: phtlc.tokenContract,
                         commitId: commitId,
