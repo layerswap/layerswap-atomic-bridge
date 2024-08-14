@@ -14,7 +14,7 @@ use anchor_spl::{
 };
 use sha2::{Digest, Sha256};
 use std::mem::size_of;
-declare_id!("3z3Lz7TVWc244ioPb2CpXySSHdSwVPgFn8kTu3WFqZty");
+declare_id!("GsEnyzJX4iF9mmAkLpaCVuarfPpeDcBAtgeDpZTMMggy");
 
 const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 
