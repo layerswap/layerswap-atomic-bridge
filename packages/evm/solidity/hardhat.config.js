@@ -27,7 +27,7 @@ module.exports = {
       chainId: 59141,
     },
     optimismSepolia: {
-      url: "https://optimism-sepolia.drpc.org",
+      url: "https://sepolia.optimism.io",
       accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
       chainId: 11155420,
     },

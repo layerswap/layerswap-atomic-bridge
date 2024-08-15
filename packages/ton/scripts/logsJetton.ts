@@ -1,39 +1,29 @@
 import { HttpClient, Api } from 'tonapi-sdk-js';
-import {
-    loadLockCommitment,
-    loadLock,
-    loadCommit,
-    loadDeploy,
-    loadRedeem,
-    loadUnlock,
-    loadUncommit,
-} from "../wrappers/HashedTimeLockTON";
 import { Cell, Slice } from '@ton/core';
 import { Address } from 'ton';
 import { hexToBase64 } from '../utils/utils';
+import { loadTokenNotification,loadLockCommitment,loadDeploy,loadRedeem,loadUnlock,loadUncommit, loadCommitData, loadLockData} from '../wrappers/JettonPreHTLC';
 
 type MsgTypeMap = {
     [key: string]: string;
 };
 
 const msgTypes: MsgTypeMap = {
-    '2f3b56bd': 'Commit',
+    '7362d09c': 'TokenNotification',
     'a958ac23': 'Uncommit',
     '5cdd41d9': 'LockCommitment',
-    '12e78cb1': 'Lock',
     '758db085': 'Redeem',
     'ad821ef9': 'Unlock',
     '946a98b6': 'Deploy'
 };
 
 const functionMap: { [key: string]: (slice: Slice) => any } = {
-    'Redeem': loadRedeem,
-    'Lock': loadLock,
-    'Unlock': loadUnlock,
-    'Deploy': loadDeploy,
     'Uncommit': loadUncommit,
     'LockCommitment': loadLockCommitment,
-    'Commit': loadCommit,
+    'Redeem': loadRedeem,
+    'Unlock': loadUnlock,
+    'Deploy': loadDeploy,
+    'TokenNotification': loadTokenNotification,
 };
 
 async function parseTx(address: string, token: string, index: number): Promise<any> {
@@ -53,8 +43,24 @@ async function parseTx(address: string, token: string, index: number): Promise<a
         const tx = await client.blockchain.getBlockchainAccountTransactions(Address.parse(address).toString());
         const rawBody = tx.transactions[index].in_msg?.raw_body || "";  
         const result = findType(rawBody);
-        if (result && functionMap[result]) {
+        if (result === 'TokenNotification') {
             let slc = Cell.fromBase64(hexToBase64(rawBody)).beginParse();
+            let data = ((functionMap[result](slc)).forward_payload);
+            let slice: Slice = data.asCell().beginParse(); 
+            let flag = slice.loadUint(1);  
+            let refCell: Cell = slice.loadRef();  
+            let refSlice: Slice = refCell.beginParse();
+            let op_code = refSlice.loadUint(32);  
+            if ( 0x6769fafe == op_code) {
+                return loadCommitData(refSlice);
+            }
+            if ( 0xee234813 == op_code) {
+                return loadLockData(refSlice);
+            }
+
+        }
+        if (result && functionMap[result]) {
+            let slc = Cell.fromBase64(hexToBase64(rawBody)).beginParse(); 
             return functionMap[result](slc);
         } else {
             console.error('No result found or no matching function.');
@@ -64,10 +70,10 @@ async function parseTx(address: string, token: string, index: number): Promise<a
     }
 }
 
-const address = 'EQDaRJ4kpwOh9_2uJIe4lH7jlACPwYtDpXFdRxlOOsyDCgOm'; 
+const address = 'EQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFYCj'; 
 const token = 'AGVYQVBYQDB6KRAAAAAFWAOS73LJHXPEWONMCFRIRGOBL7WIDI5D5G2GRWOD347TUUFWPUA'; 
 
-parseTx(address, token, 0).then(result => {
+parseTx(address, token, 2).then(result => {
     console.log(result);
   }).catch(error => {
     console.error('Error:', error);
@@ -76,7 +82,6 @@ parseTx(address, token, 0).then(result => {
 
 function findType(inputString: string): string | undefined {
     const normalizedInput = inputString.toLowerCase();
-
     for (const key in msgTypes) {
         const index = normalizedInput.indexOf(key);  
         if (index !== -1) {

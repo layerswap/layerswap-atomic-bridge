@@ -8,7 +8,7 @@ async function run() {
   const endpoint = await getHttpEndpoint({ network: "testnet" });
   const client = new TonClient({ endpoint });
 
-  const mnemonic = "thunder ignore ankle edit height leader drip motor leave expect dune online favorite ankle tail spoon detail glory flush inform estate field swear"; 
+  const mnemonic = "pretty electric october neck alley tiger action assault garlic divide oppose exist online cluster luxury clump kangaroo number away analyst attitude digital zebra world"; 
   const key = await mnemonicToWalletKey(mnemonic.split(" "));
   const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
   if (!await client.isContractDeployed(wallet.address)) {
@@ -19,14 +19,15 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQCJhsfTsoxKKpMBDw8C5z_ZGbljdOLInZNvjFM8NtyyNLk2"); 
+  const contractAddress = Address.parse("kQDUdA1NLqaognvWvgk--471bY09NIc2qf7qYxmpi-CgrJcD"); 
   const newContract = HashedTimeLockTON.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
   const amount = toNano("0.1");
 
   const lockCommitmentData: LockCommitmentData = {
-    commitId: 28980991593716787793729160457641158411340079193941161001671239997837163559946n,
-    hashlock: 7621991010947344452180899744448993864955665500331425174040819581377600501749n,
+    commitId: 24716356531191335585328661435771043996539443399925688399959468269084770915966n,
+    hashlock: 86063709575516430416322238016776016577783477821483564045133774829893108097467n,
+    timelock: BigInt(Math.floor(Date.now() / 1000) + 3600),
     $$type: "LockCommitmentData"
   };
 

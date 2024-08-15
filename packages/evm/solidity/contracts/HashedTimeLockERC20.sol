@@ -226,7 +226,7 @@ contract HashedTimeLockERC20 {
     );
   }
 
-  function lockCommitment(bytes32 commitId, bytes32 hashlock) external _committed(commitId) returns (bytes32 lockId) {
+  function lockCommitment(bytes32 commitId, bytes32 hashlock, uint256 timelock) external _committed(commitId) returns (bytes32 lockId) {
     lockId = hashlock;
     if (commits[commitId].uncommitted == true) {
       revert AlreadyUncommitted();
@@ -250,7 +250,7 @@ contract HashedTimeLockERC20 {
         hashlock,
         0x0,
         commits[commitId].amount,
-        commits[commitId].timelock,
+        timelock,
         commits[commitId].tokenContract,
         false,
         false
@@ -265,7 +265,7 @@ contract HashedTimeLockERC20 {
         commits[commitId].srcReceiver,
         commits[commitId].srcAsset,
         commits[commitId].amount,
-        commits[commitId].timelock,
+        timelock,
         commits[commitId].messenger,
         commitId,
         commits[commitId].tokenContract

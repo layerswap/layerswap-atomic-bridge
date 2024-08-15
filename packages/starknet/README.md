@@ -5,7 +5,7 @@ As we continue to experiment and test new ideas, expect significant changes to t
 
 # Hashed Timelock Contracts (HTLCs)
 
-This part of the repository contains a cairo1.0 smart contract for implementing Hashed Timelock Contracts (HTLCs) on Starknet. This contracts enables users to create, manage, and interact with HTLCs, facilitating secure and trustless transactions. The contracts include functions such as creating new HTLCs, redeeming funds locked in HTLCs with a secret hash, and refunding funds in case of expiration or non-redeem. Users can refer to the contract source code and documentation for detailed information on each function's usage and parameters.
+This part of the repository contains a cairo1.0 smart contract for implementing Hashed Timelock Contracts (HTLCs) on Starknet. This contract enables users to create, manage, and interact with HTLCs, facilitating secure and trustless transactions. The contract includes functions such as creating new HTLCs, redeeming funds locked in HTLCs with a secret hash, and refunding funds in case of expiration or non-redeem. Users can refer to the contract source code and documentation for detailed information on each function's usage and parameters.
 
 ## Contract Overview
 
@@ -15,12 +15,14 @@ This part of the repository contains a cairo1.0 smart contract for implementing 
 
 #### Functions
 
-- **createHTLC**: Allows a sender to create a new HTLC for ERC20 tokens by specifying the receiver, hashlock, timelock, token contract, and amount.
-- **batchCreateHTLC**: Allows a sender to create multiple new HTLCs for ERC20 tokens by specifying the receivers, hashlocks, timelocks, token contracts, and amounts.
-- **redeem**: Allows the receiver to claim the ERC20 tokens locked in the HTLC by providing the secret hash.
-- **batchRedeem**: Allows the receiver to claim the ERC20 tokens locked in multiple HTLCs by providing the secret hashes.
-- **refund**: Allows the sender to refund the ERC20 tokens if the timelock expires and the receiver has not redeemed the funds.
-- **getHTLCDetails**: Retrieves details of a specific HTLC by its contract ID.
+- **commit**: Allows a sender to create a new PHTLC for EREC20 tokens by specifying the receiver, messenger, timelock, token contract, and amount.
+- **lock**: Allows a sender to create a new HTLC for EREC20 tokens by specifying the receiver, hashlock, timelock, token contract, and amount.
+- **redeem**: Allows the receiver to claim the EREC20 tokens locked in the HTLC by providing the secret hash.
+- **lockCommit**: Allows the messenger to lock the commited funds by the given hashlock.
+- **unlock**: Allows the sender to unlock the EREC20 tokens if the timelock expires and the receiver has not redeemed the funds.
+- **uncommit**: Allows the sender to uncommit the EREC20 tokens if the timelock expires and the messenger has not locked the funds.
+- **getLockDetails/getCommitDetails**: Retrieves details of a specific HTLC/PHTLC by its contract ID.
+
 
 
 ## Deployment

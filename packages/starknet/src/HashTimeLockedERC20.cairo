@@ -1,5 +1,11 @@
-use starknet::ContractAddress;
+//                                                   __     _____
+//| |    __ _ _   _  ___ _ __ _____      ____ _ _ __ \ \   / ( _ )
+//| |   / _` | | | |/ _ \ '__/ __\ \ /\ / / _` | '_ \ \ \ / // _ \
+//| |__| (_| | |_| |  __/ |  \__ \\ V  V / (_| | |_) | \ V /| (_) |
+//|_____\__,_|\__, |\___|_|  |___/ \_/\_/ \__,_| .__/   \_/  \___/
+//            |___/                            |_|
 
+use starknet::ContractAddress;
 #[starknet::interface]
 pub trait IMessenger<TContractState> {
     fn notify(
@@ -20,9 +26,12 @@ pub trait IMessenger<TContractState> {
 
 #[starknet::interface]
 pub trait IHashedTimelockERC20<TContractState> {
-    fn commit(
+    fn commit_hop(
         ref self: TContractState,
         amount: u256,
+        hopChains: Span<felt252>,
+        hopAssets: Span<felt252>,
+        hopAddress: Span<felt252>,
         dstChain: felt252,
         dstAsset: felt252,
         dstAddress: felt252,
@@ -32,12 +41,9 @@ pub trait IHashedTimelockERC20<TContractState> {
         messenger: ContractAddress,
         tokenContract: ContractAddress,
     ) -> u256;
-    fn commit_hop(
+    fn commit(
         ref self: TContractState,
         amount: u256,
-        hopChains: Span<felt252>,
-        hopAssets: Span<felt252>,
-        hopAddress: Span<felt252>,
         dstChain: felt252,
         dstAsset: felt252,
         dstAddress: felt252,
@@ -64,7 +70,7 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn redeem(ref self: TContractState, lockId: u256, secret: u256) -> bool;
     fn uncommit(ref self: TContractState, commitId: u256) -> bool;
     fn unlock(ref self: TContractState, lockId: u256) -> bool;
-    fn lockCommit(ref self: TContractState, commitId: u256, hashlock: u256) -> u256;
+    fn lockCommit(ref self: TContractState, commitId: u256, hashlock: u256, timelock: u256) -> u256;
     fn getCommitDetails(self: @TContractState, commitId: u256) -> HashedTimelockERC20::PHTLC;
     fn getLockDetails(self: @TContractState, lockId: u256) -> HashedTimelockERC20::HTLC;
     fn getCommits(self: @TContractState, sender: ContractAddress) -> Span<u256>;
@@ -97,6 +103,7 @@ mod HashedTimelockERC20 {
     use starknet::get_caller_address;
     use starknet::get_contract_address;
     use starknet::get_block_timestamp;
+    use starknet::get_block_info;
     //TODO: Check if this should be IERC20SafeDispatcher 
     use openzeppelin::token::erc20::interface::IERC20Dispatcher;
     use alexandria_math::sha256::sha256;
@@ -110,6 +117,7 @@ mod HashedTimelockERC20 {
     struct Storage {
         commitCounter: u256,
         lockCounter: u256,
+        block_number: u256,
         locks: LegacyMap::<u256, HTLC>,
         commits: LegacyMap::<u256, PHTLC>,
         commitIds: LegacyMap::<u256, u256>,
@@ -217,6 +225,9 @@ mod HashedTimelockERC20 {
     fn constructor(ref self: ContractState) {
         self.commitCounter.write(0);
         self.lockCounter.write(0);
+        let block_info = get_block_info().unbox();
+        let cur_block = block_info.block_number;
+        self.block_number.write(cur_block.try_into().unwrap());
     }
     #[abi(embed_v0)]
     impl HashedTimelockERC20 of super::IHashedTimelockERC20<ContractState> {
@@ -226,6 +237,82 @@ mod HashedTimelockERC20 {
         /// @param timelock UNIX epoch seconds time that the lock expires at.
         ///                  Refunds can be made after this time.
         /// @return Id of the new PHTLC. This is needed for subsequent calls.
+        fn commit_hop(
+            ref self: ContractState,
+            amount: u256,
+            hopChains: Span<felt252>,
+            hopAssets: Span<felt252>,
+            hopAddress: Span<felt252>,
+            dstChain: felt252,
+            dstAsset: felt252,
+            dstAddress: felt252,
+            srcAsset: felt252,
+            srcReceiver: ContractAddress,
+            timelock: u256,
+            messenger: ContractAddress,
+            tokenContract: ContractAddress,
+        ) -> u256 {
+            assert!(timelock > get_block_timestamp().into(), "Not Future TimeLock");
+            assert!(amount != 0, "Funds Can Not Be Zero");
+
+            let block_number = self.block_number.read();
+            let curId = self.commitCounter.read() + 1;
+            self.commitCounter.write(curId);
+            let commitId = block_number ^ curId;
+            self.commitIds.write(curId, commitId);
+
+            assert!(!self.hasCommitId(commitId), "Commitment Already Exists");
+
+            let token: IERC20Dispatcher = IERC20Dispatcher { contract_address: tokenContract };
+            assert!(token.balance_of(get_caller_address()) >= amount, "Insufficient Balance");
+            assert!(
+                token.allowance(get_caller_address(), get_contract_address()) >= amount,
+                "Not Enough Allowence"
+            );
+
+            token.transfer_from(get_caller_address(), get_contract_address(), amount);
+
+            self
+                .commits
+                .write(
+                    commitId,
+                    PHTLC {
+                        dstAddress: dstAddress,
+                        dstChain: dstChain,
+                        dstAsset: dstAsset,
+                        srcAsset: srcAsset,
+                        sender: get_caller_address(),
+                        srcReceiver: srcReceiver,
+                        amount: amount,
+                        timelock: timelock,
+                        messenger: messenger,
+                        tokenContract: tokenContract,
+                        locked: false,
+                        uncommitted: false,
+                    }
+                );
+            self
+                .emit(
+                    TokenCommitted {
+                        commitId: commitId,
+                        hopChains: hopChains,
+                        hopAssets: hopAssets,
+                        hopAddress: hopAddress,
+                        dstChain: dstChain,
+                        dstAddress: dstAddress,
+                        dstAsset: dstAsset,
+                        sender: get_caller_address(),
+                        srcReceiver: srcReceiver,
+                        srcAsset: srcAsset,
+                        amount: amount,
+                        timelock: timelock,
+                        messenger: messenger,
+                        tokenContract: tokenContract,
+                    }
+                );
+            commitId
+        }
+
         fn commit(
             ref self: ContractState,
             amount: u256,
@@ -241,23 +328,12 @@ mod HashedTimelockERC20 {
             assert!(timelock > get_block_timestamp().into(), "Not Future TimeLock");
             assert!(amount != 0, "Funds Can Not Be Zero");
 
-            let srcChain: felt252 = 'STARKNET_SEPOLIA';
+            let block_number = self.block_number.read();
+            let curId = self.commitCounter.read() + 1;
+            self.commitCounter.write(curId);
+            let commitId = block_number ^ curId;
+            self.commitIds.write(curId, commitId);
 
-            let mut bytes: Bytes = BytesTrait::new(0, array![]);
-            bytes.append_felt252(srcChain);
-            bytes.append_address(get_contract_address());
-            bytes.append_address(get_caller_address());
-            bytes.append_u256(amount);
-            bytes.append_felt252(dstChain);
-            bytes.append_felt252(dstAsset);
-            bytes.append_felt252(dstAddress);
-            bytes.append_felt252(srcAsset);
-            bytes.append_address(srcReceiver);
-            bytes.append_u256(timelock);
-            bytes.append_address(messenger);
-            bytes.append_address(tokenContract);
-
-            let commitId = bytes.sha256();
             assert!(!self.hasCommitId(commitId), "Commitment Already Exists");
 
             let token: IERC20Dispatcher = IERC20Dispatcher { contract_address: tokenContract };
@@ -309,98 +385,6 @@ mod HashedTimelockERC20 {
                         tokenContract: tokenContract,
                     }
                 );
-            let curId = self.commitCounter.read() + 1;
-            self.commitCounter.write(curId);
-            self.commitIds.write(curId, commitId);
-            commitId
-        }
-
-        fn commit_hop(
-            ref self: ContractState,
-            amount: u256,
-            hopChains: Span<felt252>,
-            hopAssets: Span<felt252>,
-            hopAddress: Span<felt252>,
-            dstChain: felt252,
-            dstAsset: felt252,
-            dstAddress: felt252,
-            srcAsset: felt252,
-            srcReceiver: ContractAddress,
-            timelock: u256,
-            messenger: ContractAddress,
-            tokenContract: ContractAddress,
-        ) -> u256 {
-            assert!(timelock > get_block_timestamp().into(), "Not Future TimeLock");
-            assert!(amount != 0, "Funds Can Not Be Zero");
-            let srcChain: felt252 = 'STARKNET_SEPOLIA';
-
-            let mut bytes: Bytes = BytesTrait::new(0, array![]);
-            bytes.append_felt252(srcChain);
-            bytes.append_address(get_contract_address());
-            bytes.append_address(get_caller_address());
-            bytes.append_u256(amount);
-            bytes.append_felt252(dstChain);
-            bytes.append_felt252(dstAsset);
-            bytes.append_felt252(dstAddress);
-            bytes.append_felt252(srcAsset);
-            bytes.append_address(srcReceiver);
-            bytes.append_u256(timelock);
-            bytes.append_address(messenger);
-            bytes.append_address(tokenContract);
-
-            let commitId = bytes.sha256();
-            assert!(!self.hasCommitId(commitId), "Commitment Already Exists");
-
-            let token: IERC20Dispatcher = IERC20Dispatcher { contract_address: tokenContract };
-            assert!(token.balance_of(get_caller_address()) >= amount, "Insufficient Balance");
-            assert!(
-                token.allowance(get_caller_address(), get_contract_address()) >= amount,
-                "Not Enough Allowence"
-            );
-
-            token.transfer_from(get_caller_address(), get_contract_address(), amount);
-
-            self
-                .commits
-                .write(
-                    commitId,
-                    PHTLC {
-                        dstAddress: dstAddress,
-                        dstChain: dstChain,
-                        dstAsset: dstAsset,
-                        srcAsset: srcAsset,
-                        sender: get_caller_address(),
-                        srcReceiver: srcReceiver,
-                        amount: amount,
-                        timelock: timelock,
-                        messenger: messenger,
-                        tokenContract: tokenContract,
-                        locked: false,
-                        uncommitted: false,
-                    }
-                );
-            self
-                .emit(
-                    TokenCommitted {
-                        commitId: commitId,
-                        hopChains: hopChains,
-                        hopAssets: hopAssets,
-                        hopAddress: hopAddress,
-                        dstChain: dstChain,
-                        dstAddress: dstAddress,
-                        dstAsset: dstAsset,
-                        sender: get_caller_address(),
-                        srcReceiver: srcReceiver,
-                        srcAsset: srcAsset,
-                        amount: amount,
-                        timelock: timelock,
-                        messenger: messenger,
-                        tokenContract: tokenContract,
-                    }
-                );
-            let curId = self.commitCounter.read() + 1;
-            self.commitCounter.write(curId);
-            self.commitIds.write(curId, commitId);
             commitId
         }
 
@@ -516,11 +500,8 @@ mod HashedTimelockERC20 {
 
             let mut bytes: Bytes = BytesTrait::new(0, array![]);
             bytes.append_u256(secret);
-            let pre = bytes.sha256();
-            let mut bytes: Bytes = BytesTrait::new(0, array![]);
-            bytes.append_u256(pre);
-            let hash_pre = bytes.sha256();
-            assert!(htlc.hashlock == hash_pre, "Does Not Match the Hashlock");
+            let hash = bytes.sha256();
+            assert!(htlc.hashlock == hash, "Does Not Match the Hashlock");
             assert!(!htlc.redeemed, "Funds Are Alredy Redeemed");
             assert!(!htlc.unlocked, "Funds Are Alredy Unlocked");
             self
@@ -631,8 +612,11 @@ mod HashedTimelockERC20 {
         ///
         /// @param commitId of the PHTLC to lockCommit.
         /// @param hashlock of the HTLC to be locked.
-        /// @return commitCounter of the locked HTLC
-        fn lockCommit(ref self: ContractState, commitId: u256, hashlock: u256) -> u256 {
+        /// @return lockId of the locked HTLC
+        fn lockCommit(
+            ref self: ContractState, commitId: u256, hashlock: u256, timelock: u256
+        ) -> u256 {
+            assert!(timelock > get_block_timestamp().into(), "Not Future TimeLock");
             assert!(self.hasCommitId(commitId), "Commitment Id Does Not Exist");
             let lockId = hashlock;
             let phtlc: PHTLC = self.commits.read(commitId);
@@ -677,7 +661,7 @@ mod HashedTimelockERC20 {
                         hashlock: hashlock,
                         secret: 0,
                         amount: phtlc.amount,
-                        timelock: phtlc.timelock,
+                        timelock: timelock,
                         tokenContract: phtlc.tokenContract,
                         redeemed: false,
                         unlocked: false
@@ -694,7 +678,7 @@ mod HashedTimelockERC20 {
                         srcReceiver: phtlc.srcReceiver,
                         srcAsset: phtlc.srcAsset,
                         amount: phtlc.amount,
-                        timelock: phtlc.timelock,
+                        timelock: timelock,
                         messenger: phtlc.messenger,
                         tokenContract: phtlc.tokenContract,
                         commitId: commitId,
@@ -706,8 +690,6 @@ mod HashedTimelockERC20 {
             lockId
         }
 
-        /// @dev Get HTLC details.
-        /// @param lockId of the HTLC.
         fn getLockDetails(self: @ContractState, lockId: u256) -> HTLC {
             if !self.hasLockId(lockId) {
                 return HTLC {
