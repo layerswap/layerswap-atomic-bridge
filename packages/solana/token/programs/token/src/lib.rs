@@ -14,7 +14,7 @@ use anchor_spl::{
 };
 use sha2::{Digest, Sha256};
 use std::mem::size_of;
-declare_id!("3z3Lz7TVWc244ioPb2CpXySSHdSwVPgFn8kTu3WFqZty");
+declare_id!("Gi9tYkmrXR2Z9NPTjpCVjNMstCsa1WvxpQEixejouKbR");
 
 const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 
@@ -190,20 +190,37 @@ pub mod anchor_htlc {
 
         emit!(TokenCommitted {
             commitId: commitId,
-            hopChains: hopChains,
-            hopAssets: hopAssets,
-            hopAddress: hopAddress,
-            dst_chain: dst_chain,
-            dst_address: dst_address,
-            dst_asset: dst_asset,
+            hopChains: hopChains.clone(),
+            hopAssets: hopAssets.clone(),
+            hopAddress: hopAddress.clone(),
+            dst_chain: dst_chain.clone(),
+            dst_address: dst_address.clone(),
+            dst_asset: dst_asset.clone(),
             sender: *ctx.accounts.sender.to_account_info().key,
             srcReceiver: srcReceiver,
-            src_asset: src_asset,
+            src_asset: src_asset.clone(),
             amount: amount,
             timelock: timelock,
             messenger: messenger,
             token_contract: *ctx.accounts.token_contract.to_account_info().key,
         });
+        msg!("commitId: {:?}", hex::encode(commitId));
+        msg!("hopChains: {:?}", hopChains);
+        msg!("hopAssets: {:?}", hopAssets);
+        msg!("hopAddresses: {:?}", hopAddress);
+        msg!("dst_chain: {:?}", dst_chain);
+        msg!("dst_address: {:?}", dst_address);
+        msg!("dst_asset: {:?}", dst_asset);
+        msg!("sender: {:?}", *ctx.accounts.sender.to_account_info().key);
+        msg!("srcReceiver: {:?}", srcReceiver);
+        msg!("src_asset: {:?}", src_asset);
+        msg!("amount: {:?}", amount);
+        msg!("timelock: {:?}", timelock);
+        msg!("messenger: {:?}", messenger);
+        msg!(
+            "token_contract: {:?}",
+            *ctx.accounts.token_contract.to_account_info().key
+        );
         let commit_counter = &mut ctx.accounts.commitCounter;
         commit_counter.count += 1;
         Ok(())
@@ -269,18 +286,34 @@ pub mod anchor_htlc {
 
         emit!(TokenLocked {
             hashlock: lockId,
-            dst_chain: dst_chain,
-            dst_address: dst_address,
-            dst_asset: dst_asset,
+            dst_chain: dst_chain.clone(),
+            dst_address: dst_address.clone(),
+            dst_asset: dst_asset.clone(),
             sender: *ctx.accounts.sender.to_account_info().key,
             srcReceiver: srcReceiver,
-            src_asset: src_asset,
+            src_asset: src_asset.clone(),
             amount: amount,
             timelock: timelock,
             messenger: messenger,
-            commitId: commitId,
+            commitId: commitId.clone(),
             token_contract: *ctx.accounts.token_contract.to_account_info().key,
         });
+        msg!("lockid: {:?}", hex::encode(lockId));
+        msg!("dst_chain: {:?}", dst_chain);
+        msg!("dst_address: {:?}", dst_address);
+        msg!("dst_asset: {:?}", dst_asset);
+        msg!("sender: {:?}", *ctx.accounts.sender.to_account_info().key);
+        msg!("srcReceiver: {:?}", srcReceiver);
+        msg!("src_asset: {:?}", src_asset);
+        msg!("amount: {:?}", amount);
+        msg!("timelock: {:?}", timelock);
+        msg!("messenger: {:?}", messenger);
+        msg!("commitId: {:?}", hex::encode(commitId));
+        msg!(
+            "token_contract: {:?}",
+            *ctx.accounts.token_contract.to_account_info().key
+        );
+
         if messenger != Pubkey::default() {}
         let lockIdStruct = &mut ctx.accounts.lockIdStruct;
         lockIdStruct.lock_id = lockId;
@@ -353,6 +386,21 @@ pub mod anchor_htlc {
             commitId: commitId,
             token_contract: *ctx.accounts.token_contract.to_account_info().key,
         });
+        msg!("lockid: {:?}", hex::encode(lockId));
+        msg!("dst_chain: {:?}", phtlc.dst_chain);
+        msg!("dst_address: {:?}", phtlc.dst_address);
+        msg!("dst_asset: {:?}", phtlc.dst_asset);
+        msg!("sender: {:?}", phtlc.sender);
+        msg!("srcReceiver: {:?}", phtlc.srcReceiver);
+        msg!("src_asset: {:?}", phtlc.src_asset);
+        msg!("amount: {:?}", amount);
+        msg!("timelock: {:?}", timelock);
+        msg!("messenger: {:?}", phtlc.messenger);
+        msg!("commitId: {:?}", hex::encode(commitId));
+        msg!(
+            "token_contract: {:?}",
+            *ctx.accounts.token_contract.to_account_info().key
+        );
 
         Ok(())
     }
@@ -392,6 +440,8 @@ pub mod anchor_htlc {
             lockId: lockId,
             redeem_address: ctx.accounts.user_signing.key(),
         });
+        msg!("lockId: {:?}", hex::encode(lockId));
+        msg!("redeem_address: {:?}", ctx.accounts.user_signing.key());
         Ok(true)
     }
 
@@ -417,6 +467,7 @@ pub mod anchor_htlc {
         )?;
 
         emit!(TokenUncommited { commitId: commitId });
+        msg!("commitId: {:?}", hex::encode(commitId));
         Ok(true)
     }
 
@@ -441,6 +492,7 @@ pub mod anchor_htlc {
         )?;
 
         emit!(TokenUnlocked { lockId: lockId });
+        msg!("lockId: {:?}", hex::encode(lockId));
         Ok(true)
     }
 
@@ -452,6 +504,21 @@ pub mod anchor_htlc {
         phtlc_bump: u8,
     ) -> Result<PHTLC> {
         let phtlc = &ctx.accounts.phtlc;
+        msg!("dst_address: {:?}", phtlc.dst_address.clone());
+        msg!("dst_chain: {:?}", phtlc.dst_chain.clone());
+        msg!("dst_asset: {:?}", phtlc.dst_asset.clone());
+        msg!("src_asset: {:?}", phtlc.src_asset);
+        msg!("sender: {:?}", phtlc.sender);
+        msg!("srcReceiver: {:?}", phtlc.srcReceiver);
+        msg!("lockId: {:?}", hex::encode(phtlc.lockId));
+        msg!("amount: {:?}", phtlc.amount);
+        msg!("timelock: {:?}", phtlc.timelock);
+        msg!("messenger: {:?}", phtlc.messenger);
+        msg!("token_contract: {:?}", phtlc.token_contract);
+        msg!("token_wallet: {:?}", phtlc.token_wallet);
+        msg!("locked: {:?}", phtlc.locked);
+        msg!("uncommited: {:?}", phtlc.uncommitted);
+
         Ok(PHTLC {
             dst_address: phtlc.dst_address.clone(),
             dst_chain: phtlc.dst_chain.clone(),
@@ -472,28 +539,44 @@ pub mod anchor_htlc {
 
     /// @dev Get HTLC details.
     /// @param lockId of the HTLC.
-    // pub fn getLockDetails(ctx: Context<GetLockDetails>, lockId: String, htlc_bump: u8) -> Result<HTLC> {
-    //     let htlc = &ctx.accounts.htlc;
-    //     Ok(HTLC {
-    //         hashlock: htlc.hashlock,
-    //         secret:htlc.secret,
-    //         amount: htlc.amount,
-    //         timelock: htlc.timelock,
-    //         sender: htlc.sender,
-    //         srcReceiver: htlc.srcReceiver,
-    //         token_contract: htlc.token_contract,
-    //         token_wallet: htlc.token_wallet,
-    //         redeemed: htlc.redeemed,
-    //         unlocked: htlc.unlocked
-    //     })
-    // }
     pub fn getLockDetails(
         ctx: Context<GetLockDetails>,
-        lockId: [u8; 32],
+        lockId: String,
         htlc_bump: u8,
-    ) -> Result<Vec<u8>> {
+    ) -> Result<HTLC> {
         let htlc = &ctx.accounts.htlc;
-        Ok(htlc.secret.clone())
+
+        msg!("dst_address: {:?}", htlc.dst_address.clone());
+        msg!("dst_chain: {:?}", htlc.dst_chain.clone());
+        msg!("dst_asset: {:?}", htlc.dst_asset.clone());
+        msg!("src_asset: {:?}", htlc.src_asset);
+        msg!("sender: {:?}", htlc.sender);
+        msg!("srcReceiver: {:?}", htlc.srcReceiver);
+        msg!("hashlock: {:?}", hex::encode(htlc.hashlock));
+        msg!("secret: {:?}", hex::encode(htlc.secret.clone()));
+        msg!("amount: {:?}", htlc.amount);
+        msg!("timelock: {:?}", htlc.timelock);
+        msg!("token_contract: {:?}", htlc.token_contract);
+        msg!("token_wallet: {:?}", htlc.token_wallet);
+        msg!("redeemed: {:?}", htlc.redeemed);
+        msg!("unlocked: {:?}", htlc.unlocked);
+
+        Ok(HTLC {
+            dst_address: htlc.dst_address.clone(),
+            dst_chain: htlc.dst_chain.clone(),
+            dst_asset: htlc.dst_asset.clone(),
+            src_asset: htlc.src_asset.clone(),
+            sender: htlc.sender,
+            srcReceiver: htlc.srcReceiver,
+            hashlock: htlc.hashlock,
+            secret: htlc.secret.clone(),
+            amount: htlc.amount,
+            timelock: htlc.timelock,
+            token_contract: htlc.token_contract,
+            token_wallet: htlc.token_wallet,
+            redeemed: htlc.redeemed,
+            unlocked: htlc.unlocked,
+        })
     }
 
     pub fn getLockIdByCommitId(

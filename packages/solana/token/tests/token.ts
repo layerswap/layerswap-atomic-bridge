@@ -200,13 +200,11 @@ describe("safe_pay", () => {
 
     await anchor.web3.sendAndConfirmTransaction(anchor.getProvider().connection, setAndLock, [sender]);
 
-
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     program.removeEventListener(listenerTokenLocked);
 
     const lock_id = await program.methods.getLockIdByCommitId(COMMITID).accountsPartial({ lockIdStruct: pda.lockIdStruct }).rpc();
-
 
     const tx2 = await program.methods.redeem(LOCKID, SECRET, pda.htlcBump).
       accountsPartial({
