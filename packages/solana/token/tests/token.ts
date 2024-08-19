@@ -265,7 +265,6 @@ describe("HTLC", () => {
   //     bob.publicKey
   //   )
   //   const details = await program.methods.getLockDetails(LOCKID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
-  //   console.log(`${details} details`);
   //   const tx3 = await program.methods.redeem(LOCKID, SECRET, pda.htlcBump).
   //     accountsPartial({
   //       userSigning: alice.publicKey,
@@ -356,7 +355,7 @@ describe("HTLC", () => {
 
     const amount = new anchor.BN(20000000);
     const TIME = new Date().getTime();
-    const TIMELOC = (TIME + 2500) / 1000;
+    const TIMELOC = (TIME + 25000) / 1000;
     const TIMELOCK = new anchor.BN(TIMELOC);
     console.log(`[${TIMELOC * 1000}] the Timelock`);
     const listenerTokenLocked = program.addEventListener('tokenLocked', (event, slot) => {
@@ -437,7 +436,6 @@ describe("HTLC", () => {
       bob.publicKey
     )
     const details = await program.methods.getLockDetails(LOCKID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
-    console.log(`${details} details`);
     const tx2 = await program.methods.redeem(LOCKID, SECRET, pda.htlcBump).
       accountsPartial({
         userSigning: alice.publicKey,
@@ -452,7 +450,6 @@ describe("HTLC", () => {
       .signers([alice])
       .rpc();
     const postDetails = await program.methods.getLockDetails(LOCKID, pda.htlcBump).accountsPartial({ htlc: pda.htlcKey }).rpc();
-    console.log(`${postDetails} postdetails`);
     // Assert that 100 tokens were sent back.
     const [, bobBalance] = await readAccount(bobTokenAccount, provider);
     assert.equal(bobBalance, "1000000000");
