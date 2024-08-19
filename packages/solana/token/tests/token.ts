@@ -7,6 +7,7 @@ import * as spl from '@solana/spl-token';
 //import { TOKEN_2022_PROGRAM_ID, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { AnchorHtlc } from '../target/types/anchor_htlc';
 import 'dotenv/config';
+import { publicKey } from "@coral-xyz/anchor/dist/cjs/utils";
 
 interface PDAParameters {
   htlcTokenAccount: anchor.web3.PublicKey;
@@ -28,10 +29,10 @@ describe("safe_pay", () => {
   // const tokenMint = new PublicKey("9ZP28ycX1bkQzwJ4H1ZJdsMtKtuXg6z3wEE41564yUfG");
 
   //const COMMITID = new anchor.BN(24);
-  const COMMITIDIK = "randowqemBytes(32);"
-  const SECRETIK = "asdqgsdfgsdfg";
-  const COMMITID = Buffer.from(COMMITIDIK);
-  const SECRET = Buffer.from(SECRETIK);
+  const CommitIdHex = "0x57e7ff7bf1dfcb6d72e08f1b3f27ae825200af9cdaafe72d8919475ef1768c5d"
+  const SecretHex = "0xe97cda34b54b6814873e27d5e9d4c91f29f655c2aea93118138d828c4d67719b";
+  const COMMITID = Buffer.from(CommitIdHex.replace("0x", ""), "hex");
+  const SECRET = Buffer.from(SecretHex.replace("0x", ""), "hex");
   const HASHLOCK = createHash("sha256").update(SECRET).digest();
   const LOCKID = HASHLOCK;
   const lockIdhex = LOCKID.toString('hex');
@@ -46,19 +47,19 @@ describe("safe_pay", () => {
   const HOPASSETS = [DSTASSET];
   const DSTADDRESS = "0x11";
   const HOPADDRESSES = [DSTADDRESS];
+  let receiverTokenAccount: PublicKey;
+  let senderTokenAccount: PublicKey;
 
 
   // let tokenMint: anchor.web3.PublicKey;
   const tokenMint = new PublicKey(process.env.USDC_ADDRESS);
   const sender = wallet;
-  const senderTokenAccount = new PublicKey("2LS7Z2FCoKNbUUhxGfvUhNYXzWeUjgCvSakVnoMHbzqx");
-  //  async () => {
-  //   senderTokenAccount = await spl.getAssociatedTokenAddress(tokenMint, sender.publicKey);
-  // };
 
-  console.log(`[${senderTokenAccount}] derived htlc`);
+  const getTokenAccount = async (mintAddress: PublicKey, ownerAddress: PublicKey): Promise<PublicKey> => {
+    return await spl.getAssociatedTokenAddress(mintAddress, ownerAddress);
+  };
+
   const receiver = new PublicKey(process.env.RECEIVER_ACCOUNT);
-  const receiverTokenAccount = new PublicKey(process.env.RECEIVER_TOKEN_ACCOUNT);
 
   let pda: PDAParameters;
 
@@ -126,6 +127,8 @@ describe("safe_pay", () => {
 
   before(async () => {
     pda = await getPdaParams(LOCKID, COMMITID);
+    senderTokenAccount = await getTokenAccount(tokenMint, sender.publicKey);
+    receiverTokenAccount = await getTokenAccount(tokenMint, receiver);
   });
   // it("Create Prehtlc", async () => {
   //   const txIn = await program.methods
@@ -141,7 +144,7 @@ describe("safe_pay", () => {
 
 
   it("receiver can redeem", async () => {
-    const amount = new anchor.BN(20000000);
+    const amount = new anchor.BN(100000);
     const TIME = new Date().getTime();
     const TIMELOC = (TIME + 250000) / 1000;
     const TIMELOCK = new anchor.BN(TIMELOC);
@@ -177,20 +180,21 @@ describe("safe_pay", () => {
     const LOCKIDArray: number[] = Array.from(LOCKID);
     const COMMITIDArray: number[] = Array.from(COMMITID);
     let setAndLock = new anchor.web3.Transaction();
-    const initTx = await program.methods.initLockIdByCommitId(COMMITID).
+    const initTx = await program.methods.initLockIdByCommitId(COMMITIDArray).
       accountsPartial({
         sender: sender.publicKey,
         lockIdStruct: pda.lockIdStruct,
       }).transaction();
+
     const lockTx = await program.methods
-      .lock(LOCKIDArray, COMMITIDArray, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, receiver, sender.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
+      .lock(LOCKIDArray, COMMITIDArray, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, receiver, sender.publicKey, new anchor.BN(amount), pda.htlcBump)
       .accountsPartial({
         sender: sender.publicKey,
         htlc: pda.htlcKey,
         htlcTokenAccount: pda.htlcTokenAccount,
         lockIdStruct: pda.lockIdStruct,
         tokenContract: tokenMint,
-        senderTokenAccount: senderWallet
+        senderTokenAccount: senderTokenAccount
       })
       .transaction();
     console.log(`Created a new HTLC. sender will pay receiver 100 tokens`);
@@ -198,15 +202,16 @@ describe("safe_pay", () => {
     setAndLock.add(initTx);
     setAndLock.add(lockTx);
 
-    await anchor.web3.sendAndConfirmTransaction(anchor.getProvider().connection, setAndLock, [sender]);
+    const txhash = await anchor.web3.sendAndConfirmTransaction(anchor.getProvider().connection, setAndLock, [sender.payer]);
 
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     program.removeEventListener(listenerTokenLocked);
 
-    const lock_id = await program.methods.getLockIdByCommitId(COMMITID).accountsPartial({ lockIdStruct: pda.lockIdStruct }).rpc();
+    const lock_id = await program.methods.getLockIdByCommitId(COMMITIDArray).accountsPartial({ lockIdStruct: pda.lockIdStruct }).rpc();
 
-    const tx2 = await program.methods.redeem(LOCKID, SECRET, pda.htlcBump).
+
+    const tx2 = await program.methods.redeem(LOCKIDArray, SECRET, pda.htlcBump).
       accountsPartial({
         userSigning: sender.publicKey,
         htlc: pda.htlcKey,
