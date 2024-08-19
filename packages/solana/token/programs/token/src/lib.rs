@@ -541,7 +541,7 @@ pub mod anchor_htlc {
     /// @param lockId of the HTLC.
     pub fn getLockDetails(
         ctx: Context<GetLockDetails>,
-        lockId: String,
+        lockId: [u8; 32],
         htlc_bump: u8,
     ) -> Result<HTLC> {
         let htlc = &ctx.accounts.htlc;
