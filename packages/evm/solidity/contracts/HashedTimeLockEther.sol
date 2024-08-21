@@ -10,6 +10,16 @@ _                                                 __     _____
 
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
+import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
+import '@openzeppelin/contracts/utils/Address.sol';
+
+struct EIP712Domain {
+  string name;
+  string version;
+  uint256 chainId;
+  address verifyingContract;
+  bytes32 salt;
+}
 
 interface IMessenger {
   function notify(
@@ -28,6 +38,25 @@ interface IMessenger {
 }
 
 contract HashedTimeLockEther {
+  bytes32 private DOMAIN_SEPARATOR;
+  // keccak256(abi.encodePacked("Layerswap V8")) = 0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0
+  bytes32 private constant SALT = 0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0;
+
+  constructor() {
+    DOMAIN_SEPARATOR = hashDomain(
+      EIP712Domain({
+        name: 'HashedTimeLockEther',
+        version: '1',
+        chainId: 11155111,
+        verifyingContract: address(this),
+        salt: SALT
+      })
+    );
+  }
+
+  using ECDSA for bytes32;
+  using Address for address;
+
   error FundsNotSent();
   error NotFutureTimelock();
   error NotPassedTimelock();
@@ -42,6 +71,7 @@ contract HashedTimeLockEther {
   error AlreadyLocked();
   error AlreadyUncommitted();
   error NoAllowance();
+  error InvalidSigniture();
 
   struct HTLC {
     string dstAddress;
@@ -143,7 +173,7 @@ contract HashedTimeLockEther {
     if (timelock <= block.timestamp) {
       revert NotFutureTimelock();
     }
-    contractNonce+=1;
+    contractNonce += 1;
     commitId = bytes32(blockHashAsUint ^ contractNonce);
     if (hasPHTLC(commitId)) {
       revert CommitIdAlreadyExists();
@@ -195,7 +225,11 @@ contract HashedTimeLockEther {
     return true;
   }
 
-  function lockCommitment(bytes32 commitId, bytes32 hashlock, uint256 timelock) external _committed(commitId) returns (bytes32 lockId) {
+  function lockCommitment(
+    bytes32 commitId,
+    bytes32 hashlock,
+    uint256 timelock
+  ) external _committed(commitId) returns (bytes32 lockId) {
     lockId = hashlock;
     if (commits[commitId].uncommitted == true) {
       revert AlreadyUncommitted();
@@ -206,7 +240,7 @@ contract HashedTimeLockEther {
     if (hasHTLC(lockId)) {
       revert LockAlreadyExists();
     }
-    if (msg.sender == commits[commitId].sender || msg.sender == commits[commitId].messenger) {
+    if (msg.sender == commits[commitId].sender || msg.sender == commits[commitId].messenger || msg.sender == address(this)) {
       commits[commitId].locked = true;
       commits[commitId].lockId = hashlock;
 
@@ -240,6 +274,21 @@ contract HashedTimeLockEther {
       );
     } else {
       revert NoAllowance();
+    }
+  }
+
+  function lockCommitmentSig(
+    bytes32 commitId,
+    HTLC memory message,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external _committed(commitId) returns (bytes32 lockId) {
+    if (verifyMessage(message, v, r, s)) {
+      lockId = this.lockCommitment(commitId, message.hashlock, message.timelock);
+      return lockId;
+    } else {
+      revert InvalidSigniture();
     }
   }
 
@@ -458,5 +507,55 @@ contract HashedTimeLockEther {
 
   function getLockIdByCommitId(bytes32 commitId) public view returns (bytes32) {
     return commitIdToLockId[commitId];
+  }
+
+  function hashDomain(EIP712Domain memory domain) private pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 salt)'),
+          keccak256(bytes(domain.name)),
+          keccak256(bytes(domain.version)),
+          domain.chainId,
+          domain.verifyingContract,
+          domain.salt
+        )
+      );
+  }
+
+  // Hashes an EIP712 message struct
+  function hashMessage(HTLC memory message) private pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          keccak256(
+            bytes(
+              'HTLC(string dstAddress,string dstChain,string dstAsset,string srcAsset,address payable sender,address payable srcReceiver,bytes32 hashlock,uint256 secret,uint256 amount,uint256 timelock,bool redeemed,bool unlocked)'
+            )
+          ),
+          keccak256(bytes(message.dstAddress)),
+          keccak256(bytes(message.dstChain)),
+
+          keccak256(bytes(message.dstAsset)),
+          keccak256(bytes(message.srcAsset)),
+          message.sender,
+          message.srcReceiver,
+          message.hashlock,
+          message.secret,
+          message.amount,
+          message.timelock,
+          message.redeemed,
+          message.unlocked
+        )
+      );
+  }
+
+  // Verifies an EIP712 message signature
+  function verifyMessage(HTLC memory message, uint8 v, bytes32 r, bytes32 s) private view returns (bool) {
+    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', DOMAIN_SEPARATOR, hashMessage(message)));
+
+    address recoveredAddress = digest.recover(v, r, s);
+
+    return (recoveredAddress == message.sender);
   }
 }
