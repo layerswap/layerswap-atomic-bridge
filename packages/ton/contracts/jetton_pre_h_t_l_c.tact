@@ -17,6 +17,10 @@ message(0x7362d09c) TokenNotification {
     forward_payload: Slice as remaining;
 }
 
+message(0xd53276db) TokenExcesses {
+    queryId: Int as uint64;
+}
+
 // Messenger notification
 struct Notification {
     commitId: Int;
@@ -48,8 +52,8 @@ struct PHTLC {
     messenger: Address;
     locked: Bool;
     uncommitted: Bool;
-    jettonMasterAddress: Slice;
-    htlcJettonWalletAddress: Slice;  
+    jettonMasterAddress: Address;
+    htlcJettonWalletAddress: Address;  
 }
 
 struct CommitData{
@@ -63,8 +67,8 @@ struct CommitData{
     srcReceiver: Address;
     timelock: Int; 
     messenger: Address;
-    jettonMasterAddress: Slice;
-    htlcJettonWalletAddress: Slice;  
+    jettonMasterAddress: Address;
+    htlcJettonWalletAddress: Address;  
 }
 
 // Lock object
@@ -81,8 +85,8 @@ struct HTLC {
     timelock: Int;
     redeemed: Bool;
     unlocked: Bool;
-    jettonMasterAddress: Slice;
-    htlcJettonWalletAddress: Slice;  
+    jettonMasterAddress: Address;
+    htlcJettonWalletAddress: Address;  
 }
 
 struct LockData {
@@ -95,8 +99,8 @@ struct LockData {
     dstAsset: String;
     commitId: Int?;
     messenger: Address?;
-    jettonMasterAddress: Slice;
-    htlcJettonWalletAddress: Slice;  
+    jettonMasterAddress: Address;
+    htlcJettonWalletAddress: Address;  
 }
 
 // Messages received by contract
@@ -178,7 +182,7 @@ contract HashedTimeLockTON with Deployable {
         if (op_code == 1734998782){
             self._commit(refSlice, msg.from,msg.amount);
         }
-        if (op_code == 3995289619){
+        if (op_code == 1558004185){
             self._lock(refSlice, msg.from,msg.amount);
         }
     }
@@ -223,7 +227,7 @@ contract HashedTimeLockTON with Deployable {
         let queryIndex: Int =  (0x000000000000000 & queryHash);
 
         send(SendParameters{
-                to: commitObj.htlcJettonWalletAddress.loadAddress(),
+                to: commitObj.htlcJettonWalletAddress,
                 value: ctx.value,
                 bounce: true,
                 mode: 0,
@@ -343,7 +347,7 @@ contract HashedTimeLockTON with Deployable {
         let queryIndex: Int =  (0x000000000000000 & queryHash);
 
         send(SendParameters{
-                            to: lockObj.htlcJettonWalletAddress.loadAddress(),
+                            to: lockObj.htlcJettonWalletAddress,
                             value: ctx.value,
                             bounce: true,
                             mode: 0,
@@ -374,7 +378,7 @@ contract HashedTimeLockTON with Deployable {
         let queryIndex: Int =  (0x000000000000000 & queryHash);
 
         send(SendParameters{
-                    to: lockObj.htlcJettonWalletAddress.loadAddress(),
+                    to: lockObj.htlcJettonWalletAddress,
                     value: ctx.value,
                     bounce: true,
                     mode: 0,
@@ -392,6 +396,8 @@ contract HashedTimeLockTON with Deployable {
 
         self.locks.del(msg.data.hashlock);
     }
+
+    receive(msg: TokenExcesses){}
 
     get fun getLockCDetails(hashlock: Int): HTLC? {
         return self.locks.get(hashlock);

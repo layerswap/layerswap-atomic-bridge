@@ -23,6 +23,7 @@ PROGRAM{
   DECLPROC $TokenTransfer$_store
   DECLPROC $TokenTransfer$_store_cell
   DECLPROC $TokenNotification$_load
+  DECLPROC $TokenExcesses$_load
   DECLPROC $Notification$_store
   DECLPROC $Notify$_store
   DECLPROC $Notify$_store_cell
@@ -98,6 +99,7 @@ PROGRAM{
   DECLPROC $HashedTimeLockTON$_internal_binary_LockCommitment
   DECLPROC $HashedTimeLockTON$_internal_binary_Redeem
   DECLPROC $HashedTimeLockTON$_internal_binary_Unlock
+  DECLPROC $HashedTimeLockTON$_internal_binary_TokenExcesses
   DECLPROC $HashedTimeLockTON$_internal_binary_Deploy
   111424 DECLMETHOD %getLockCDetails
   107939 DECLMETHOD %getCommitDetails
@@ -362,6 +364,15 @@ PROGRAM{
     s3 s0 s3 XC2PU
     s2 s3 XCHG
   }>
+  $TokenExcesses$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    3576854235 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    64 LDU
+    SWAP
+  }>
   $Notification$_store PROCREF:<{
     s9 s10 XCHG2
     257 PUSHINT
@@ -467,15 +478,11 @@ PROGRAM{
     1 STI
     s1 s3 XCHG
     1 STI
-    NEWC
-    s0 s5 XCHG2
-    STSLICER
-    ENDC
     s0 s4 XCHG2
-    STREF
+    __tact_store_address INLINECALLDICT
     NEWC
     s0 s3 XCHG2
-    STSLICER
+    __tact_store_address INLINECALLDICT
     ENDC
     ROT
     STREF
@@ -527,13 +534,13 @@ PROGRAM{
     SWAP
     1 LDI
     1 LDI
-    LDREF
-    SWAP
-    CTOS
+    __tact_load_address INLINECALLDICT
     SWAP
     LDREF
     DROP
     CTOS
+    __tact_load_address INLINECALLDICT
+    NIP
     s11 s13 XCHG
     s11 s12 XCHG
   }>
@@ -586,12 +593,12 @@ PROGRAM{
     __tact_load_address INLINECALLDICT
     SWAP
     LDREF
-    SWAP
-    CTOS
-    SWAP
-    LDREF
     DROP
     CTOS
+    __tact_load_address INLINECALLDICT
+    SWAP
+    __tact_load_address INLINECALLDICT
+    NIP
     s10 s12 XCHG
     s10 s11 XCHG
   }>
@@ -650,18 +657,14 @@ PROGRAM{
     1 STI
     NEWC
     s0 s5 XCHG2
-    STSLICER
-    ENDC
-    s0 s4 XCHG2
-    STREF
-    NEWC
+    __tact_store_address INLINECALLDICT
     s0 s3 XCHG2
-    STSLICER
+    __tact_store_address INLINECALLDICT
+    ENDC
+    s0 s3 XCHG2
+    STREF
     ENDC
     ROT
-    STREF
-    ENDC
-    SWAP
     STREF
     ENDC
     SWAP
@@ -711,12 +714,12 @@ PROGRAM{
     1 LDI
     1 LDI
     LDREF
-    SWAP
-    CTOS
-    SWAP
-    LDREF
     DROP
     CTOS
+    __tact_load_address INLINECALLDICT
+    SWAP
+    __tact_load_address INLINECALLDICT
+    NIP
     s12 s14 XCHG
     s12 s13 XCHG
   }>
@@ -773,13 +776,13 @@ PROGRAM{
     }>
     __tact_load_address_opt INLINECALLDICT
     SWAP
-    LDREF
-    SWAP
-    CTOS
+    __tact_load_address INLINECALLDICT
     SWAP
     LDREF
     DROP
     CTOS
+    __tact_load_address INLINECALLDICT
+    NIP
     s6 s11 XCHG
     s6 s10 XCHG
     s6 s9 XCHG
@@ -1536,7 +1539,7 @@ PROGRAM{
       4 4 BLKSWAP
     }>
     SWAP
-    3995289619 PUSHINT
+    1558004185 PUSHINT
     EQUAL
     IF:<{
       -ROT
@@ -1594,16 +1597,14 @@ PROGRAM{
     0 PUSHINT
     SWAP
     AND
-    s0 s2 XCHG
-    __tact_load_address INLINECALLDICT
-    NIP
     TRUE
     0 PUSHINT
     MYADDR
     PUSHNULL
     1 PUSHINT
     B{b5ee9c7241010101000d000016556e636f6d6d6974746564420d80a5} B>boc <s PUSHSLICE
-    7 4 REVERSE
+    s5 s9 XCHG
+    s4 s10 XCHG
     $TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload INLINECALLDICT
     $TokenTransfer$_store_cell INLINECALLDICT
     s4 s3 s0 XCHG3
@@ -1767,16 +1768,12 @@ PROGRAM{
     0 PUSHINT
     SWAP
     AND
-    s0 s7 XCHG
-    __tact_load_address INLINECALLDICT
-    NIP
     TRUE
     0 PUSHINT
     __tact_context_get_sender INLINECALLDICT
     PUSHNULL
     1 PUSHINT
     B{b5ee9c7241010101000a00001052656465656d65640fd3d370} B>boc <s PUSHSLICE
-    s6 s13 XCHG
     s5 s7 XCHG
     s4 s15 XCHG
     $TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload INLINECALLDICT
@@ -1841,16 +1838,12 @@ PROGRAM{
     0 PUSHINT
     SWAP
     AND
-    SWAP
-    __tact_load_address INLINECALLDICT
-    NIP
     TRUE
     0 PUSHINT
     __tact_context_get_sender INLINECALLDICT
     PUSHNULL
     1 PUSHINT
     B{b5ee9c7241010101000a000010556e6c6f636b6564b37615bc} B>boc <s PUSHSLICE
-    s6 s7 XCHG
     s5 s13 XCHG
     s4 s8 XCHG
     $TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload INLINECALLDICT
@@ -1865,6 +1858,9 @@ PROGRAM{
     DICTIDEL
     DROP
     s2 s4 XCHG2
+  }>
+  $HashedTimeLockTON$_internal_binary_TokenExcesses PROCINLINE:<{
+    DROP
   }>
   $HashedTimeLockTON$_internal_binary_Deploy PROCINLINE:<{
     $DeployOk$_constructor_queryId INLINECALLDICT
@@ -1989,6 +1985,16 @@ PROGRAM{
       $Unlock$_load INLINECALLDICT
       NIP
       $HashedTimeLockTON$_internal_binary_Unlock INLINECALLDICT
+      TRUE
+    }>
+    DUP
+    3576854235 PUSHINT
+    EQUAL
+    IFJMP:<{
+      DROP
+      $TokenExcesses$_load INLINECALLDICT
+      NIP
+      $HashedTimeLockTON$_internal_binary_TokenExcesses INLINECALLDICT
       TRUE
     }>
     2490013878 PUSHINT

@@ -168,7 +168,7 @@
     if (($op_code == 1734998782)) {
         ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun__commit($refSlice, $msg'from, $msg'amount);
     }
-    if (($op_code == 3995289619)) {
+    if (($op_code == 1558004185)) {
         ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun__lock($refSlice, $msg'from, $msg'amount);
     }
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
@@ -185,7 +185,7 @@
     var ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
     int $queryHash = cell_hash(end_cell(store_int(__tact_store_address(begin_cell(), $ctx'sender), now(), 48)));
     int $queryIndex = (0 & $queryHash);
-    $global_send($SendParameters$_constructor_to_value_bounce_mode_body($commitObj'htlcJettonWalletAddress~__tact_load_address(), $ctx'value, true, 0, $TokenTransfer$_store_cell($TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload($queryIndex, $commitObj'amount, $commitObj'sender, my_address(), null(), 1, __tact_str_to_slice(__gen_slice_string_745fd96be4cd665d7df3e2789d5bcd205d53436c91efe2eae1b705281840e313())))));
+    $global_send($SendParameters$_constructor_to_value_bounce_mode_body($commitObj'htlcJettonWalletAddress, $ctx'value, true, 0, $TokenTransfer$_store_cell($TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload($queryIndex, $commitObj'amount, $commitObj'sender, my_address(), null(), 1, __tact_str_to_slice(__gen_slice_string_745fd96be4cd665d7df3e2789d5bcd205d53436c91efe2eae1b705281840e313())))));
     $self'commits~__tact_dict_delete_int(257, $msg'data'commitId);
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
@@ -222,7 +222,7 @@
     throw_unless(46887, ($lockObj'redeemed == false));
     int $queryHash = cell_hash(end_cell(store_int(__tact_store_address(begin_cell(), $ctx'sender), now(), 48)));
     int $queryIndex = (0 & $queryHash);
-    $global_send($SendParameters$_constructor_to_value_bounce_mode_body($lockObj'htlcJettonWalletAddress~__tact_load_address(), $ctx'value, true, 0, $TokenTransfer$_store_cell($TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload($queryIndex, $lockObj'amount, $lockObj'srcReceiver, __tact_context_get_sender(), null(), 1, __tact_str_to_slice(__gen_slice_string_2f7fe9b07f89441d6ea969c50c7445098198d0e0031cf5c4f19adb721422d770())))));
+    $global_send($SendParameters$_constructor_to_value_bounce_mode_body($lockObj'htlcJettonWalletAddress, $ctx'value, true, 0, $TokenTransfer$_store_cell($TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload($queryIndex, $lockObj'amount, $lockObj'srcReceiver, __tact_context_get_sender(), null(), 1, __tact_str_to_slice(__gen_slice_string_2f7fe9b07f89441d6ea969c50c7445098198d0e0031cf5c4f19adb721422d770())))));
     $self'locks~__tact_dict_delete_int(257, $msg'data'lockId);
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
@@ -238,8 +238,14 @@
     throw_unless(46887, ($lockObj'redeemed == false));
     int $queryHash = cell_hash(end_cell(store_int(__tact_store_address(begin_cell(), $ctx'sender), now(), 48)));
     int $queryIndex = (0 & $queryHash);
-    $global_send($SendParameters$_constructor_to_value_bounce_mode_body($lockObj'htlcJettonWalletAddress~__tact_load_address(), $ctx'value, true, 0, $TokenTransfer$_store_cell($TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload($queryIndex, $lockObj'amount, $lockObj'sender, __tact_context_get_sender(), null(), 1, __tact_str_to_slice(__gen_slice_string_d3c5974226249205b098bfc49055635817871f13c2281fb641070b6fd4cbe0d6())))));
+    $global_send($SendParameters$_constructor_to_value_bounce_mode_body($lockObj'htlcJettonWalletAddress, $ctx'value, true, 0, $TokenTransfer$_store_cell($TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload($queryIndex, $lockObj'amount, $lockObj'sender, __tact_context_get_sender(), null(), 1, __tact_str_to_slice(__gen_slice_string_d3c5974226249205b098bfc49055635817871f13c2281fb641070b6fd4cbe0d6())))));
     $self'locks~__tact_dict_delete_int(257, $msg'data'hashlock);
+    return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
+}
+
+(((cell, cell, cell, int, int)), ()) $HashedTimeLockTON$_internal_binary_TokenExcesses((cell, cell, cell, int, int) $self, (int) $msg) impure inline {
+    var ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed) = $self;
+    var ($msg'queryId) = $msg;
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
@@ -360,6 +366,13 @@ _ lazy_deployment_completed() method_id {
     if (op == 2910985977) {
         var msg = in_msg~$Unlock$_load();
         self~$HashedTimeLockTON$_internal_binary_Unlock(msg);
+        return (self, true);
+    }
+    
+    ;; Receive TokenExcesses message
+    if (op == 3576854235) {
+        var msg = in_msg~$TokenExcesses$_load();
+        self~$HashedTimeLockTON$_internal_binary_TokenExcesses(msg);
         return (self, true);
     }
     

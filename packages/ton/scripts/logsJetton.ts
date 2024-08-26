@@ -54,7 +54,7 @@ async function parseTx(address: string, token: string, index: number): Promise<a
             if ( 0x6769fafe == op_code) {
                 return loadCommitData(refSlice);
             }
-            if ( 0xee234813 == op_code) {
+            if ( 0x5cdd41d9 == op_code) {
                 return loadLockData(refSlice);
             }
 
@@ -70,10 +70,10 @@ async function parseTx(address: string, token: string, index: number): Promise<a
     }
 }
 
-const address = 'EQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFYCj'; 
+const address = 'kQAz381AguTykUXr6_IdjhuvnSrqPy2iWB91ODoJsGWd3Xqt'; 
 const token = 'AGVYQVBYQDB6KRAAAAAFWAOS73LJHXPEWONMCFRIRGOBL7WIDI5D5G2GRWOD347TUUFWPUA'; 
 
-parseTx(address, token, 2).then(result => {
+parseTx(address, token, 1).then(result => {
     console.log(result);
   }).catch(error => {
     console.error('Error:', error);

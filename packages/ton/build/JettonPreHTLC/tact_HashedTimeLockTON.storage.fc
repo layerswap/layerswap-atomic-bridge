@@ -102,6 +102,18 @@ cell $TokenTransfer$_store_cell((int, int, slice, slice, cell, int, slice) v) in
 }
 
 ;;
+;; Type: TokenExcesses
+;; Header: 0xd53276db
+;; TLB: token_excesses#d53276db queryId:uint64 = TokenExcesses
+;;
+
+(slice, ((int))) $TokenExcesses$_load(slice sc_0) inline {
+    throw_unless(129, sc_0~load_uint(32) == 3576854235);
+    var v'queryId = sc_0~load_uint(64);
+    return (sc_0, (v'queryId));
+}
+
+;;
 ;; Type: Notification
 ;; TLB: _ commitId:int257 hashlock:int257 dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string sender:address srcReceiver:address amount:int257 timelock:int257 = Notification
 ;;
@@ -152,7 +164,7 @@ cell $Notify$_store_cell(((int, int, slice, slice, slice, slice, slice, slice, i
 
 ;;
 ;; Type: PHTLC
-;; TLB: _ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string sender:address srcReceiver:address timelock:int257 amount:int257 messenger:address locked:bool uncommitted:bool jettonMasterAddress:^slice htlcJettonWalletAddress:^slice = PHTLC
+;; TLB: _ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string sender:address srcReceiver:address timelock:int257 amount:int257 messenger:address locked:bool uncommitted:bool jettonMasterAddress:address htlcJettonWalletAddress:address = PHTLC
 ;;
 
 builder $PHTLC$_store(builder build_0, (slice, slice, slice, slice, slice, slice, int, int, slice, int, int, slice, slice) v) inline_ref {
@@ -170,8 +182,10 @@ builder $PHTLC$_store(builder build_0, (slice, slice, slice, slice, slice, slice
     build_2 = __tact_store_address(build_2, v'messenger);
     build_2 = build_2.store_int(v'locked, 1);
     build_2 = build_2.store_int(v'uncommitted, 1);
-    build_2 = build_2.store_ref(begin_cell().store_slice(v'jettonMasterAddress).end_cell());
-    build_2 = build_2.store_ref(begin_cell().store_slice(v'htlcJettonWalletAddress).end_cell());
+    build_2 = __tact_store_address(build_2, v'jettonMasterAddress);
+    var build_3 = begin_cell();
+    build_3 = __tact_store_address(build_3, v'htlcJettonWalletAddress);
+    build_2 = store_ref(build_2, build_3.end_cell());
     build_1 = store_ref(build_1, build_2.end_cell());
     build_0 = store_ref(build_0, build_1.end_cell());
     return build_0;
@@ -195,8 +209,9 @@ cell $PHTLC$_store_cell((slice, slice, slice, slice, slice, slice, int, int, sli
     var v'messenger = sc_2~__tact_load_address();
     var v'locked = sc_2~load_int(1);
     var v'uncommitted = sc_2~load_int(1);
-    var v'jettonMasterAddress = sc_2~load_ref().begin_parse();
-    var v'htlcJettonWalletAddress = sc_2~load_ref().begin_parse();
+    var v'jettonMasterAddress = sc_2~__tact_load_address();
+    slice sc_3 = sc_2~load_ref().begin_parse();
+    var v'htlcJettonWalletAddress = sc_3~__tact_load_address();
     return (sc_0, (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted, v'jettonMasterAddress, v'htlcJettonWalletAddress));
 }
 
@@ -244,7 +259,7 @@ tuple $PHTLC$_to_opt_external(tuple v) inline {
 
 ;;
 ;; Type: CommitData
-;; TLB: _ hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string srcReceiver:address timelock:int257 messenger:address jettonMasterAddress:^slice htlcJettonWalletAddress:^slice = CommitData
+;; TLB: _ hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string srcReceiver:address timelock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address = CommitData
 ;;
 
 (slice, ((cell, cell, cell, slice, slice, slice, slice, slice, int, slice, slice, slice))) $CommitData$_load(slice sc_0) inline_ref {
@@ -260,8 +275,9 @@ tuple $PHTLC$_to_opt_external(tuple v) inline {
     var v'srcReceiver = sc_2~__tact_load_address();
     var v'timelock = sc_2~load_int(257);
     var v'messenger = sc_2~__tact_load_address();
-    var v'jettonMasterAddress = sc_2~load_ref().begin_parse();
-    var v'htlcJettonWalletAddress = sc_2~load_ref().begin_parse();
+    slice sc_3 = sc_2~load_ref().begin_parse();
+    var v'jettonMasterAddress = sc_3~__tact_load_address();
+    var v'htlcJettonWalletAddress = sc_3~__tact_load_address();
     return (sc_0, (v'hopChains, v'hopAssets, v'hopAddresses, v'dstChain, v'dstAsset, v'dstAddress, v'srcAsset, v'srcReceiver, v'timelock, v'messenger, v'jettonMasterAddress, v'htlcJettonWalletAddress));
 }
 
@@ -273,7 +289,7 @@ tuple $PHTLC$_to_opt_external(tuple v) inline {
 
 ;;
 ;; Type: HTLC
-;; TLB: _ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string sender:address srcReceiver:address hashlock:int257 secret:int257 amount:int257 timelock:int257 redeemed:bool unlocked:bool jettonMasterAddress:^slice htlcJettonWalletAddress:^slice = HTLC
+;; TLB: _ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string sender:address srcReceiver:address hashlock:int257 secret:int257 amount:int257 timelock:int257 redeemed:bool unlocked:bool jettonMasterAddress:address htlcJettonWalletAddress:address = HTLC
 ;;
 
 builder $HTLC$_store(builder build_0, (slice, slice, slice, slice, slice, slice, int, int, int, int, int, int, slice, slice) v) inline_ref {
@@ -292,8 +308,10 @@ builder $HTLC$_store(builder build_0, (slice, slice, slice, slice, slice, slice,
     build_2 = build_2.store_int(v'timelock, 257);
     build_2 = build_2.store_int(v'redeemed, 1);
     build_2 = build_2.store_int(v'unlocked, 1);
-    build_2 = build_2.store_ref(begin_cell().store_slice(v'jettonMasterAddress).end_cell());
-    build_2 = build_2.store_ref(begin_cell().store_slice(v'htlcJettonWalletAddress).end_cell());
+    var build_3 = begin_cell();
+    build_3 = __tact_store_address(build_3, v'jettonMasterAddress);
+    build_3 = __tact_store_address(build_3, v'htlcJettonWalletAddress);
+    build_2 = store_ref(build_2, build_3.end_cell());
     build_1 = store_ref(build_1, build_2.end_cell());
     build_0 = store_ref(build_0, build_1.end_cell());
     return build_0;
@@ -318,8 +336,9 @@ cell $HTLC$_store_cell((slice, slice, slice, slice, slice, slice, int, int, int,
     var v'timelock = sc_2~load_int(257);
     var v'redeemed = sc_2~load_int(1);
     var v'unlocked = sc_2~load_int(1);
-    var v'jettonMasterAddress = sc_2~load_ref().begin_parse();
-    var v'htlcJettonWalletAddress = sc_2~load_ref().begin_parse();
+    slice sc_3 = sc_2~load_ref().begin_parse();
+    var v'jettonMasterAddress = sc_3~__tact_load_address();
+    var v'htlcJettonWalletAddress = sc_3~__tact_load_address();
     return (sc_0, (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'srcReceiver, v'hashlock, v'secret, v'amount, v'timelock, v'redeemed, v'unlocked, v'jettonMasterAddress, v'htlcJettonWalletAddress));
 }
 
@@ -367,7 +386,7 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
 
 ;;
 ;; Type: LockData
-;; TLB: _ hashlock:int257 timelock:int257 srcReceiver:address srcAsset:^string dstChain:^string dstAddress:^string dstAsset:^string commitId:Maybe int257 messenger:Maybe address jettonMasterAddress:^slice htlcJettonWalletAddress:^slice = LockData
+;; TLB: _ hashlock:int257 timelock:int257 srcReceiver:address srcAsset:^string dstChain:^string dstAddress:^string dstAsset:^string commitId:Maybe int257 messenger:Maybe address jettonMasterAddress:address htlcJettonWalletAddress:address = LockData
 ;;
 
 (slice, ((int, int, slice, slice, slice, slice, slice, int, slice, slice, slice))) $LockData$_load(slice sc_0) inline_ref {
@@ -381,8 +400,9 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
     var v'dstAsset = sc_1~load_ref().begin_parse();
     var v'commitId = sc_1~load_int(1) ? sc_1~load_int(257) : null();
     var v'messenger = sc_1~__tact_load_address_opt();
-    var v'jettonMasterAddress = sc_1~load_ref().begin_parse();
-    var v'htlcJettonWalletAddress = sc_1~load_ref().begin_parse();
+    var v'jettonMasterAddress = sc_1~__tact_load_address();
+    slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'htlcJettonWalletAddress = sc_2~__tact_load_address();
     return (sc_0, (v'hashlock, v'timelock, v'srcReceiver, v'srcAsset, v'dstChain, v'dstAddress, v'dstAsset, v'commitId, v'messenger, v'jettonMasterAddress, v'htlcJettonWalletAddress));
 }
 

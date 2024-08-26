@@ -75,6 +75,9 @@ cell $TokenTransfer$_store_cell((int, int, slice, slice, cell, int, slice) v) in
 ;; $TokenNotification$_load
 (slice, ((int, int, slice, slice))) $TokenNotification$_load(slice sc_0) inline;
 
+;; $TokenExcesses$_load
+(slice, ((int))) $TokenExcesses$_load(slice sc_0) inline;
+
 ;; $Notification$_store
 builder $Notification$_store(builder build_0, (int, int, slice, slice, slice, slice, slice, slice, int, int) v) inline_ref;
 
