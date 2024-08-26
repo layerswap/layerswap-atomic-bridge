@@ -1,0 +1,1870 @@
+PROGRAM{
+  DECLPROC __tact_verify_address
+  DECLPROC __tact_load_address
+  DECLPROC __tact_load_address_opt
+  DECLPROC __tact_store_address
+  DECLPROC __tact_my_balance
+  DECLPROC __tact_not_null
+  DECLPROC __tact_context_get
+  DECLPROC __tact_context_get_sender
+  DECLPROC __tact_prepare_random
+  DECLPROC __tact_store_bool
+  DECLPROC __tact_dict_set_int_int
+  DECLPROC __tact_dict_min_int_int
+  DECLPROC __tact_dict_next_int_int
+  DECLPROC __tact_dict_set_int_cell
+  DECLPROC __tact_dict_get_int_cell
+  DECLPROC __tact_dict_min_int_cell
+  DECLPROC __tact_dict_next_int_cell
+  DECLPROC __tact_slice_eq_bits
+  DECLPROC $Deploy$_load
+  DECLPROC $DeployOk$_store
+  DECLPROC $DeployOk$_store_cell
+  DECLPROC $Notification$_store
+  DECLPROC $Notify$_store
+  DECLPROC $Notify$_store_cell
+  DECLPROC $PHTLC$_store
+  DECLPROC $PHTLC$_store_cell
+  DECLPROC $PHTLC$_load
+  DECLPROC $PHTLC$_as_optional
+  DECLPROC $PHTLC$_load_opt
+  DECLPROC $HTLC$_store
+  DECLPROC $HTLC$_store_cell
+  DECLPROC $HTLC$_load
+  DECLPROC $HTLC$_as_optional
+  DECLPROC $HTLC$_load_opt
+  DECLPROC $CommitData$_load
+  DECLPROC $Commit$_load
+  DECLPROC $LockCommitmentData$_load
+  DECLPROC $LockCommitment$_load
+  DECLPROC $UncommitData$_load
+  DECLPROC $Uncommit$_load
+  DECLPROC $LockData$_load
+  DECLPROC $Lock$_load
+  DECLPROC $RedeemData$_load
+  DECLPROC $Redeem$_load
+  DECLPROC $UnlockData$_load
+  DECLPROC $Unlock$_load
+  DECLPROC $CommitId$_store
+  DECLPROC $CommitId$_store_cell
+  DECLPROC $HashedTimeLockTON$_store
+  DECLPROC $HashedTimeLockTON$_load
+  DECLPROC $StateInit$_not_null
+  DECLPROC $PHTLC$_not_null
+  DECLPROC $PHTLC$_to_tuple
+  DECLPROC $PHTLC$_to_opt_tuple
+  DECLPROC $PHTLC$_to_opt_external
+  DECLPROC $HTLC$_not_null
+  DECLPROC $HTLC$_to_tuple
+  DECLPROC $HTLC$_to_opt_tuple
+  DECLPROC $HTLC$_to_opt_external
+  DECLPROC $global_random
+  DECLPROC $HashedTimeLockTON$_contract_init
+  DECLPROC $HashedTimeLockTON$_contract_load
+  DECLPROC $HashedTimeLockTON$_contract_store
+  DECLPROC $global_send
+  DECLPROC $global_emit
+  DECLPROC $Builder$_fun_asSlice
+  DECLPROC $HashedTimeLockTON$_fun_lockExists
+  DECLPROC $HashedTimeLockTON$_fun_commitExists
+  DECLPROC $HashedTimeLockTON$_fun_getLockCDetails
+  DECLPROC $HashedTimeLockTON$_fun_getCommitDetails
+  DECLPROC $HashedTimeLockTON$_fun_commitsLength
+  DECLPROC $HashedTimeLockTON$_fun_locksLength
+  DECLPROC $HashedTimeLockTON$_fun_lockIdToCommitIdLength
+  DECLPROC $HashedTimeLockTON$_fun_getCommits
+  DECLPROC $HashedTimeLockTON$_fun_getLocks
+  DECLPROC $HashedTimeLockTON$_fun_getLockIdByCommitId
+  DECLPROC $SendParameters$_constructor_bounce_to_value_mode_body_code_data
+  DECLPROC $HashedTimeLockTON$_fun_forward
+  DECLPROC $HashedTimeLockTON$_fun_notify
+  DECLPROC $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted
+  DECLPROC $CommitId$_constructor_commitId
+  DECLPROC $SendParameters$_constructor_to_bounce_value_mode
+  DECLPROC $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked
+  DECLPROC $SendParameters$_constructor_to_bounce_value_mode_body
+  DECLPROC $Notify$_constructor_data
+  DECLPROC $Notification$_constructor_commitId_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock
+  DECLPROC $DeployOk$_constructor_queryId
+  DECLPROC $HashedTimeLockTON$_internal_binary_Commit
+  DECLPROC $HashedTimeLockTON$_internal_binary_Uncommit
+  DECLPROC $HashedTimeLockTON$_internal_binary_LockCommitment
+  DECLPROC $HashedTimeLockTON$_internal_binary_Lock
+  DECLPROC $HashedTimeLockTON$_internal_binary_Redeem
+  DECLPROC $HashedTimeLockTON$_internal_binary_Unlock
+  DECLPROC $HashedTimeLockTON$_internal_binary_Deploy
+  111424 DECLMETHOD %getLockCDetails
+  107939 DECLMETHOD %getCommitDetails
+  86110 DECLMETHOD %commitsLength
+  83309 DECLMETHOD %locksLength
+  113296 DECLMETHOD %lockIdToCommitIdLength
+  77681 DECLMETHOD %getCommits
+  102208 DECLMETHOD %getLocks
+  87550 DECLMETHOD %getLockIdByCommitId
+  115390 DECLMETHOD lazy_deployment_completed
+  DECLPROC $HashedTimeLockTON$_contract_router_internal
+  DECLPROC recv_internal
+  DECLGLOBVAR __tact_context
+  DECLGLOBVAR __tact_context_sender
+  DECLGLOBVAR __tact_context_sys
+  DECLGLOBVAR __tact_randomized
+  __tact_verify_address PROCINLINE:<{
+    DUP
+    SBITS
+    267 PUSHINT
+    EQUAL
+    136 THROWIFNOT
+    DUP
+    11 PLDU
+    DUP
+    1279 PUSHINT
+    EQUAL
+    137 THROWIF
+    10 PUSHPOW2
+    EQUAL
+    136 THROWIFNOT
+  }>
+  __tact_load_address PROCINLINE:<{
+    LDMSGADDR
+    SWAP
+    __tact_verify_address INLINECALLDICT
+  }>
+  __tact_load_address_opt PROCINLINE:<{
+    DUP
+    2 PLDU
+    0 NEQINT
+    IF:<{
+      LDMSGADDR
+      SWAP
+      __tact_verify_address INLINECALLDICT
+    }>ELSE<{
+      2 PUSHINT
+      SDSKIPFIRST
+      PUSHNULL
+    }>
+  }>
+  __tact_store_address PROCINLINE:<{
+    __tact_verify_address INLINECALLDICT
+    STSLICER
+  }>
+  __tact_my_balance PROCINLINE:<{
+    BALANCE
+    FIRST
+  }>
+  __tact_not_null PROCINLINE:<{
+    DUP
+    ISNULL
+    128 THROWIF
+  }>
+  __tact_context_get PROCINLINE:<{
+    __tact_context GETGLOB
+    4 UNTUPLE
+  }>
+  __tact_context_get_sender PROCINLINE:<{
+    __tact_context_sender GETGLOB
+  }>
+  __tact_prepare_random PROCINLINE:<{
+    __tact_randomized GETGLOB
+    ISNULL
+    IF:<{
+      LTIME
+      ADDRAND
+      TRUE
+      __tact_randomized SETGLOB
+    }>
+  }>
+  __tact_store_bool PROCINLINE:<{
+    SWAP
+    1 STI
+  }>
+  __tact_dict_set_int_int PROCINLINE:<{
+    OVER
+    ISNULL
+    IF:<{
+      2DROP
+      -ROT
+      DICTIDEL
+      DROP
+    }>ELSE<{
+      NEWC
+      SWAP
+      STIX
+      s1 s3 s3 XCHG3
+      DICTISETB
+    }>
+  }>
+  __tact_dict_min_int_int PROCINLINE:<{
+    -ROT
+    DICTIMIN
+    NULLSWAPIFNOT2
+    DUP
+    IF:<{
+      s2 s3 XCHG2
+      LDIX
+      DROP
+      ROT
+    }>ELSE<{
+      2 1 BLKDROP2
+      PUSHNULL
+      s2 POP
+      PUSHNULL
+      SWAP
+    }>
+  }>
+  __tact_dict_next_int_int PROCINLINE:<{
+    s1 s3 s3 XCHG3
+    DICTIGETNEXT
+    NULLSWAPIFNOT2
+    DUP
+    IF:<{
+      s2 s3 XCHG2
+      LDIX
+      DROP
+      ROT
+    }>ELSE<{
+      2 1 BLKDROP2
+      PUSHNULL
+      s2 POP
+      PUSHNULL
+      SWAP
+    }>
+  }>
+  __tact_dict_set_int_cell PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      -ROT
+      DICTIDEL
+      DROP
+    }>ELSE<{
+      s1 s3 s3 XCHG3
+      DICTISETREF
+    }>
+  }>
+  __tact_dict_get_int_cell PROCINLINE:<{
+    -ROT
+    DICTIGETREF
+    NULLSWAPIFNOT
+    IF:<{
+    }>ELSE<{
+      DROP
+      PUSHNULL
+    }>
+  }>
+  __tact_dict_min_int_cell PROCINLINE:<{
+    DICTIMINREF
+    NULLSWAPIFNOT2
+    DUP
+    IF:<{
+      s1 s2 XCHG
+    }>ELSE<{
+      NIP
+      PUSHNULL
+      s2 POP
+      PUSHNULL
+      SWAP
+    }>
+  }>
+  __tact_dict_next_int_cell PROCINLINE:<{
+    -ROT
+    DICTIGETNEXT
+    NULLSWAPIFNOT2
+    DUP
+    IF:<{
+      s0 s2 XCHG
+      LDREF
+      DROP
+      ROT
+    }>ELSE<{
+      NIP
+      PUSHNULL
+      s2 POP
+      PUSHNULL
+      SWAP
+    }>
+  }>
+  __tact_slice_eq_bits PROCINLINE:<{
+    SDEQ
+  }>
+  $Deploy$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    2490013878 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    64 LDU
+    SWAP
+  }>
+  $DeployOk$_store PROCINLINE:<{
+    2952335191 PUSHINT
+    ROT
+    32 STU
+    64 STU
+  }>
+  $DeployOk$_store_cell PROCINLINE:<{
+    NEWC
+    SWAP
+    $DeployOk$_store INLINECALLDICT
+    ENDC
+  }>
+  $Notification$_store PROCREF:<{
+    s9 s10 XCHG2
+    257 PUSHINT
+    STIX
+    s1 s7 XCHG
+    257 PUSHINT
+    STIX
+    NEWC
+    s0 s6 XCHG2
+    STSLICER
+    ENDC
+    s0 s5 XCHG2
+    STREF
+    NEWC
+    s0 s4 XCHG2
+    STSLICER
+    ENDC
+    s0 s3 XCHG2
+    STREF
+    NEWC
+    NEWC
+    s0 s3 XCHG2
+    STSLICER
+    ENDC
+    ROT
+    STREF
+    NEWC
+    s0 s3 XCHG2
+    STSLICER
+    ENDC
+    ROT
+    STREF
+    ROT
+    __tact_store_address INLINECALLDICT
+    ROT
+    __tact_store_address INLINECALLDICT
+    s1 s2 XCHG
+    257 PUSHINT
+    STIX
+    s0 s2 XCHG
+    NEWC
+    257 PUSHINT
+    STIX
+    ENDC
+    ROT
+    STREF
+    ENDC
+    SWAP
+    STREF
+  }>
+  $Notify$_store PROCINLINE:<{
+    1005277634 PUSHINT
+    s0 s11 XCHG2
+    32 STU
+    s0 s10 XCHG
+    $Notification$_store INLINECALLDICT
+  }>
+  $Notify$_store_cell PROCINLINE:<{
+    NEWC
+    10 -ROLL
+    $Notify$_store INLINECALLDICT
+    ENDC
+  }>
+  $PHTLC$_store PROCREF:<{
+    NEWC
+    s0 s11 XCHG2
+    STSLICER
+    ENDC
+    s0 s11 XCHG2
+    STREF
+    NEWC
+    s0 s9 XCHG2
+    STSLICER
+    ENDC
+    s0 s8 XCHG2
+    STREF
+    NEWC
+    NEWC
+    s0 s8 XCHG2
+    STSLICER
+    ENDC
+    s0 s7 XCHG2
+    STREF
+    NEWC
+    s0 s6 XCHG2
+    STSLICER
+    ENDC
+    s0 s5 XCHG2
+    STREF
+    s0 s3 XCHG2
+    __tact_store_address INLINECALLDICT
+    SWAP
+    __tact_store_address INLINECALLDICT
+    257 PUSHINT
+    STIX
+    SWAP
+    NEWC
+    257 PUSHINT
+    STIX
+    s0 s3 XCHG2
+    __tact_store_address INLINECALLDICT
+    s1 s4 XCHG
+    1 STI
+    s1 s2 XCHG
+    1 STI
+    ENDC
+    SWAP
+    STREF
+    ENDC
+    SWAP
+    STREF
+  }>
+  $PHTLC$_store_cell PROCINLINE:<{
+    NEWC
+    11 -ROLL
+    $PHTLC$_store INLINECALLDICT
+    ENDC
+  }>
+  $PHTLC$_load PROCREF:<{
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    __tact_load_address INLINECALLDICT
+    SWAP
+    __tact_load_address INLINECALLDICT
+    SWAP
+    257 PUSHINT
+    LDIX
+    LDREF
+    DROP
+    CTOS
+    257 PUSHINT
+    LDIX
+    __tact_load_address INLINECALLDICT
+    SWAP
+    1 LDI
+    1 LDI
+    DROP
+    s9 s11 XCHG
+    s9 s10 XCHG
+  }>
+  $PHTLC$_as_optional PROCINLINE:<{
+    11 TUPLE
+  }>
+  $PHTLC$_load_opt PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+      CTOS
+      $PHTLC$_load INLINECALLDICT
+      1 11 BLKDROP2
+      $PHTLC$_as_optional INLINECALLDICT
+    }>
+  }>
+  $HTLC$_store PROCREF:<{
+    NEWC
+    s0 s12 XCHG2
+    STSLICER
+    ENDC
+    s0 s12 XCHG2
+    STREF
+    NEWC
+    s0 s10 XCHG2
+    STSLICER
+    ENDC
+    s0 s9 XCHG2
+    STREF
+    NEWC
+    NEWC
+    s0 s9 XCHG2
+    STSLICER
+    ENDC
+    s0 s8 XCHG2
+    STREF
+    NEWC
+    s0 s7 XCHG2
+    STSLICER
+    ENDC
+    s0 s6 XCHG2
+    STREF
+    s0 s4 XCHG2
+    __tact_store_address INLINECALLDICT
+    ROT
+    __tact_store_address INLINECALLDICT
+    257 PUSHINT
+    STIX
+    SWAP
+    NEWC
+    257 PUSHINT
+    STIX
+    s1 s2 XCHG
+    257 PUSHINT
+    STIX
+    s1 s3 XCHG
+    257 PUSHINT
+    STIX
+    s1 s4 XCHG
+    1 STI
+    s1 s2 XCHG
+    1 STI
+    ENDC
+    SWAP
+    STREF
+    ENDC
+    SWAP
+    STREF
+  }>
+  $HTLC$_store_cell PROCINLINE:<{
+    NEWC
+    12 -ROLL
+    $HTLC$_store INLINECALLDICT
+    ENDC
+  }>
+  $HTLC$_load PROCREF:<{
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    __tact_load_address INLINECALLDICT
+    SWAP
+    __tact_load_address INLINECALLDICT
+    SWAP
+    257 PUSHINT
+    LDIX
+    LDREF
+    DROP
+    CTOS
+    257 PUSHINT
+    LDIX
+    257 PUSHINT
+    LDIX
+    257 PUSHINT
+    LDIX
+    1 LDI
+    1 LDI
+    DROP
+    s10 s12 XCHG
+    s10 s11 XCHG
+  }>
+  $HTLC$_as_optional PROCINLINE:<{
+    12 TUPLE
+  }>
+  $HTLC$_load_opt PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+      CTOS
+      $HTLC$_load INLINECALLDICT
+      1 12 BLKDROP2
+      $HTLC$_as_optional INLINECALLDICT
+    }>
+  }>
+  $CommitData$_load PROCREF:<{
+    LDDICT
+    LDDICT
+    LDREF
+    SWAP
+    CTOS
+    LDDICT
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    DROP
+    CTOS
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    __tact_load_address INLINECALLDICT
+    SWAP
+    257 PUSHINT
+    LDIX
+    __tact_load_address INLINECALLDICT
+    NIP
+    s8 s10 XCHG
+    s8 s9 XCHG
+  }>
+  $Commit$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    458640785 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    $CommitData$_load INLINECALLDICT
+  }>
+  $LockCommitmentData$_load PROCINLINE:<{
+    257 PUSHINT
+    LDIX
+    257 PUSHINT
+    LDIX
+    257 PUSHINT
+    LDIX
+    3 -ROLL
+  }>
+  $LockCommitment$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    1558004185 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    $LockCommitmentData$_load INLINECALLDICT
+  }>
+  $UncommitData$_load PROCINLINE:<{
+    257 PUSHINT
+    LDIX
+    SWAP
+  }>
+  $Uncommit$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    2841160739 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    $UncommitData$_load INLINECALLDICT
+  }>
+  $LockData$_load PROCREF:<{
+    257 PUSHINT
+    LDIX
+    257 PUSHINT
+    LDIX
+    __tact_load_address INLINECALLDICT
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    1 LDI
+    SWAP
+    IF:<{
+      257 PUSHINT
+      LDIX
+    }>ELSE<{
+      PUSHNULL
+      SWAP
+    }>
+    __tact_load_address_opt INLINECALLDICT
+    NIP
+    s4 s9 XCHG
+    s4 s8 XCHG
+    s4 s7 XCHG
+    s4 s6 XCHG
+    s4 s5 XCHG
+  }>
+  $Lock$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    317164721 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    $LockData$_load INLINECALLDICT
+  }>
+  $RedeemData$_load PROCINLINE:<{
+    257 PUSHINT
+    LDIX
+    257 PUSHINT
+    LDIX
+    -ROT
+  }>
+  $Redeem$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    1972220037 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    $RedeemData$_load INLINECALLDICT
+  }>
+  $UnlockData$_load PROCINLINE:<{
+    257 PUSHINT
+    LDIX
+    SWAP
+  }>
+  $Unlock$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    2910985977 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    $UnlockData$_load INLINECALLDICT
+  }>
+  $CommitId$_store PROCINLINE:<{
+    787237729 PUSHINT
+    ROT
+    32 STU
+    257 PUSHINT
+    STIX
+  }>
+  $CommitId$_store_cell PROCINLINE:<{
+    NEWC
+    SWAP
+    $CommitId$_store INLINECALLDICT
+    ENDC
+  }>
+  $HashedTimeLockTON$_store PROCINLINE:<{
+    s4 s5 XCHG2
+    STDICT
+    s0 s2 XCHG
+    NEWC
+    STDICT
+    STDICT
+    s1 s2 XCHG
+    257 PUSHINT
+    STIX
+    s1 s2 XCHG
+    257 PUSHINT
+    STIX
+    ENDC
+    SWAP
+    STREF
+  }>
+  $HashedTimeLockTON$_load PROCINLINE:<{
+    LDDICT
+    LDREF
+    SWAP
+    CTOS
+    LDDICT
+    LDDICT
+    257 PUSHINT
+    LDIX
+    257 PUSHINT
+    LDIX
+    DROP
+    s4 s5 XCHG
+  }>
+  $StateInit$_not_null PROCINLINE:<{
+    DUP
+    ISNULL
+    128 THROWIF
+    2 UNTUPLE
+  }>
+  $PHTLC$_not_null PROCINLINE:<{
+    DUP
+    ISNULL
+    128 THROWIF
+    11 UNTUPLE
+  }>
+  $PHTLC$_to_tuple PROCINLINE:<{
+    11 TUPLE
+  }>
+  $PHTLC$_to_opt_tuple PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+      $PHTLC$_not_null INLINECALLDICT
+      $PHTLC$_to_tuple INLINECALLDICT
+    }>
+  }>
+  $PHTLC$_to_opt_external PROCINLINE:<{
+    $PHTLC$_to_opt_tuple INLINECALLDICT
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+    }>
+  }>
+  $HTLC$_not_null PROCINLINE:<{
+    DUP
+    ISNULL
+    128 THROWIF
+    12 UNTUPLE
+  }>
+  $HTLC$_to_tuple PROCINLINE:<{
+    12 TUPLE
+  }>
+  $HTLC$_to_opt_tuple PROCINLINE:<{
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+      $HTLC$_not_null INLINECALLDICT
+      $HTLC$_to_tuple INLINECALLDICT
+    }>
+  }>
+  $HTLC$_to_opt_external PROCINLINE:<{
+    $HTLC$_to_opt_tuple INLINECALLDICT
+    DUP
+    ISNULL
+    IF:<{
+      DROP
+      PUSHNULL
+    }>ELSE<{
+    }>
+  }>
+  $global_random PROCINLINE:<{
+    __tact_prepare_random INLINECALLDICT
+    OVER
+    SUB
+    RAND
+    ADD
+  }>
+  $HashedTimeLockTON$_contract_init PROCREF:<{
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+    0 PUSHINT
+    10000000000000000000000000000000000000000000000000000000000000000000000000000 PUSHINTX
+    99999999999999999999999999999999999999999999999999999999999999999999999999999 PUSHINT
+    $global_random INLINECALLDICT
+  }>
+  $HashedTimeLockTON$_contract_load PROCREF:<{
+    c4 PUSH
+    CTOS
+    LDREF
+    SWAP
+    __tact_context_sys SETGLOB
+    1 LDI
+    SWAP
+    IFJMP:<{
+      $HashedTimeLockTON$_load INLINECALLDICT
+      1 5 BLKDROP2
+    }>
+    DROP
+    MYADDR
+    11 PLDU
+    10 PUSHPOW2
+    EQUAL
+    137 THROWIFNOT
+    $HashedTimeLockTON$_contract_init INLINECALLDICT
+  }>
+  $HashedTimeLockTON$_contract_store PROCINLINE:<{
+    NEWC
+    __tact_context_sys GETGLOB
+    SWAP
+    STREF
+    TRUE
+    SWAP
+    1 STI
+    5 -ROLL
+    $HashedTimeLockTON$_store INLINECALLDICT
+    ENDC
+    c4 POP
+  }>
+  $global_send PROCREF:<{
+    NEWC
+    1 PUSHINT
+    SWAP
+    2 STI
+    s0 s7 XCHG2
+    __tact_store_bool INLINECALLDICT
+    0 PUSHINT
+    SWAP
+    3 STI
+    s0 s5 XCHG2
+    __tact_store_address INLINECALLDICT
+    s0 s3 XCHG2
+    STGRAMS
+    0 PUSHINT
+    SWAP
+    105 STI
+    s3 PUSH
+    ISNULL
+    NOT
+    IF:<{
+      TRUE
+    }>ELSE<{
+      s4 PUSH
+      ISNULL
+      NOT
+    }>
+    IF:<{
+      TRUE
+      __tact_store_bool INLINECALLDICT
+      NEWC
+      FALSE
+      __tact_store_bool INLINECALLDICT
+      FALSE
+      __tact_store_bool INLINECALLDICT
+      s4 PUSH
+      ISNULL
+      NOT
+      IF:<{
+        TRUE
+        __tact_store_bool INLINECALLDICT
+        s0 s4 XCHG
+        __tact_not_null INLINECALLDICT
+        s0 s4 XCHG2
+        STREF
+      }>ELSE<{
+        s4 POP
+        s0 s3 XCHG
+        FALSE
+        __tact_store_bool INLINECALLDICT
+      }>
+      s4 PUSH
+      ISNULL
+      NOT
+      IF:<{
+        TRUE
+        __tact_store_bool INLINECALLDICT
+        s0 s4 XCHG
+        __tact_not_null INLINECALLDICT
+        s0 s4 XCHG2
+        STREF
+      }>ELSE<{
+        s4 POP
+        s0 s3 XCHG
+        FALSE
+        __tact_store_bool INLINECALLDICT
+      }>
+      FALSE
+      __tact_store_bool INLINECALLDICT
+      s0 s2 XCHG
+      TRUE
+      __tact_store_bool INLINECALLDICT
+      s0 s2 XCHG
+      ENDC
+      ROT
+      STREF
+    }>ELSE<{
+      s3 POP
+      s3 POP
+      SWAP
+      FALSE
+      __tact_store_bool INLINECALLDICT
+    }>
+    OVER
+    ISNULL
+    NOT
+    IF:<{
+      TRUE
+      __tact_store_bool INLINECALLDICT
+      SWAP
+      __tact_not_null INLINECALLDICT
+      SWAP
+      STREF
+    }>ELSE<{
+      NIP
+      FALSE
+      __tact_store_bool INLINECALLDICT
+    }>
+    ENDC
+    SWAP
+    SENDRAWMSG
+  }>
+  $global_emit PROCINLINE:<{
+    NEWC
+    15211807202738752817960438464513 PUSHINT
+    SWAP
+    104 STU
+    STREF
+    ENDC
+    0 PUSHINT
+    SENDRAWMSG
+  }>
+  $Builder$_fun_asSlice PROCINLINE:<{
+    ENDC
+    CTOS
+  }>
+  $HashedTimeLockTON$_fun_lockExists PROCREF:<{
+    257 PUSHINT
+    s6 PUSH
+    s0 s2 XCHG
+    __tact_dict_get_int_cell INLINECALLDICT
+    $HTLC$_load_opt INLINECALLDICT
+    ISNULL
+    IFJMP:<{
+      FALSE
+    }>
+    TRUE
+  }>
+  $HashedTimeLockTON$_fun_commitExists PROCREF:<{
+    257 PUSHINT
+    s5 PUSH
+    s0 s2 XCHG
+    __tact_dict_get_int_cell INLINECALLDICT
+    $PHTLC$_load_opt INLINECALLDICT
+    ISNULL
+    IFJMP:<{
+      FALSE
+    }>
+    TRUE
+  }>
+  $HashedTimeLockTON$_fun_getLockCDetails PROCREF:<{
+    257 PUSHINT
+    s6 PUSH
+    s0 s2 XCHG
+    __tact_dict_get_int_cell INLINECALLDICT
+    $HTLC$_load_opt INLINECALLDICT
+  }>
+  $HashedTimeLockTON$_fun_getCommitDetails PROCREF:<{
+    257 PUSHINT
+    s5 PUSH
+    s0 s2 XCHG
+    __tact_dict_get_int_cell INLINECALLDICT
+    $PHTLC$_load_opt INLINECALLDICT
+  }>
+  $HashedTimeLockTON$_fun_commitsLength PROCREF:<{
+    0 PUSHINT
+    s4 PUSH
+    257 PUSHINT
+    __tact_dict_min_int_cell INLINECALLDICT
+    WHILE:<{
+    }>DO<{
+      DROP
+      SWAP
+      INC
+      257 PUSHINT
+      s6 s0 s2 PUXC2
+      __tact_dict_next_int_cell INLINECALLDICT
+    }>
+    2DROP
+  }>
+  $HashedTimeLockTON$_fun_locksLength PROCREF:<{
+    0 PUSHINT
+    s5 PUSH
+    257 PUSHINT
+    __tact_dict_min_int_cell INLINECALLDICT
+    WHILE:<{
+    }>DO<{
+      DROP
+      SWAP
+      INC
+      257 PUSHINT
+      s7 s0 s2 PUXC2
+      __tact_dict_next_int_cell INLINECALLDICT
+    }>
+    2DROP
+  }>
+  $HashedTimeLockTON$_fun_lockIdToCommitIdLength PROCREF:<{
+    0 PUSHINT
+    257 PUSHINT
+    s4 s(-1) s(-1) PUXCPU
+    __tact_dict_min_int_int INLINECALLDICT
+    NIP
+    WHILE:<{
+    }>DO<{
+      SWAP
+      INC
+      257 PUSHINT
+      s0 s5 PUSH2
+      s0 s3 XCHG
+      s4 s4 XCHG2
+      __tact_dict_next_int_int INLINECALLDICT
+      NIP
+    }>
+    DROP
+  }>
+  $HashedTimeLockTON$_fun_getCommits PROCREF:<{
+    PUSHNULL
+    0 PUSHINT
+    s6 PUSH
+    257 PUSHINT
+    __tact_dict_min_int_cell INLINECALLDICT
+    WHILE:<{
+    }>DO<{
+      $PHTLC$_load_opt INLINECALLDICT
+      $PHTLC$_not_null INLINECALLDICT
+      s6 s10 XCHG
+      10 BLKDROP
+      s4 s(-1) PUXC
+      __tact_slice_eq_bits INLINECALLDICT
+      IF:<{
+        257 PUSHINT
+        s3 s0 s0 XC2PU
+        s3 s4 s(-2) PU2XC
+        __tact_dict_set_int_int INLINECALLDICT
+        SWAP
+        INC
+        ROT
+      }>
+      257 PUSHINT
+      s8 PUSH
+      s0 s2 XCHG
+      __tact_dict_next_int_cell INLINECALLDICT
+    }>
+    s3 s4 XCHG
+    4 BLKDROP
+  }>
+  $HashedTimeLockTON$_fun_getLocks PROCREF:<{
+    PUSHNULL
+    0 PUSHINT
+    s7 PUSH
+    257 PUSHINT
+    __tact_dict_min_int_cell INLINECALLDICT
+    WHILE:<{
+    }>DO<{
+      $HTLC$_load_opt INLINECALLDICT
+      $HTLC$_not_null INLINECALLDICT
+      s7 s11 XCHG
+      11 BLKDROP
+      s4 s(-1) PUXC
+      __tact_slice_eq_bits INLINECALLDICT
+      IF:<{
+        257 PUSHINT
+        s3 s0 s0 XC2PU
+        s3 s4 s(-2) PU2XC
+        __tact_dict_set_int_int INLINECALLDICT
+        SWAP
+        INC
+        ROT
+      }>
+      257 PUSHINT
+      s9 PUSH
+      s0 s2 XCHG
+      __tact_dict_next_int_cell INLINECALLDICT
+    }>
+    s3 s4 XCHG
+    4 BLKDROP
+  }>
+  $HashedTimeLockTON$_fun_getLockIdByCommitId PROCREF:<{
+    c2 SAVE
+    SAMEALTSAVE
+    257 PUSHINT
+    s4 s(-1) s(-1) PUXCPU
+    __tact_dict_min_int_int INLINECALLDICT
+    WHILE:<{
+    }>DO<{
+      s1 s2 PUSH2
+      EQUAL
+      IFJMP:<{
+        2 1 BLKDROP2
+        RETALT
+      }>
+      DROP
+      257 PUSHINT
+      s0 s5 PUSH2
+      s3 s3 XCHG2
+      __tact_dict_next_int_int INLINECALLDICT
+    }>
+    3 BLKDROP
+    PUSHNULL
+  }>
+  $SendParameters$_constructor_bounce_to_value_mode_body_code_data PROCINLINE:<{
+  }>
+  $HashedTimeLockTON$_fun_forward PROCREF:<{
+    PUSHNULL
+    PUSHNULL
+    s2 PUSH
+    ISNULL
+    NOT
+    IF:<{
+      2DROP
+      $StateInit$_not_null INLINECALLDICT
+      SWAP
+    }>ELSE<{
+      s2 POP
+    }>
+    s2 s4 XCHG
+    0 PUSHINT
+    s0 s3 XCHG
+    s0 s4 XCHG
+    66 PUSHINT
+    s2 s3 XCHG2
+    $SendParameters$_constructor_bounce_to_value_mode_body_code_data INLINECALLDICT
+    $global_send INLINECALLDICT
+  }>
+  $HashedTimeLockTON$_fun_notify PROCINLINE:<{
+    __tact_context_get_sender INLINECALLDICT
+    SWAP
+    FALSE
+    PUSHNULL
+    $HashedTimeLockTON$_fun_forward INLINECALLDICT
+  }>
+  $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted PROCINLINE:<{
+  }>
+  $CommitId$_constructor_commitId PROCINLINE:<{
+  }>
+  $SendParameters$_constructor_to_bounce_value_mode PROCINLINE:<{
+    s2 s3 XCHG
+    PUSHNULL
+    PUSHNULL
+    PUSHNULL
+  }>
+  $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked PROCINLINE:<{
+  }>
+  $SendParameters$_constructor_to_bounce_value_mode_body PROCINLINE:<{
+    s3 s4 XCHG
+    PUSHNULL
+    PUSHNULL
+  }>
+  $Notify$_constructor_data PROCINLINE:<{
+  }>
+  $Notification$_constructor_commitId_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock PROCINLINE:<{
+  }>
+  $DeployOk$_constructor_queryId PROCINLINE:<{
+  }>
+  $HashedTimeLockTON$_internal_binary_Commit PROCINLINE:<{
+    s7 POP
+    s7 POP
+    s7 POP
+    __tact_context_get INLINECALLDICT
+    DROP
+    s2 POP
+    4670 PUSHINT
+    s2 PUSH
+    0 NEQINT
+    THROWANYIFNOT
+    21683 PUSHINT
+    s8 PUSH
+    NOW
+    GREATER
+    THROWANYIFNOT
+    s0 s10 XCHG
+    INC
+    s9 s0 PUSH2
+    XOR
+    s3 s14 XCHG
+    s13 s12 s12 XCHG3
+    22150 PUSHINT
+    s11 s13 XCPU
+    $HashedTimeLockTON$_fun_commitExists INLINECALLDICT
+    0 EQINT
+    s1 s12 XCHG
+    THROWANYIFNOT
+    s4 s7 XCHG
+    s4 s14 XCHG
+    s3 s11 XCHG
+    s9 s8 s0 XCHG3
+    257 PUSHINT
+    s14 s15 XCHG2
+    FALSE
+    FALSE
+    $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted INLINECALLDICT
+    $PHTLC$_store_cell INLINECALLDICT
+    s7 s5 s(-1) XCPUXC
+    __tact_dict_set_int_cell INLINECALLDICT
+    s0 s3 XCHG
+    $CommitId$_constructor_commitId INLINECALLDICT
+    $CommitId$_store_cell INLINECALLDICT
+    $global_emit INLINECALLDICT
+    s4 s4 s0 XCHG3
+    s1 s3 XCHG
+  }>
+  $HashedTimeLockTON$_internal_binary_Uncommit PROCINLINE:<{
+    4 2 BLKSWAP
+    30789 PUSHINT
+    s6 s5 XCPU
+    $HashedTimeLockTON$_fun_commitExists INLINECALLDICT
+    -1 EQINT
+    s1 s7 XCHG
+    THROWANYIFNOT
+    s2 PUSH
+    257 PUSHINT
+    s6 PUSH
+    __tact_dict_get_int_cell INLINECALLDICT
+    $PHTLC$_load_opt INLINECALLDICT
+    $PHTLC$_not_null INLINECALLDICT
+    s2 POP
+    s4 POP
+    s5 POP
+    s5 POP
+    s5 POP
+    s5 POP
+    42324 PUSHINT
+    s0 s2 XCHG
+    0 EQINT
+    s1 s2 XCHG
+    THROWANYIFNOT
+    46722 PUSHINT
+    s0 s4 XCHG
+    0 EQINT
+    s1 s4 XCHG
+    THROWANYIFNOT
+    38239 PUSHINT
+    s0 s2 XCHG
+    NOW
+    LEQ
+    s1 s2 XCHG
+    THROWANYIFNOT
+    __tact_context_get INLINECALLDICT
+    s1 s3 XCHG
+    3 BLKDROP
+    SWAP
+    TRUE
+    s0 s2 XCHG
+    ADD
+    64 PUSHINT
+    $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+    $global_send INLINECALLDICT
+    s4 s2 XCHG2
+    257 PUSHINT
+    DICTIDEL
+    DROP
+    s4 s1 s3 XCHG3
+    s0 s2 XCHG
+  }>
+  $HashedTimeLockTON$_internal_binary_LockCommitment PROCINLINE:<{
+    __tact_context_get INLINECALLDICT
+    DROP
+    s2 POP
+    s3 PUSH
+    s3 s10 XCHG
+    s9 s8 s7 XCHG3
+    30789 PUSHINT
+    s7 s6 XCPU
+    $HashedTimeLockTON$_fun_commitExists INLINECALLDICT
+    -1 EQINT
+    s1 s8 XCHG
+    THROWANYIFNOT
+    s2 PUSH
+    257 PUSHINT
+    s7 PUSH
+    __tact_dict_get_int_cell INLINECALLDICT
+    $PHTLC$_load_opt INLINECALLDICT
+    $PHTLC$_not_null INLINECALLDICT
+    s4 POP
+    s5 PUSH
+    19 s() PUSH
+    __tact_slice_eq_bits INLINECALLDICT
+    IF:<{
+      NIP
+      TRUE
+    }>ELSE<{
+      SWAP
+      18 s() PUSH
+      __tact_slice_eq_bits INLINECALLDICT
+    }>
+    IF:<{
+      s3 s12 XCHG
+      s11 s10 s9 XCHG3
+      6007 PUSHINT
+      s0 16 s() XCHG
+      17 s() PUSH
+      $HashedTimeLockTON$_fun_lockExists INLINECALLDICT
+      0 EQINT
+      s1 17 s() XCHG
+      THROWANYIFNOT
+      46722 PUSHINT
+      s0 s10 XCHG
+      0 EQINT
+      s1 s10 XCHG
+      THROWANYIFNOT
+      42324 PUSHINT
+      s0 s11 XCHG
+      0 EQINT
+      s1 s11 XCHG
+      THROWANYIFNOT
+      s6 s7 XCHG
+      s5 s6 XCHG
+      s4 s5 XCHG
+      s3 s4 XCHG
+      s2 s3 XCHG
+      s10 s11 s0 XCHG3
+      257 PUSHINT
+      0 PUSHINT
+      s0 s2 XCHG
+      s0 19 s() XCHG
+      s1 s10 XCHG
+      FALSE
+      FALSE
+      $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked INLINECALLDICT
+      $HTLC$_store_cell INLINECALLDICT
+      s3 s4 XCHG
+      s1 s7 s0 XCHG3
+      __tact_dict_set_int_cell INLINECALLDICT
+      s2 s7 XCHG2
+      257 PUSHINT
+      DICTIDEL
+      DROP
+      s1 s4 XCHG
+      TRUE
+      s0 s6 XCHG2
+      64 PUSHINT
+      $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+      $global_send INLINECALLDICT
+    }>ELSE<{
+      9 BLKDROP
+      s4 POP
+      s4 POP
+      s5 POP
+      s5 POP
+      s5 POP
+      s5 POP
+      31687 PUSHINT
+      THROWANY
+      s4 s3 s0 XCHG3
+      s1 s2 XCHG
+    }>
+    s1 s2 XCHG
+  }>
+  $HashedTimeLockTON$_internal_binary_Lock PROCINLINE:<{
+    __tact_context_get INLINECALLDICT
+    s1 s3 XCHG
+    3 BLKDROP
+    s3 s14 XCHG
+    s13 s12 s11 XCHG3
+    6007 PUSHINT
+    s11 s10 XCPU
+    $HashedTimeLockTON$_fun_lockExists INLINECALLDICT
+    0 EQINT
+    s1 s12 XCHG
+    THROWANYIFNOT
+    21683 PUSHINT
+    NOW
+    s10 PUSH
+    LEQ
+    THROWANYIFNOT
+    4670 PUSHINT
+    s12 PUSH
+    0 NEQINT
+    THROWANYIFNOT
+    257 PUSHINT
+    __tact_context_get_sender INLINECALLDICT
+    0 PUSHINT
+    FALSE
+    FALSE
+    s9 PUSH
+    s4 s11 XCPU
+    s0 s4 XCHG
+    21 s() PUSH
+    s4 s14 XCPU
+    s0 s4 XCHG
+    16 s() PUSH
+    s0 s3 XCHG
+    19 s() PUSH
+    s2 s3 XCHG2
+    22 s() PUSH
+    s0 s2 XCHG
+    20 s() PUSH
+    -ROT
+    $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked INLINECALLDICT
+    $HTLC$_store_cell INLINECALLDICT
+    s11 PUSH
+    s3 s6 XCHG
+    SWAP
+    __tact_dict_set_int_cell INLINECALLDICT
+    s13 PUSH
+    ISNULL
+    NOT
+    IF:<{
+      s13 PUSH
+      __tact_not_null INLINECALLDICT
+      257 PUSHINT
+      DUP
+      s3 s4 XCHG
+      s2 s12 s(-1) XCPUXC
+      __tact_dict_set_int_int INLINECALLDICT
+      SWAP
+    }>
+    s12 PUSH
+    ISNULL
+    NOT
+    IF:<{
+      s13 PUSH
+      ISNULL
+      NOT
+    }>ELSE<{
+      FALSE
+    }>
+    IF:<{
+      s0 s12 XCHG
+      __tact_not_null INLINECALLDICT
+      TRUE
+      20000000 PUSHINT
+      0 PUSHINT
+      s0 16 s() XCHG
+      __tact_not_null INLINECALLDICT
+      __tact_context_get_sender INLINECALLDICT
+      s1 s9 XCHG
+      s8 s13 XCHG
+      s1 s7 XCHG
+      s6 18 s() XCHG
+      s5 s13 XCHG
+      s4 s10 XCHG
+      s11 s1 s3 XCHG3
+      s15 s12 XCHG2
+      $Notification$_constructor_commitId_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock INLINECALLDICT
+      $Notify$_constructor_data INLINECALLDICT
+      $Notify$_store_cell INLINECALLDICT
+      s1 s4 XCHG
+      s1 s8 XCHG
+      $SendParameters$_constructor_to_bounce_value_mode_body INLINECALLDICT
+      $global_send INLINECALLDICT
+      s3 s4 XCHG
+      s1 s3 s0 XCHG3
+    }>ELSE<{
+      s13 POP
+      s13 POP
+      s10 s9 XCHG2
+      8 BLKDROP
+    }>
+    s1 s3 XCHG
+    s4 s4 s0 XCHG3
+  }>
+  $HashedTimeLockTON$_internal_binary_Redeem PROCINLINE:<{
+    __tact_context_get INLINECALLDICT
+    s1 s3 XCHG
+    3 BLKDROP
+    4 4 BLKSWAP
+    6272 PUSHINT
+    s8 s7 XCPU
+    $HashedTimeLockTON$_fun_lockExists INLINECALLDICT
+    -1 EQINT
+    s1 s9 XCHG
+    THROWANYIFNOT
+    s3 PUSH
+    257 PUSHINT
+    s8 PUSH
+    __tact_dict_get_int_cell INLINECALLDICT
+    $HTLC$_load_opt INLINECALLDICT
+    $HTLC$_not_null INLINECALLDICT
+    s2 POP
+    s3 POP
+    5 5 BLKDROP2
+    s0 s10 XCHG
+    NEWC
+    256 STU
+    $Builder$_fun_asSlice INLINECALLDICT
+    SHA256U
+    s0 s3 XCHG
+    50918 PUSHINT
+    s0 s4 XCHG
+    EQUAL
+    s1 s3 XCHG
+    THROWANYIFNOT
+    s0 s8 XCHG
+    0 EQINT
+    1503 THROWIFNOT
+    46887 PUSHINT
+    s0 s8 XCHG
+    0 EQINT
+    s1 s8 XCHG
+    THROWANYIFNOT
+    __tact_context_get_sender INLINECALLDICT
+    OVER
+    __tact_slice_eq_bits INLINECALLDICT
+    IF:<{
+      DROP
+      __tact_context_get_sender INLINECALLDICT
+      s0 s6 XCHG
+      TRUE
+      s0 s6 XCHG
+      ADD
+      s6 s5 s0 XCHG3
+      64 PUSHINT
+      $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+      $global_send INLINECALLDICT
+    }>ELSE<{
+      TRUE
+      ROT
+      s0 s7 XCHG
+      0 PUSHINT
+      $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+      $global_send INLINECALLDICT
+      __tact_context_get_sender INLINECALLDICT
+      TRUE
+      ROT
+      s0 s5 XCHG
+      64 PUSHINT
+      $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+      $global_send INLINECALLDICT
+      s2 s3 XCHG
+    }>
+    s4 s4 XCHG2
+    257 PUSHINT
+    DICTIDEL
+    DROP
+    s0 s4 XCHG
+  }>
+  $HashedTimeLockTON$_internal_binary_Unlock PROCINLINE:<{
+    __tact_context_get INLINECALLDICT
+    DROP
+    s2 POP
+    s7 PUSH
+    257 PUSHINT
+    s4 PUSH
+    __tact_dict_get_int_cell INLINECALLDICT
+    $HTLC$_load_opt INLINECALLDICT
+    $HTLC$_not_null INLINECALLDICT
+    s4 POP
+    s4 POP
+    s4 POP
+    s5 POP
+    s5 POP
+    s5 POP
+    s5 POP
+    s3 s12 XCHG
+    s11 s10 s9 XCHG3
+    6272 PUSHINT
+    s9 s8 XCPU
+    $HashedTimeLockTON$_fun_lockExists INLINECALLDICT
+    -1 EQINT
+    s1 s10 XCHG
+    THROWANYIFNOT
+    s0 s11 XCHG
+    0 EQINT
+    1503 THROWIFNOT
+    46887 PUSHINT
+    s0 s12 XCHG
+    0 EQINT
+    s1 s12 XCHG
+    THROWANYIFNOT
+    38239 PUSHINT
+    s0 s3 XCHG
+    NOW
+    LESS
+    s1 s3 XCHG
+    THROWANYIFNOT
+    s2 s6 PUSH2
+    __tact_slice_eq_bits INLINECALLDICT
+    IF:<{
+      s6 POP
+      s0 s6 XCHG
+      TRUE
+      s0 s3 XCHG
+      ADD
+      s1 s2 XCHG
+      64 PUSHINT
+      $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+      $global_send INLINECALLDICT
+    }>ELSE<{
+      s1 s6 XCHG
+      TRUE
+      s0 s8 XCHG2
+      0 PUSHINT
+      $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+      $global_send INLINECALLDICT
+      TRUE
+      ROT
+      64 PUSHINT
+      $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+      $global_send INLINECALLDICT
+      s2 s3 XCHG
+    }>
+    ROT
+    257 PUSHINT
+    DICTIDEL
+    DROP
+    s4 s1 s4 XCHG3
+    s3 s3 XCHG2
+  }>
+  $HashedTimeLockTON$_internal_binary_Deploy PROCINLINE:<{
+    $DeployOk$_constructor_queryId INLINECALLDICT
+    $DeployOk$_store_cell INLINECALLDICT
+    $HashedTimeLockTON$_fun_notify INLINECALLDICT
+  }>
+  %getLockCDetails PROC:<{
+    $HashedTimeLockTON$_contract_load INLINECALLDICT
+    5 ROLL
+    $HashedTimeLockTON$_fun_getLockCDetails INLINECALLDICT
+    5 1 BLKDROP2
+    $HTLC$_to_opt_external INLINECALLDICT
+  }>
+  %getCommitDetails PROC:<{
+    $HashedTimeLockTON$_contract_load INLINECALLDICT
+    5 ROLL
+    $HashedTimeLockTON$_fun_getCommitDetails INLINECALLDICT
+    5 1 BLKDROP2
+    $PHTLC$_to_opt_external INLINECALLDICT
+  }>
+  %commitsLength PROC:<{
+    $HashedTimeLockTON$_contract_load INLINECALLDICT
+    $HashedTimeLockTON$_fun_commitsLength INLINECALLDICT
+    5 1 BLKDROP2
+  }>
+  %locksLength PROC:<{
+    $HashedTimeLockTON$_contract_load INLINECALLDICT
+    $HashedTimeLockTON$_fun_locksLength INLINECALLDICT
+    5 1 BLKDROP2
+  }>
+  %lockIdToCommitIdLength PROC:<{
+    $HashedTimeLockTON$_contract_load INLINECALLDICT
+    $HashedTimeLockTON$_fun_lockIdToCommitIdLength INLINECALLDICT
+    5 1 BLKDROP2
+  }>
+  %getCommits PROC:<{
+    __tact_verify_address INLINECALLDICT
+    $HashedTimeLockTON$_contract_load INLINECALLDICT
+    5 ROLL
+    $HashedTimeLockTON$_fun_getCommits INLINECALLDICT
+    5 1 BLKDROP2
+  }>
+  %getLocks PROC:<{
+    __tact_verify_address INLINECALLDICT
+    $HashedTimeLockTON$_contract_load INLINECALLDICT
+    5 ROLL
+    $HashedTimeLockTON$_fun_getLocks INLINECALLDICT
+    5 1 BLKDROP2
+  }>
+  %getLockIdByCommitId PROC:<{
+    $HashedTimeLockTON$_contract_load INLINECALLDICT
+    5 ROLL
+    $HashedTimeLockTON$_fun_getLockIdByCommitId INLINECALLDICT
+    5 1 BLKDROP2
+  }>
+  lazy_deployment_completed PROC:<{
+    c4 PUSH
+    CTOS
+    1 LDI
+    SWAP
+  }>
+  $HashedTimeLockTON$_contract_router_internal PROCREF:<{
+    SWAP
+    IFJMP:<{
+      DROP
+      TRUE
+    }>
+    0 PUSHINT
+    OVER
+    SBITS
+    31 GTINT
+    IF:<{
+      DROP
+      DUP
+      32 PLDU
+    }>
+    DUP
+    458640785 PUSHINT
+    EQUAL
+    IFJMP:<{
+      DROP
+      $Commit$_load INLINECALLDICT
+      1 10 BLKDROP2
+      $HashedTimeLockTON$_internal_binary_Commit INLINECALLDICT
+      TRUE
+    }>
+    DUP
+    2841160739 PUSHINT
+    EQUAL
+    IFJMP:<{
+      DROP
+      $Uncommit$_load INLINECALLDICT
+      NIP
+      $HashedTimeLockTON$_internal_binary_Uncommit INLINECALLDICT
+      TRUE
+    }>
+    DUP
+    1558004185 PUSHINT
+    EQUAL
+    IFJMP:<{
+      DROP
+      $LockCommitment$_load INLINECALLDICT
+      1 3 BLKDROP2
+      $HashedTimeLockTON$_internal_binary_LockCommitment INLINECALLDICT
+      TRUE
+    }>
+    DUP
+    317164721 PUSHINT
+    EQUAL
+    IFJMP:<{
+      DROP
+      $Lock$_load INLINECALLDICT
+      1 9 BLKDROP2
+      $HashedTimeLockTON$_internal_binary_Lock INLINECALLDICT
+      TRUE
+    }>
+    DUP
+    1972220037 PUSHINT
+    EQUAL
+    IFJMP:<{
+      DROP
+      $Redeem$_load INLINECALLDICT
+      1 2 BLKDROP2
+      $HashedTimeLockTON$_internal_binary_Redeem INLINECALLDICT
+      TRUE
+    }>
+    DUP
+    2910985977 PUSHINT
+    EQUAL
+    IFJMP:<{
+      DROP
+      $Unlock$_load INLINECALLDICT
+      NIP
+      $HashedTimeLockTON$_internal_binary_Unlock INLINECALLDICT
+      TRUE
+    }>
+    2490013878 PUSHINT
+    EQUAL
+    IFJMP:<{
+      $Deploy$_load INLINECALLDICT
+      NIP
+      $HashedTimeLockTON$_internal_binary_Deploy INLINECALLDICT
+      TRUE
+    }>
+    DROP
+    FALSE
+  }>
+  recv_internal PROC:<{
+    SWAP
+    CTOS
+    4 LDU
+    SWAP
+    1 PUSHINT
+    AND
+    NEGATE
+    SWAP
+    LDMSGADDR
+    SWAP
+    __tact_verify_address INLINECALLDICT
+    s0 s4 s2 PUXCPU
+    s0 s3 XCHG
+    4 TUPLE
+    __tact_context SETGLOB
+    s0 s2 XCHG
+    __tact_context_sender SETGLOB
+    $HashedTimeLockTON$_contract_load INLINECALLDICT
+    2 5 BLKSWAP
+    $HashedTimeLockTON$_contract_router_internal INLINECALLDICT
+    130 THROWIFNOT
+    $HashedTimeLockTON$_contract_store INLINECALLDICT
+  }>
+}END>c
