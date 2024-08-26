@@ -37,25 +37,24 @@ interface IMessenger {
   ) external;
 }
 
-contract HashedTimeLockEther {
+contract LayerswapV8 {
+  using ECDSA for bytes32;
+  using Address for address;
+
   bytes32 private DOMAIN_SEPARATOR;
-  // keccak256(abi.encodePacked("Layerswap V8")) = 0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0
-  bytes32 private constant SALT = 0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0;
+  bytes32 private constant SALT = keccak256(abi.encodePacked('Layerswap V8'));
 
   constructor() {
     DOMAIN_SEPARATOR = hashDomain(
       EIP712Domain({
-        name: 'HashedTimeLockEther',
+        name: 'LayerswapV8',
         version: '1',
-        chainId: 11155111,
+        chainId: block.chainid,
         verifyingContract: address(this),
         salt: SALT
       })
     );
   }
-
-  using ECDSA for bytes32;
-  using Address for address;
 
   error FundsNotSent();
   error NotFutureTimelock();
@@ -102,6 +101,12 @@ contract HashedTimeLockEther {
     bool locked;
     bool uncommitted;
   }
+
+  struct lockCommitmentMsg {
+    bytes32 hashlock;
+    uint256 timelock;
+  }
+
   event TokenCommitted(
     bytes32 commitId,
     string[] hopChains,
@@ -240,7 +245,9 @@ contract HashedTimeLockEther {
     if (hasHTLC(lockId)) {
       revert LockAlreadyExists();
     }
-    if (msg.sender == commits[commitId].sender || msg.sender == commits[commitId].messenger || msg.sender == address(this)) {
+    if (
+      msg.sender == commits[commitId].sender || msg.sender == commits[commitId].messenger || msg.sender == address(this)
+    ) {
       commits[commitId].locked = true;
       commits[commitId].lockId = hashlock;
 
@@ -279,12 +286,12 @@ contract HashedTimeLockEther {
 
   function lockCommitmentSig(
     bytes32 commitId,
-    HTLC memory message,
+    lockCommitmentMsg memory message,
     uint8 v,
     bytes32 r,
     bytes32 s
   ) external _committed(commitId) returns (bytes32 lockId) {
-    if (verifyMessage(message, v, r, s)) {
+    if (verifyMessage(msg.sender, message, v, r, s)) {
       lockId = this.lockCommitment(commitId, message.hashlock, message.timelock);
       return lockId;
     } else {
@@ -509,7 +516,7 @@ contract HashedTimeLockEther {
     return commitIdToLockId[commitId];
   }
 
-  function hashDomain(EIP712Domain memory domain) private pure returns (bytes32) {
+  function hashDomain(EIP712Domain memory domain) public pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -524,38 +531,29 @@ contract HashedTimeLockEther {
   }
 
   // Hashes an EIP712 message struct
-  function hashMessage(HTLC memory message) private pure returns (bytes32) {
+  function hashMessage(lockCommitmentMsg memory message) public pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
-          keccak256(
-            bytes(
-              'HTLC(string dstAddress,string dstChain,string dstAsset,string srcAsset,address payable sender,address payable srcReceiver,bytes32 hashlock,uint256 secret,uint256 amount,uint256 timelock,bool redeemed,bool unlocked)'
-            )
-          ),
-          keccak256(bytes(message.dstAddress)),
-          keccak256(bytes(message.dstChain)),
-
-          keccak256(bytes(message.dstAsset)),
-          keccak256(bytes(message.srcAsset)),
-          message.sender,
-          message.srcReceiver,
+          keccak256('lockCommitmentMsg(bytes32 hashlock,uint256 timelock)'),
           message.hashlock,
-          message.secret,
-          message.amount,
-          message.timelock,
-          message.redeemed,
-          message.unlocked
+          message.timelock
         )
       );
   }
 
   // Verifies an EIP712 message signature
-  function verifyMessage(HTLC memory message, uint8 v, bytes32 r, bytes32 s) private view returns (bool) {
+  function verifyMessage(
+    address sender,
+    lockCommitmentMsg memory message,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) public view returns (bool) {
     bytes32 digest = keccak256(abi.encodePacked('\x19\x01', DOMAIN_SEPARATOR, hashMessage(message)));
 
-    address recoveredAddress = digest.recover(v, r, s);
+    address recoveredAddress = ecrecover(digest, v, r, s);
 
-    return (recoveredAddress == message.sender);
+    return (recoveredAddress == sender);
   }
 }

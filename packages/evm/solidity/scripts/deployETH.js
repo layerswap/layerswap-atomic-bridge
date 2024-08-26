@@ -8,18 +8,18 @@ const hre = require('hardhat');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-  const HashedTimelockEther = await hre.ethers.deployContract('HashedTimeLockEther', []);
+  const LayerswapV8 = await hre.ethers.deployContract('LayerswapV8', []);
 
-  await HashedTimelockEther.waitForDeployment();
+  await LayerswapV8.waitForDeployment();
 
-  console.log(`HashedTimelockEther deployed to ${HashedTimelockEther.target}`);
+  console.log(`LayerswapV8 deployed to ${LayerswapV8.target}`);
 
   await sleep(30000);
 
   await hre.run('verify:verify', {
-    address: HashedTimelockEther.target,
+    address: LayerswapV8.target,
     constructorArguments: [],
-    contract: 'contracts/HashedTimeLockEther.sol:HashedTimeLockEther',
+    contract: 'contracts/HashedTimeLockEther.sol:LayerswapV8',
   });
 }
 
