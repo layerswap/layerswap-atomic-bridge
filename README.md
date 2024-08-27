@@ -1,25 +1,39 @@
-# Layerswap V8 Atomic Bridge
-Permissionless, trustless cross-chain bridging protocol without Oracles
+# Layerswap V8: Permissionless, Trustless Cross-Chain Bridging Protocol
 
-## The Motivation
+## TL;DR
 
-An Ideal bridging solution ❌ **SHOULD NOT**:
+- Introduces PreHTLC, an improved version of HTLC for practical atomic swaps
+- Permissionless and trustless protocol without reliance on 3rd parties
+- Supports multi-hop transactions for bridging between indirectly connected chains
+- Alpha version available for testing on multiple testnets
 
-- Rely on third parties
-- Require complex infrastructure
-- Introduce additional security assumptions
+## Introduction
 
-It **SHOULD** be trustless, open to any participant, and free of external dependencies. This is where the concept of Atomic Swaps comes into play. Atomic Swaps allow for permissionless, trustless asset exchange between two parties without relying on any external verification.
+Layerswap V8 is a revolutionary bridging protocol designed to address the challenges of seamless asset movement across the rapidly expanding cryptocurrency ecosystem. As the number of blockchain networks grows, including L1s, L2s, side-chains, and app-chains, the need for efficient and secure cross-chain asset transfer becomes critical.
 
-Read full article [here](https://layerswap.notion.site).
+## Key Features
 
-## Core concept
-
-The network-adding process in the Layerswap protocol is similar to adding an ERC20 token to the Uniswap protocol, making bridging trustless and permissionless.
+- **Trustless**: No reliance on oracle-based systems or 3rd parties
+- **Permissionless**: Open for any participant to join without compromising security
+- **Multi-hop Transactions**: Enables bridging between chains without direct LP connections
+- **Simplified User Experience**: Addresses practicality issues of traditional atomic swaps
+- **Censorship Resistant**: Decentralized design resistant to censorship attempts
 
 ## Architecture
 
 ![image](https://github.com/user-attachments/assets/b9ce1642-179a-4cc2-b1c2-b137153ad66b)
+
+## How It Works
+
+Layerswap V8 introduces PreHTLC (Pre-Hashed Time Lock Contract), an improved version of HTLC that addresses key limitations:
+
+1. User creates a PreHTLC, committing funds for the selected LP
+2. LP detects the transaction, generates a Secret, and creates an HTLC on the destination chain
+3. User observes the destination transaction and converts their PreHTLC to an HTLC on the source chain
+4. LP reveals the Secret on both chains to complete the transfer
+
+This approach resolves issues with secret management, claim transactions on the destination chain, and liveness requirements.
+
 
 ## Disclaimer: Development in Progress
 
