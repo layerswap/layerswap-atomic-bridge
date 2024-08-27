@@ -1,6 +1,7 @@
 # Layerswap V8: Permissionless, Trustless Cross-Chain Bridging Protocol
 
-Live in tesnets: [https://layerswap.io/v8](https://layerswap.io/v8)
+Live in tesnets - [Layerswap V8](https://layerswap.io/v8)
+Read the protocol description and sepc [draft] - [Layerswap V8 Notion](https://layerswap.notion.site
 
 ## TL;DR
 
@@ -18,7 +19,6 @@ Layerswap V8 is a revolutionary bridging protocol designed to address the challe
 - **Trustless**: No reliance on oracle-based systems or 3rd parties
 - **Permissionless**: Open for any participant to join without compromising security
 - **Multi-hop Transactions**: Enables bridging between chains without direct LP connections
-- **Simplified User Experience**: Addresses practicality issues of traditional atomic swaps
 - **Censorship Resistant**: Decentralized design resistant to censorship attempts
 
 ## Architecture
