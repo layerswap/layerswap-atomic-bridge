@@ -218,14 +218,6 @@ describe("HTLC", () => {
     //   .rpc();
     // console.log(`can uncommit`);
 
-    // const pre_locks = await program.methods.getLocks(sender.publicKey).accountsPartial({ locks: pda.locks }).view();
-    // console.log(`${pre_locks} the locks before`);
-
-    const initLocksTx = await program.methods.initLocks().
-      accountsPartial({
-        sender: sender.publicKey,
-        locks: pda.locks,
-      }).transaction();
     const lockCommitTx = await program.methods.lockCommit(COMMITIDArray, LOCKIDArray, TIMELOCK, pda.phtlcBump).
       accountsPartial({
         messenger: sender.publicKey,
@@ -233,19 +225,9 @@ describe("HTLC", () => {
         htlc: pda.htlc,
         phtlcTokenAccount: pda.phtlcTokenAccount,
         htlcTokenAccount: pda.htlcTokenAccount,
-        locks: pda.locks,
         tokenContract: tokenMint,
-      })
-      .transaction();//.catch(e => console.error(e));
-
-    let initAndLockCommit = new anchor.web3.Transaction();
-    initAndLockCommit.add(initLocksTx);
-    initAndLockCommit.add(lockCommitTx);
-
-    await anchor.web3.sendAndConfirmTransaction(anchor.getProvider().connection, initAndLockCommit, [wallet.payer]);
-
-    const locks = await program.methods.getLocks(wallet.publicKey).accountsPartial({ locks: pda.locks }).view();
-    console.log(`${locks} the locks`);
+      }).signers([wallet.payer])
+      .rpc();
 
     const [, htlcBalancePost] = await readAccount(pda.htlcTokenAccount, provider);
     console.log(`${pda.htlcTokenAccount} --- htlcWALLET`);
@@ -272,11 +254,6 @@ describe("HTLC", () => {
       })
       .signers([wallet.payer])
       .rpc();
-
-
-
-
-
 
     // await wait(2000);
     // const tx4 = await program.methods.unlock(LOCKID, pda.htlcBump).
