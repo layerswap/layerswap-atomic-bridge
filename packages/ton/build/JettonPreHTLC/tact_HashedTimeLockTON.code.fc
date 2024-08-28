@@ -42,7 +42,7 @@
     int $commitId = ($self'seed ^ $self'contractNonce);
     throw_unless(22150, (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_commitExists($commitId) == false));
     $self'commits~__tact_dict_set_int_cell(257, $commitId, $PHTLC$_store_cell($PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted_jettonMasterAddress_htlcJettonWalletAddress($msg'dstAddress, $msg'dstChain, $msg'dstAsset, $msg'srcAsset, $sender, $msg'srcReceiver, $msg'timelock, $value, $msg'messenger, false, false, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress)));
-    $global_emit($CommitId$_store_cell($CommitId$_constructor_commitId($commitId)));
+    $global_emit($TokenCommitted$_store_cell($TokenCommitted$_constructor_commitId_hopChains_hopAssets_hopAddresses_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress($commitId, $msg'hopChains, $msg'hopAssets, $msg'hopAddresses, $msg'dstChain, $msg'dstAddress, $msg'dstAsset, $sender, $msg'srcReceiver, $msg'srcAsset, $value, $msg'timelock, $msg'messenger, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress)));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
@@ -58,8 +58,9 @@
         $self'commitIdToLockId~__tact_dict_set_int_int(257, $id, $msg'hashlock, 257);
     }
     if (( ((~ null?($msg'messenger))) ? ((~ null?($msg'commitId))) : (false) )) {
-        $global_send($SendParameters$_constructor_to_bounce_value_mode_body(__tact_not_null($msg'messenger), true, 20000000, 0, $Notify$_store_cell($Notify$_constructor_data($Notification$_constructor_commitId_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock(__tact_not_null($msg'commitId), $msg'hashlock, $msg'dstChain, $msg'dstAsset, $msg'dstAddress, $msg'srcAsset, $sender, $msg'srcReceiver, $value, $msg'timelock)))));
+        $global_send($SendParameters$_constructor_to_bounce_value_mode_body(__tact_not_null($msg'messenger), true, 0, 1, $Notify$_store_cell($Notify$_constructor_data($Notification$_constructor_commitId_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock(__tact_not_null($msg'commitId), $msg'hashlock, $msg'dstChain, $msg'dstAsset, $msg'dstAddress, $msg'srcAsset, $sender, $msg'srcReceiver, $value, $msg'timelock)))));
     }
+    $global_emit($TokenLocked$_store_cell($TokenLocked$_constructor_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_commitId_jettonMasterAddress_htlcJettonWalletAddress($msg'hashlock, $msg'dstChain, $msg'dstAddress, $msg'dstAddress, $sender, $msg'srcReceiver, $msg'srcAsset, $value, $msg'timelock, __tact_not_null($msg'messenger), __tact_not_null($msg'commitId), $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress)));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
@@ -152,6 +153,26 @@
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), null());
 }
 
+((cell, cell, cell, int, int), ()) $HashedTimeLockTON$_fun_lockCommitment((cell, cell, cell, int, int) $self, ((int, int, int)) $msg, (int, slice, int, slice) $ctx) impure inline_ref {
+    var (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)) = $self;
+    var ((($msg'data'commitId, $msg'data'hashlock, $msg'data'timelock))) = $msg;
+    var (($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw)) = $ctx;
+    int $lockId = $msg'data'hashlock;
+    throw_unless(30789, (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_commitExists($msg'data'commitId) == true));
+    var ($commitObj'dstAddress, $commitObj'dstChain, $commitObj'dstAsset, $commitObj'srcAsset, $commitObj'sender, $commitObj'srcReceiver, $commitObj'timelock, $commitObj'amount, $commitObj'messenger, $commitObj'locked, $commitObj'uncommitted, $commitObj'jettonMasterAddress, $commitObj'htlcJettonWalletAddress) = $PHTLC$_not_null($PHTLC$_load_opt(__tact_dict_get_int_cell($self'commits, 257, $msg'data'commitId)));
+    if (( (( __tact_slice_eq_bits($commitObj'sender, $ctx'sender) )) ? (true) : (( __tact_slice_eq_bits($commitObj'messenger, $ctx'sender) )) )) {
+        throw_unless(6007, (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_lockExists($lockId) == false));
+        throw_unless(46722, ($commitObj'locked == false));
+        throw_unless(42324, ($commitObj'uncommitted == false));
+        $self'locks~__tact_dict_set_int_cell(257, $lockId, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked_jettonMasterAddress_htlcJettonWalletAddress($commitObj'dstAddress, $commitObj'dstChain, $commitObj'dstAsset, $commitObj'srcAsset, $commitObj'sender, $commitObj'srcReceiver, $msg'data'hashlock, 0, $commitObj'amount, $msg'data'timelock, false, false, $commitObj'jettonMasterAddress, $commitObj'htlcJettonWalletAddress)));
+        $self'commits~__tact_dict_delete_int(257, $msg'data'commitId);
+        $global_emit($TokenLocked$_store_cell($TokenLocked$_constructor_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_commitId_jettonMasterAddress_htlcJettonWalletAddress($msg'data'hashlock, $commitObj'dstChain, $commitObj'dstAddress, $commitObj'dstAddress, $ctx'sender, $commitObj'srcReceiver, $commitObj'srcAsset, $ctx'value, $msg'data'timelock, $commitObj'messenger, $msg'data'commitId, $commitObj'jettonMasterAddress, $commitObj'htlcJettonWalletAddress)));
+    } else {
+        throw_unless(31687, false);
+    }
+    return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
+}
+
 ;;
 ;; Receivers of a Contract HashedTimeLockTON
 ;;
@@ -168,7 +189,7 @@
     if (($op_code == 1734998782)) {
         ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun__commit($refSlice, $msg'from, $msg'amount);
     }
-    if (($op_code == 1558004185)) {
+    if (($op_code == 317164721)) {
         ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun__lock($refSlice, $msg'from, $msg'amount);
     }
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
@@ -187,25 +208,27 @@
     int $queryIndex = (0 & $queryHash);
     $global_send($SendParameters$_constructor_to_value_bounce_mode_body($commitObj'htlcJettonWalletAddress, $ctx'value, true, 0, $TokenTransfer$_store_cell($TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload($queryIndex, $commitObj'amount, $commitObj'sender, my_address(), null(), 1, __tact_str_to_slice(__gen_slice_string_745fd96be4cd665d7df3e2789d5bcd205d53436c91efe2eae1b705281840e313())))));
     $self'commits~__tact_dict_delete_int(257, $msg'data'commitId);
+    $global_emit($TokenUncommitted$_store_cell($TokenUncommitted$_constructor_commitId($msg'data'commitId)));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
 (((cell, cell, cell, int, int)), ()) $HashedTimeLockTON$_internal_binary_LockCommitment((cell, cell, cell, int, int) $self, ((int, int, int)) $msg) impure inline {
     var ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed) = $self;
     var (($msg'data'commitId, $msg'data'hashlock, $msg'data'timelock)) = $msg;
+    ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_lockCommitment((($msg'data'commitId, $msg'data'hashlock, $msg'data'timelock)), __tact_context_get());
+    return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
+}
+
+(((cell, cell, cell, int, int)), ()) $HashedTimeLockTON$_internal_binary_LockCommitmentSig((cell, cell, cell, int, int) $self, ((int, slice, slice, int)) $msg) impure inline {
+    var ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed) = $self;
+    var (($msg'data'commitId, $msg'data'data, $msg'data'signature, $msg'data'publicKey)) = $msg;
+    throw_unless(20173, ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_commitExists($msg'data'commitId));
+    throw_unless(48401, check_signature(slice_hash($msg'data'data), $msg'data'signature, $msg'data'publicKey));
+    int $hashlock = $msg'data'data~load_int(257);
+    int $timelock = $msg'data'data~load_int(257);
+    var (($lockCommitmentMessage'data'commitId, $lockCommitmentMessage'data'hashlock, $lockCommitmentMessage'data'timelock)) = $LockCommitment$_constructor_data($LockCommitmentData$_constructor_commitId_hashlock_timelock($msg'data'commitId, $hashlock, $timelock));
     var ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
-    int $lockId = $msg'data'hashlock;
-    throw_unless(30789, (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_commitExists($msg'data'commitId) == true));
-    var ($commitObj'dstAddress, $commitObj'dstChain, $commitObj'dstAsset, $commitObj'srcAsset, $commitObj'sender, $commitObj'srcReceiver, $commitObj'timelock, $commitObj'amount, $commitObj'messenger, $commitObj'locked, $commitObj'uncommitted, $commitObj'jettonMasterAddress, $commitObj'htlcJettonWalletAddress) = $PHTLC$_not_null($PHTLC$_load_opt(__tact_dict_get_int_cell($self'commits, 257, $msg'data'commitId)));
-    if (( (( __tact_slice_eq_bits($commitObj'sender, $ctx'sender) )) ? (true) : (( __tact_slice_eq_bits($commitObj'messenger, $ctx'sender) )) )) {
-        throw_unless(6007, (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_lockExists($lockId) == false));
-        throw_unless(46722, ($commitObj'locked == false));
-        throw_unless(42324, ($commitObj'uncommitted == false));
-        $self'locks~__tact_dict_set_int_cell(257, $lockId, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked_jettonMasterAddress_htlcJettonWalletAddress($commitObj'dstAddress, $commitObj'dstChain, $commitObj'dstAsset, $commitObj'srcAsset, $commitObj'sender, $commitObj'srcReceiver, $msg'data'hashlock, 0, $commitObj'amount, $msg'data'timelock, false, false, $commitObj'jettonMasterAddress, $commitObj'htlcJettonWalletAddress)));
-        $self'commits~__tact_dict_delete_int(257, $msg'data'commitId);
-    } else {
-        throw_unless(31687, false);
-    }
+    ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_lockCommitment((($lockCommitmentMessage'data'commitId, $lockCommitmentMessage'data'hashlock, $lockCommitmentMessage'data'timelock)), ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
@@ -224,6 +247,7 @@
     int $queryIndex = (0 & $queryHash);
     $global_send($SendParameters$_constructor_to_value_bounce_mode_body($lockObj'htlcJettonWalletAddress, $ctx'value, true, 0, $TokenTransfer$_store_cell($TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload($queryIndex, $lockObj'amount, $lockObj'srcReceiver, __tact_context_get_sender(), null(), 1, __tact_str_to_slice(__gen_slice_string_2f7fe9b07f89441d6ea969c50c7445098198d0e0031cf5c4f19adb721422d770())))));
     $self'locks~__tact_dict_delete_int(257, $msg'data'lockId);
+    $global_emit($TokenRedeemed$_store_cell($TokenRedeemed$_constructor_lockId_redeemAddress($msg'data'lockId, __tact_context_get_sender())));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
@@ -240,6 +264,7 @@
     int $queryIndex = (0 & $queryHash);
     $global_send($SendParameters$_constructor_to_value_bounce_mode_body($lockObj'htlcJettonWalletAddress, $ctx'value, true, 0, $TokenTransfer$_store_cell($TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload($queryIndex, $lockObj'amount, $lockObj'sender, __tact_context_get_sender(), null(), 1, __tact_str_to_slice(__gen_slice_string_d3c5974226249205b098bfc49055635817871f13c2281fb641070b6fd4cbe0d6())))));
     $self'locks~__tact_dict_delete_int(257, $msg'data'hashlock);
+    $global_emit($TokenUnlocked$_store_cell($TokenUnlocked$_constructor_lockId($msg'data'hashlock)));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
@@ -352,6 +377,13 @@ _ lazy_deployment_completed() method_id {
     if (op == 1558004185) {
         var msg = in_msg~$LockCommitment$_load();
         self~$HashedTimeLockTON$_internal_binary_LockCommitment(msg);
+        return (self, true);
+    }
+    
+    ;; Receive LockCommitmentSig message
+    if (op == 3252164863) {
+        var msg = in_msg~$LockCommitmentSig$_load();
+        self~$HashedTimeLockTON$_internal_binary_LockCommitmentSig(msg);
         return (self, true);
     }
     

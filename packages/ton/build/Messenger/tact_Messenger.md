@@ -1,6 +1,6 @@
 # TACT Compilation Report
 Contract: Messenger
-BOC Size: 577 bytes
+BOC Size: 586 bytes
 
 # Types
 Total Types: 8
@@ -29,13 +29,13 @@ Signature: `DeployOk{queryId:uint64}`
 TLB: `factory_deploy#6d0ff13b queryId:uint64 cashback:address = FactoryDeploy`
 Signature: `FactoryDeploy{queryId:uint64,cashback:address}`
 
-## HTLCNotification
-TLB: `_ htlcID:int257 sender:address receiver:address amount:int257 timelock:int257 hashlock:int257 dstAddress:^string phtlcID:int257 = HTLCNotification`
-Signature: `HTLCNotification{htlcID:int257,sender:address,receiver:address,amount:int257,timelock:int257,hashlock:int257,dstAddress:^string,phtlcID:int257}`
+## Notification
+TLB: `_ commitId:int257 hashlock:int257 dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string sender:address srcReceiver:address amount:int257 timelock:int257 = Notification`
+Signature: `Notification{commitId:int257,hashlock:int257,dstChain:^string,dstAsset:^string,dstAddress:^string,srcAsset:^string,sender:address,srcReceiver:address,amount:int257,timelock:int257}`
 
-## HTLCNotify
-TLB: `htlc_notify#c2638484 data:HTLCNotification{htlcID:int257,sender:address,receiver:address,amount:int257,timelock:int257,hashlock:int257,dstAddress:^string,phtlcID:int257} = HTLCNotify`
-Signature: `HTLCNotify{data:HTLCNotification{htlcID:int257,sender:address,receiver:address,amount:int257,timelock:int257,hashlock:int257,dstAddress:^string,phtlcID:int257}}`
+## Notify
+TLB: `notify#3beb51c2 data:Notification{commitId:int257,hashlock:int257,dstChain:^string,dstAsset:^string,dstAddress:^string,srcAsset:^string,sender:address,srcReceiver:address,amount:int257,timelock:int257} = Notify`
+Signature: `Notify{data:Notification{commitId:int257,hashlock:int257,dstChain:^string,dstAsset:^string,dstAddress:^string,srcAsset:^string,sender:address,srcReceiver:address,amount:int257,timelock:int257}}`
 
 # Get Methods
 Total Get Methods: 0

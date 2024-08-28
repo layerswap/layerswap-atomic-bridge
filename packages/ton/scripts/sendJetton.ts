@@ -7,8 +7,9 @@ import { TokenTransfer,JettonDefaultWallet } from "../build/SampleJetton/tact_Je
 export async function run() {
   const endpoint = await getHttpEndpoint({ network: "testnet" });
   const client = new TonClient({ endpoint });
-
-  const mnemonic = "thunder ignore ankle edit height leader drip motor leave expect dune online favorite ankle tail spoon detail glory flush inform estate field swear reason";
+  
+  const mnemonic = "pretty electric october neck alley tiger action assault garlic divide oppose exist online cluster luxury clump kangaroo number away analyst attitude digital zebra world"; 
+  
   const key = await mnemonicToWalletKey(mnemonic.split(" "));
   const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
   if (!await client.isContractDeployed(wallet.address)) {
@@ -19,17 +20,17 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("0:4d3b789f0240fa5f8577dcaef38447daf69320d6c5fe5130f53bd73ede06f808");
+  const contractAddress = Address.parse("0:53ea76a0ebb7746ae9d04d2445424c3a9de2046e70ae8adbae883a47e1c5ef73");
   const newContract = JettonDefaultWallet.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
   const queryId = BigInt(Date.now());
-  const amount = 18n;
-  const destination = Address.parse("0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y"); 
-  const response_destination = Address.parse("kQCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw69Rw"); 
+  const amount = 100n;
+  const destination = Address.parse("0QCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw64m1"); 
+  const response_destination = Address.parse("0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y"); 
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell();
   const forward_ton_amount = toNano("0.1"); 
-  const forward_payload = beginCell().endCell();
+  const forward_payload = beginCell().storeStringTail("yuhu").endCell();
 
   const tokenTransferMessage: TokenTransfer = {
     $$type: 'TokenTransfer',

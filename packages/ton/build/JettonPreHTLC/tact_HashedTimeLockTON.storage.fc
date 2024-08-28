@@ -424,6 +424,10 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
     return (sc_0, (v'commitId, v'hashlock, v'timelock));
 }
 
+((int, int, int)) $LockCommitmentData$_constructor_commitId_hashlock_timelock(int $commitId, int $hashlock, int $timelock) inline {
+    return ($commitId, $hashlock, $timelock);
+}
+
 ;;
 ;; Type: LockCommitment
 ;; Header: 0x5cdd41d9
@@ -434,6 +438,10 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
     throw_unless(129, sc_0~load_uint(32) == 1558004185);
     var v'data = sc_0~$LockCommitmentData$_load();
     return (sc_0, (v'data));
+}
+
+(((int, int, int))) $LockCommitment$_constructor_data((int, int, int) $data) inline {
+    return ($data);
 }
 
 ;;
@@ -504,24 +512,174 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
 }
 
 ;;
-;; Type: CommitId
-;; Header: 0x2eec4b61
-;; TLB: commit_id#2eec4b61 commitId:int257 = CommitId
+;; Type: LockCommitmentSigData
+;; TLB: _ commitId:int257 data:^slice signature:^slice publicKey:int257 = LockCommitmentSigData
 ;;
 
-builder $CommitId$_store(builder build_0, (int) v) inline {
+(slice, ((int, slice, slice, int))) $LockCommitmentSigData$_load(slice sc_0) inline {
+    var v'commitId = sc_0~load_int(257);
+    var v'data = sc_0~load_ref().begin_parse();
+    var v'signature = sc_0~load_ref().begin_parse();
+    var v'publicKey = sc_0~load_int(257);
+    return (sc_0, (v'commitId, v'data, v'signature, v'publicKey));
+}
+
+;;
+;; Type: LockCommitmentSig
+;; Header: 0xc1d818ff
+;; TLB: lock_commitment_sig#c1d818ff data:LockCommitmentSigData{commitId:int257,data:^slice,signature:^slice,publicKey:int257} = LockCommitmentSig
+;;
+
+(slice, (((int, slice, slice, int)))) $LockCommitmentSig$_load(slice sc_0) inline {
+    throw_unless(129, sc_0~load_uint(32) == 3252164863);
+    var v'data = sc_0~$LockCommitmentSigData$_load();
+    return (sc_0, (v'data));
+}
+
+;;
+;; Type: TokenCommitted
+;; Header: 0xbf3d24d1
+;; TLB: token_committed#bf3d24d1 commitId:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address = TokenCommitted
+;;
+
+builder $TokenCommitted$_store(builder build_0, (int, cell, cell, cell, slice, slice, slice, slice, slice, slice, int, int, slice, slice, slice) v) inline_ref {
+    var (v'commitId, v'hopChains, v'hopAssets, v'hopAddresses, v'dstChain, v'dstAddress, v'dstAsset, v'sender, v'srcReceiver, v'srcAsset, v'amount, v'timelock, v'messenger, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
+    build_0 = store_uint(build_0, 3208455377, 32);
+    build_0 = build_0.store_int(v'commitId, 257);
+    build_0 = build_0.store_dict(v'hopChains);
+    build_0 = build_0.store_dict(v'hopAssets);
+    var build_1 = begin_cell();
+    build_1 = build_1.store_dict(v'hopAddresses);
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'dstAddress).end_cell());
+    var build_2 = begin_cell();
+    build_2 = build_2.store_ref(begin_cell().store_slice(v'dstAsset).end_cell());
+    build_2 = __tact_store_address(build_2, v'sender);
+    build_2 = __tact_store_address(build_2, v'srcReceiver);
+    build_2 = build_2.store_ref(begin_cell().store_slice(v'srcAsset).end_cell());
+    build_2 = build_2.store_int(v'amount, 257);
+    var build_3 = begin_cell();
+    build_3 = build_3.store_int(v'timelock, 257);
+    build_3 = __tact_store_address(build_3, v'messenger);
+    build_3 = __tact_store_address(build_3, v'jettonMasterAddress);
+    var build_4 = begin_cell();
+    build_4 = __tact_store_address(build_4, v'htlcJettonWalletAddress);
+    build_3 = store_ref(build_3, build_4.end_cell());
+    build_2 = store_ref(build_2, build_3.end_cell());
+    build_1 = store_ref(build_1, build_2.end_cell());
+    build_0 = store_ref(build_0, build_1.end_cell());
+    return build_0;
+}
+
+cell $TokenCommitted$_store_cell((int, cell, cell, cell, slice, slice, slice, slice, slice, slice, int, int, slice, slice, slice) v) inline {
+    return $TokenCommitted$_store(begin_cell(), v).end_cell();
+}
+
+((int, cell, cell, cell, slice, slice, slice, slice, slice, slice, int, int, slice, slice, slice)) $TokenCommitted$_constructor_commitId_hopChains_hopAssets_hopAddresses_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress(int $commitId, cell $hopChains, cell $hopAssets, cell $hopAddresses, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, slice $jettonMasterAddress, slice $htlcJettonWalletAddress) inline {
+    return ($commitId, $hopChains, $hopAssets, $hopAddresses, $dstChain, $dstAddress, $dstAsset, $sender, $srcReceiver, $srcAsset, $amount, $timelock, $messenger, $jettonMasterAddress, $htlcJettonWalletAddress);
+}
+
+;;
+;; Type: TokenLocked
+;; Header: 0x0f47e1b8
+;; TLB: token_locked#0f47e1b8 hashlock:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:Maybe address commitId:Maybe int257 jettonMasterAddress:address htlcJettonWalletAddress:address = TokenLocked
+;;
+
+builder $TokenLocked$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, int, slice, slice) v) inline_ref {
+    var (v'hashlock, v'dstChain, v'dstAddress, v'dstAsset, v'sender, v'srcReceiver, v'srcAsset, v'amount, v'timelock, v'messenger, v'commitId, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
+    build_0 = store_uint(build_0, 256369080, 32);
+    build_0 = build_0.store_int(v'hashlock, 257);
+    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
+    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstAddress).end_cell());
+    var build_1 = begin_cell();
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'dstAsset).end_cell());
+    build_1 = __tact_store_address(build_1, v'sender);
+    build_1 = __tact_store_address(build_1, v'srcReceiver);
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'srcAsset).end_cell());
+    build_1 = build_1.store_int(v'amount, 257);
+    var build_2 = begin_cell();
+    build_2 = build_2.store_int(v'timelock, 257);
+    build_2 = __tact_store_address_opt(build_2, v'messenger);
+    build_2 = ~ null?(v'commitId) ? build_2.store_int(true, 1).store_int(v'commitId, 257) : build_2.store_int(false, 1);
+    var build_3 = begin_cell();
+    build_3 = __tact_store_address(build_3, v'jettonMasterAddress);
+    build_3 = __tact_store_address(build_3, v'htlcJettonWalletAddress);
+    build_2 = store_ref(build_2, build_3.end_cell());
+    build_1 = store_ref(build_1, build_2.end_cell());
+    build_0 = store_ref(build_0, build_1.end_cell());
+    return build_0;
+}
+
+cell $TokenLocked$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, slice, slice) v) inline {
+    return $TokenLocked$_store(begin_cell(), v).end_cell();
+}
+
+((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, slice, slice)) $TokenLocked$_constructor_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_commitId_jettonMasterAddress_htlcJettonWalletAddress(int $hashlock, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, int $commitId, slice $jettonMasterAddress, slice $htlcJettonWalletAddress) inline {
+    return ($hashlock, $dstChain, $dstAddress, $dstAsset, $sender, $srcReceiver, $srcAsset, $amount, $timelock, $messenger, $commitId, $jettonMasterAddress, $htlcJettonWalletAddress);
+}
+
+;;
+;; Type: TokenUnlocked
+;; Header: 0x697b5a61
+;; TLB: token_unlocked#697b5a61 lockId:int257 = TokenUnlocked
+;;
+
+builder $TokenUnlocked$_store(builder build_0, (int) v) inline {
+    var (v'lockId) = v;
+    build_0 = store_uint(build_0, 1769691745, 32);
+    build_0 = build_0.store_int(v'lockId, 257);
+    return build_0;
+}
+
+cell $TokenUnlocked$_store_cell((int) v) inline {
+    return $TokenUnlocked$_store(begin_cell(), v).end_cell();
+}
+
+((int)) $TokenUnlocked$_constructor_lockId(int $lockId) inline {
+    return ($lockId);
+}
+
+;;
+;; Type: TokenUncommitted
+;; Header: 0x10f03869
+;; TLB: token_uncommitted#10f03869 commitId:int257 = TokenUncommitted
+;;
+
+builder $TokenUncommitted$_store(builder build_0, (int) v) inline {
     var (v'commitId) = v;
-    build_0 = store_uint(build_0, 787237729, 32);
+    build_0 = store_uint(build_0, 284178537, 32);
     build_0 = build_0.store_int(v'commitId, 257);
     return build_0;
 }
 
-cell $CommitId$_store_cell((int) v) inline {
-    return $CommitId$_store(begin_cell(), v).end_cell();
+cell $TokenUncommitted$_store_cell((int) v) inline {
+    return $TokenUncommitted$_store(begin_cell(), v).end_cell();
 }
 
-((int)) $CommitId$_constructor_commitId(int $commitId) inline {
+((int)) $TokenUncommitted$_constructor_commitId(int $commitId) inline {
     return ($commitId);
+}
+
+;;
+;; Type: TokenRedeemed
+;; Header: 0xbcd6ac8a
+;; TLB: token_redeemed#bcd6ac8a lockId:int257 redeemAddress:address = TokenRedeemed
+;;
+
+builder $TokenRedeemed$_store(builder build_0, (int, slice) v) inline {
+    var (v'lockId, v'redeemAddress) = v;
+    build_0 = store_uint(build_0, 3168185482, 32);
+    build_0 = build_0.store_int(v'lockId, 257);
+    build_0 = __tact_store_address(build_0, v'redeemAddress);
+    return build_0;
+}
+
+cell $TokenRedeemed$_store_cell((int, slice) v) inline {
+    return $TokenRedeemed$_store(begin_cell(), v).end_cell();
+}
+
+((int, slice)) $TokenRedeemed$_constructor_lockId_redeemAddress(int $lockId, slice $redeemAddress) inline {
+    return ($lockId, $redeemAddress);
 }
 
 ;;

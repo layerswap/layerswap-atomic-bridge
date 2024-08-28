@@ -1,9 +1,9 @@
 # TACT Compilation Report
 Contract: HashedTimeLockTON
-BOC Size: 4430 bytes
+BOC Size: 5381 bytes
 
 # Types
-Total Types: 25
+Total Types: 31
 
 ## StateInit
 TLB: `_ code:^cell data:^cell = StateInit`
@@ -97,9 +97,33 @@ Signature: `Unlock{data:UnlockData{hashlock:int257}}`
 TLB: `_ hashlock:int257 = UnlockData`
 Signature: `UnlockData{hashlock:int257}`
 
-## CommitId
-TLB: `commit_id#2eec4b61 commitId:int257 = CommitId`
-Signature: `CommitId{commitId:int257}`
+## LockCommitmentSig
+TLB: `lock_commitment_sig#c1d818ff data:LockCommitmentSigData{commitId:int257,data:^slice,signature:^slice,publicKey:int257} = LockCommitmentSig`
+Signature: `LockCommitmentSig{data:LockCommitmentSigData{commitId:int257,data:^slice,signature:^slice,publicKey:int257}}`
+
+## LockCommitmentSigData
+TLB: `_ commitId:int257 data:^slice signature:^slice publicKey:int257 = LockCommitmentSigData`
+Signature: `LockCommitmentSigData{commitId:int257,data:^slice,signature:^slice,publicKey:int257}`
+
+## TokenCommitted
+TLB: `token_committed#bf3d24d1 commitId:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address = TokenCommitted`
+Signature: `TokenCommitted{commitId:int257,hopChains:dict<int, ^StringImpl{data:^string}>,hopAssets:dict<int, ^StringImpl{data:^string}>,hopAddresses:dict<int, ^StringImpl{data:^string}>,dstChain:^string,dstAddress:^string,dstAsset:^string,sender:address,srcReceiver:address,srcAsset:^string,amount:int257,timelock:int257,messenger:address,jettonMasterAddress:address,htlcJettonWalletAddress:address}`
+
+## TokenLocked
+TLB: `token_locked#0f47e1b8 hashlock:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:Maybe address commitId:Maybe int257 jettonMasterAddress:address htlcJettonWalletAddress:address = TokenLocked`
+Signature: `TokenLocked{hashlock:int257,dstChain:^string,dstAddress:^string,dstAsset:^string,sender:address,srcReceiver:address,srcAsset:^string,amount:int257,timelock:int257,messenger:Maybe address,commitId:Maybe int257,jettonMasterAddress:address,htlcJettonWalletAddress:address}`
+
+## TokenUnlocked
+TLB: `token_unlocked#697b5a61 lockId:int257 = TokenUnlocked`
+Signature: `TokenUnlocked{lockId:int257}`
+
+## TokenUncommitted
+TLB: `token_uncommitted#10f03869 commitId:int257 = TokenUncommitted`
+Signature: `TokenUncommitted{commitId:int257}`
+
+## TokenRedeemed
+TLB: `token_redeemed#bcd6ac8a lockId:int257 redeemAddress:address = TokenRedeemed`
+Signature: `TokenRedeemed{lockId:int257,redeemAddress:address}`
 
 ## StringImpl
 TLB: `_ data:^string = StringImpl`
@@ -158,6 +182,7 @@ Argument: commitId
 4670: Funds Not Sent
 6007: Lock Already Exists
 6272: Lock Does Not Exist
+20173: Commitment does not exist
 21683: Not Future Timelock
 22150: Commit Already Exists
 30789: Commit Does Not Exist
@@ -166,6 +191,7 @@ Argument: commitId
 42324: Already Uncommitted
 46722: Already Locked
 46887: Already Redeemed
+48401: Invalid signature
 50918: Hashlock Not Match
 
 # Trait Inheritance Diagram

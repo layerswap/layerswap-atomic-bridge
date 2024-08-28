@@ -19,14 +19,14 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQDUdA1NLqaognvWvgk--471bY09NIc2qf7qYxmpi-CgrJcD"); 
+  const contractAddress = Address.parse("EQDj4UDbdWSJm4jVZOkr_hOFMkeUG8BahxApftBKOG4mhPjP"); 
   const newContract = HashedTimeLockTON.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
   const amount = toNano("0.1");
 
   const lockCommitmentData: LockCommitmentData = {
-    commitId: 24716356531191335585328661435771043996539443399925688399959468269084770915966n,
-    hashlock: 86063709575516430416322238016776016577783477821483564045133774829893108097467n,
+    commitId: 79487511186371839588255465463422044852128997200189785173967264060596494197385n,
+    hashlock: 87562466615021115273923358655790804049477827703244008055029249926713965109410n,
     timelock: BigInt(Math.floor(Date.now() / 1000) + 3600),
     $$type: "LockCommitmentData"
   };
@@ -37,7 +37,7 @@ async function run() {
   };
 
   console.log("Sending LockCommitment message...");
-  await contractProvider.send(walletSender, { value: amount, bounce: true }, lockCommitmentMessage);
+  await contractProvider.send(walletSender, { value: amount,bounce: true }, lockCommitmentMessage);
 
   let currentSeqno = seqno;
   while (currentSeqno == seqno) {

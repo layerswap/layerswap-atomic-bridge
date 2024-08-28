@@ -15,6 +15,9 @@ slice __tact_verify_address(slice address) impure inline;
 ;; __tact_store_address
 builder __tact_store_address(builder b, slice address) inline;
 
+;; __tact_store_address_opt
+builder __tact_store_address_opt(builder b, slice address) inline;
+
 ;; __tact_my_balance
 int __tact_my_balance() inline;
 
@@ -141,11 +144,41 @@ tuple $HTLC$_load_opt(cell cl) inline;
 ;; $Unlock$_load
 (slice, (((int)))) $Unlock$_load(slice sc_0) inline;
 
-;; $CommitId$_store
-builder $CommitId$_store(builder build_0, (int) v) inline;
+;; $LockCommitmentSigData$_load
+(slice, ((int, slice, slice, int))) $LockCommitmentSigData$_load(slice sc_0) inline;
 
-;; $CommitId$_store_cell
-cell $CommitId$_store_cell((int) v) inline;
+;; $LockCommitmentSig$_load
+(slice, (((int, slice, slice, int)))) $LockCommitmentSig$_load(slice sc_0) inline;
+
+;; $TokenCommitted$_store
+builder $TokenCommitted$_store(builder build_0, (int, cell, cell, cell, slice, slice, slice, slice, slice, slice, int, int, slice) v) inline_ref;
+
+;; $TokenCommitted$_store_cell
+cell $TokenCommitted$_store_cell((int, cell, cell, cell, slice, slice, slice, slice, slice, slice, int, int, slice) v) inline;
+
+;; $TokenLocked$_store
+builder $TokenLocked$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, int) v) inline_ref;
+
+;; $TokenLocked$_store_cell
+cell $TokenLocked$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, int) v) inline;
+
+;; $TokenUnlocked$_store
+builder $TokenUnlocked$_store(builder build_0, (int) v) inline;
+
+;; $TokenUnlocked$_store_cell
+cell $TokenUnlocked$_store_cell((int) v) inline;
+
+;; $TokenUncommitted$_store
+builder $TokenUncommitted$_store(builder build_0, (int) v) inline;
+
+;; $TokenUncommitted$_store_cell
+cell $TokenUncommitted$_store_cell((int) v) inline;
+
+;; $TokenRedeemed$_store
+builder $TokenRedeemed$_store(builder build_0, (int, slice) v) inline;
+
+;; $TokenRedeemed$_store_cell
+cell $TokenRedeemed$_store_cell((int, slice) v) inline;
 
 ;; $HashedTimeLockTON$_store
 builder $HashedTimeLockTON$_store(builder build_0, (cell, cell, cell, int, int) v) inline;
@@ -231,6 +264,18 @@ slice $Builder$_fun_asSlice(builder $self) impure inline;
 ;; $HashedTimeLockTON$_fun_getLockIdByCommitId
 ((cell, cell, cell, int, int), int) $HashedTimeLockTON$_fun_getLockIdByCommitId((cell, cell, cell, int, int) $self, int $commitId) impure inline_ref;
 
+;; $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked
+((slice, slice, slice, slice, slice, slice, int, int, int, int, int, int)) $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, slice $srcReceiver, int $hashlock, int $secret, int $amount, int $timelock, int $redeemed, int $unlocked) inline;
+
+;; $SendParameters$_constructor_to_bounce_value_mode
+((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode(slice $to, int $bounce, int $value, int $mode) inline;
+
+;; $TokenLocked$_constructor_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_commitId
+((int, slice, slice, slice, slice, slice, slice, int, int, slice, int)) $TokenLocked$_constructor_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_commitId(int $hashlock, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, int $commitId) inline;
+
+;; $HashedTimeLockTON$_fun_lockCommitment
+((cell, cell, cell, int, int), ()) $HashedTimeLockTON$_fun_lockCommitment((cell, cell, cell, int, int) $self, ((int, int, int)) $msg, (int, slice, int, slice) $ctx) impure inline_ref;
+
 ;; $SendParameters$_constructor_bounce_to_value_mode_body_code_data
 ((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_bounce_to_value_mode_body_code_data(int $bounce, slice $to, int $value, int $mode, cell $body, cell $code, cell $data) inline;
 
@@ -243,14 +288,17 @@ slice $Builder$_fun_asSlice(builder $self) impure inline;
 ;; $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted
 ((slice, slice, slice, slice, slice, slice, int, int, slice, int, int)) $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, slice $srcReceiver, int $timelock, int $amount, slice $messenger, int $locked, int $uncommitted) inline;
 
-;; $CommitId$_constructor_commitId
-((int)) $CommitId$_constructor_commitId(int $commitId) inline;
+;; $TokenCommitted$_constructor_commitId_hopChains_hopAssets_hopAddresses_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger
+((int, cell, cell, cell, slice, slice, slice, slice, slice, slice, int, int, slice)) $TokenCommitted$_constructor_commitId_hopChains_hopAssets_hopAddresses_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger(int $commitId, cell $hopChains, cell $hopAssets, cell $hopAddresses, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger) inline;
 
-;; $SendParameters$_constructor_to_bounce_value_mode
-((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode(slice $to, int $bounce, int $value, int $mode) inline;
+;; $TokenUncommitted$_constructor_commitId
+((int)) $TokenUncommitted$_constructor_commitId(int $commitId) inline;
 
-;; $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked
-((slice, slice, slice, slice, slice, slice, int, int, int, int, int, int)) $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, slice $srcReceiver, int $hashlock, int $secret, int $amount, int $timelock, int $redeemed, int $unlocked) inline;
+;; $LockCommitment$_constructor_data
+(((int, int, int))) $LockCommitment$_constructor_data((int, int, int) $data) inline;
+
+;; $LockCommitmentData$_constructor_commitId_hashlock_timelock
+((int, int, int)) $LockCommitmentData$_constructor_commitId_hashlock_timelock(int $commitId, int $hashlock, int $timelock) inline;
 
 ;; $SendParameters$_constructor_to_bounce_value_mode_body
 ((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode_body(slice $to, int $bounce, int $value, int $mode, cell $body) inline;
@@ -260,6 +308,12 @@ slice $Builder$_fun_asSlice(builder $self) impure inline;
 
 ;; $Notification$_constructor_commitId_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock
 ((int, int, slice, slice, slice, slice, slice, slice, int, int)) $Notification$_constructor_commitId_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock(int $commitId, int $hashlock, slice $dstChain, slice $dstAsset, slice $dstAddress, slice $srcAsset, slice $sender, slice $srcReceiver, int $amount, int $timelock) inline;
+
+;; $TokenRedeemed$_constructor_lockId_redeemAddress
+((int, slice)) $TokenRedeemed$_constructor_lockId_redeemAddress(int $lockId, slice $redeemAddress) inline;
+
+;; $TokenUnlocked$_constructor_lockId
+((int)) $TokenUnlocked$_constructor_lockId(int $lockId) inline;
 
 ;; $DeployOk$_constructor_queryId
 ((int)) $DeployOk$_constructor_queryId(int $queryId) inline;

@@ -321,125 +321,135 @@ function dictValueParserFactoryDeploy(): DictionaryValue<FactoryDeploy> {
     }
 }
 
-export type HTLCNotification = {
-    $$type: 'HTLCNotification';
-    htlcID: bigint;
+export type Notification = {
+    $$type: 'Notification';
+    commitId: bigint;
+    hashlock: bigint;
+    dstChain: string;
+    dstAsset: string;
+    dstAddress: string;
+    srcAsset: string;
     sender: Address;
-    receiver: Address;
+    srcReceiver: Address;
     amount: bigint;
     timelock: bigint;
-    hashlock: bigint;
-    dstAddress: string;
-    phtlcID: bigint;
 }
 
-export function storeHTLCNotification(src: HTLCNotification) {
+export function storeNotification(src: Notification) {
     return (builder: Builder) => {
         let b_0 = builder;
-        b_0.storeInt(src.htlcID, 257);
-        b_0.storeAddress(src.sender);
-        b_0.storeAddress(src.receiver);
+        b_0.storeInt(src.commitId, 257);
+        b_0.storeInt(src.hashlock, 257);
+        b_0.storeStringRefTail(src.dstChain);
+        b_0.storeStringRefTail(src.dstAsset);
         let b_1 = new Builder();
-        b_1.storeInt(src.amount, 257);
-        b_1.storeInt(src.timelock, 257);
-        b_1.storeInt(src.hashlock, 257);
         b_1.storeStringRefTail(src.dstAddress);
+        b_1.storeStringRefTail(src.srcAsset);
+        b_1.storeAddress(src.sender);
+        b_1.storeAddress(src.srcReceiver);
+        b_1.storeInt(src.amount, 257);
         let b_2 = new Builder();
-        b_2.storeInt(src.phtlcID, 257);
+        b_2.storeInt(src.timelock, 257);
         b_1.storeRef(b_2.endCell());
         b_0.storeRef(b_1.endCell());
     };
 }
 
-export function loadHTLCNotification(slice: Slice) {
+export function loadNotification(slice: Slice) {
     let sc_0 = slice;
-    let _htlcID = sc_0.loadIntBig(257);
-    let _sender = sc_0.loadAddress();
-    let _receiver = sc_0.loadAddress();
+    let _commitId = sc_0.loadIntBig(257);
+    let _hashlock = sc_0.loadIntBig(257);
+    let _dstChain = sc_0.loadStringRefTail();
+    let _dstAsset = sc_0.loadStringRefTail();
     let sc_1 = sc_0.loadRef().beginParse();
-    let _amount = sc_1.loadIntBig(257);
-    let _timelock = sc_1.loadIntBig(257);
-    let _hashlock = sc_1.loadIntBig(257);
     let _dstAddress = sc_1.loadStringRefTail();
+    let _srcAsset = sc_1.loadStringRefTail();
+    let _sender = sc_1.loadAddress();
+    let _srcReceiver = sc_1.loadAddress();
+    let _amount = sc_1.loadIntBig(257);
     let sc_2 = sc_1.loadRef().beginParse();
-    let _phtlcID = sc_2.loadIntBig(257);
-    return { $$type: 'HTLCNotification' as const, htlcID: _htlcID, sender: _sender, receiver: _receiver, amount: _amount, timelock: _timelock, hashlock: _hashlock, dstAddress: _dstAddress, phtlcID: _phtlcID };
+    let _timelock = sc_2.loadIntBig(257);
+    return { $$type: 'Notification' as const, commitId: _commitId, hashlock: _hashlock, dstChain: _dstChain, dstAsset: _dstAsset, dstAddress: _dstAddress, srcAsset: _srcAsset, sender: _sender, srcReceiver: _srcReceiver, amount: _amount, timelock: _timelock };
 }
 
-function loadTupleHTLCNotification(source: TupleReader) {
-    let _htlcID = source.readBigNumber();
+function loadTupleNotification(source: TupleReader) {
+    let _commitId = source.readBigNumber();
+    let _hashlock = source.readBigNumber();
+    let _dstChain = source.readString();
+    let _dstAsset = source.readString();
+    let _dstAddress = source.readString();
+    let _srcAsset = source.readString();
     let _sender = source.readAddress();
-    let _receiver = source.readAddress();
+    let _srcReceiver = source.readAddress();
     let _amount = source.readBigNumber();
     let _timelock = source.readBigNumber();
-    let _hashlock = source.readBigNumber();
-    let _dstAddress = source.readString();
-    let _phtlcID = source.readBigNumber();
-    return { $$type: 'HTLCNotification' as const, htlcID: _htlcID, sender: _sender, receiver: _receiver, amount: _amount, timelock: _timelock, hashlock: _hashlock, dstAddress: _dstAddress, phtlcID: _phtlcID };
+    return { $$type: 'Notification' as const, commitId: _commitId, hashlock: _hashlock, dstChain: _dstChain, dstAsset: _dstAsset, dstAddress: _dstAddress, srcAsset: _srcAsset, sender: _sender, srcReceiver: _srcReceiver, amount: _amount, timelock: _timelock };
 }
 
-function storeTupleHTLCNotification(source: HTLCNotification) {
+function storeTupleNotification(source: Notification) {
     let builder = new TupleBuilder();
-    builder.writeNumber(source.htlcID);
+    builder.writeNumber(source.commitId);
+    builder.writeNumber(source.hashlock);
+    builder.writeString(source.dstChain);
+    builder.writeString(source.dstAsset);
+    builder.writeString(source.dstAddress);
+    builder.writeString(source.srcAsset);
     builder.writeAddress(source.sender);
-    builder.writeAddress(source.receiver);
+    builder.writeAddress(source.srcReceiver);
     builder.writeNumber(source.amount);
     builder.writeNumber(source.timelock);
-    builder.writeNumber(source.hashlock);
-    builder.writeString(source.dstAddress);
-    builder.writeNumber(source.phtlcID);
     return builder.build();
 }
 
-function dictValueParserHTLCNotification(): DictionaryValue<HTLCNotification> {
+function dictValueParserNotification(): DictionaryValue<Notification> {
     return {
         serialize: (src, builder) => {
-            builder.storeRef(beginCell().store(storeHTLCNotification(src)).endCell());
+            builder.storeRef(beginCell().store(storeNotification(src)).endCell());
         },
         parse: (src) => {
-            return loadHTLCNotification(src.loadRef().beginParse());
+            return loadNotification(src.loadRef().beginParse());
         }
     }
 }
 
-export type HTLCNotify = {
-    $$type: 'HTLCNotify';
-    data: HTLCNotification;
+export type Notify = {
+    $$type: 'Notify';
+    data: Notification;
 }
 
-export function storeHTLCNotify(src: HTLCNotify) {
+export function storeNotify(src: Notify) {
     return (builder: Builder) => {
         let b_0 = builder;
-        b_0.storeUint(3261301892, 32);
-        b_0.store(storeHTLCNotification(src.data));
+        b_0.storeUint(1005277634, 32);
+        b_0.store(storeNotification(src.data));
     };
 }
 
-export function loadHTLCNotify(slice: Slice) {
+export function loadNotify(slice: Slice) {
     let sc_0 = slice;
-    if (sc_0.loadUint(32) !== 3261301892) { throw Error('Invalid prefix'); }
-    let _data = loadHTLCNotification(sc_0);
-    return { $$type: 'HTLCNotify' as const, data: _data };
+    if (sc_0.loadUint(32) !== 1005277634) { throw Error('Invalid prefix'); }
+    let _data = loadNotification(sc_0);
+    return { $$type: 'Notify' as const, data: _data };
 }
 
-function loadTupleHTLCNotify(source: TupleReader) {
-    const _data = loadTupleHTLCNotification(source.readTuple());
-    return { $$type: 'HTLCNotify' as const, data: _data };
+function loadTupleNotify(source: TupleReader) {
+    const _data = loadTupleNotification(source.readTuple());
+    return { $$type: 'Notify' as const, data: _data };
 }
 
-function storeTupleHTLCNotify(source: HTLCNotify) {
+function storeTupleNotify(source: Notify) {
     let builder = new TupleBuilder();
-    builder.writeTuple(storeTupleHTLCNotification(source.data));
+    builder.writeTuple(storeTupleNotification(source.data));
     return builder.build();
 }
 
-function dictValueParserHTLCNotify(): DictionaryValue<HTLCNotify> {
+function dictValueParserNotify(): DictionaryValue<Notify> {
     return {
         serialize: (src, builder) => {
-            builder.storeRef(beginCell().store(storeHTLCNotify(src)).endCell());
+            builder.storeRef(beginCell().store(storeNotify(src)).endCell());
         },
         parse: (src) => {
-            return loadHTLCNotify(src.loadRef().beginParse());
+            return loadNotify(src.loadRef().beginParse());
         }
     }
 }
@@ -455,8 +465,8 @@ function initMessenger_init_args(src: Messenger_init_args) {
 }
 
 async function Messenger_init() {
-    const __code = Cell.fromBase64('te6ccgECCwEAAjUAART/APSkE/S88sgLAQIBYgIDApLQAdDTAwFxsKMB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiFRQUwNvBPhhAvhi2zxZ2zzy4IIwyPhDAcx/AcoAye1UBAUAEaGFfdqJoaQAAwE07UTQ1AH4Y9IAMJFt4Pgo1wsKgwm68uCJ2zwGAsoBkjB/4HAh10nCH5UwINcLH94gghDCY4SEuo6VMNMfAYIQwmOEhLry4IHbPGwYXwh/4IIQlGqYtrqOp9MfAYIQlGqYtrry4IHTPwExyAGCEK/5D1dYyx/LP8n4QgFwbds8f+AwcAcIAAJtANSBAQHXAPpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IgB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiAHUAdCBAQHXAIEBAdcAgQEB1wDUAdAB1DDQgQEB1wAwEFgQVxBWATptbSJus5lbIG7y0IBvIgGRMuIQJHADBIBCUCPbPAkByshxAcoBUAcBygBwAcoCUAUg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIzxZQA/oCcAHKaCNus5F/kyRus+KXMzMBcAHKAOMNIW6znH8BygABIG7y0IABzJUxcAHKAOLJAfsACgCYfwHKAMhwAcoAcAHKACRus51/AcoABCBu8tCAUATMljQDcAHKAOIkbrOdfwHKAAQgbvLQgFAEzJY0A3ABygDicAHKAAJ/AcoAAslYzA==');
-    const __system = Cell.fromBase64('te6cckECDQEAAj8AAQHAAQEFoM0DAgEU/wD0pBP0vPLICwMCAWIEDAKS0AHQ0wMBcbCjAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IhUUFMDbwT4YQL4Yts8Wds88uCCMMj4QwHMfwHKAMntVAUHATTtRNDUAfhj0gAwkW3g+CjXCwqDCbry4InbPAYAAm0CygGSMH/gcCHXScIflTAg1wsf3iCCEMJjhIS6jpUw0x8BghDCY4SEuvLggds8bBhfCH/gghCUapi2uo6n0x8BghCUapi2uvLggdM/ATHIAYIQr/kPV1jLH8s/yfhCAXBt2zx/4DBwCAkA1IEBAdcA+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiAH6QAEg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIAdQB0IEBAdcAgQEB1wCBAQHXANQB0AHUMNCBAQHXADAQWBBXEFYBOm1tIm6zmVsgbvLQgG8iAZEy4hAkcAMEgEJQI9s8CgHKyHEBygFQBwHKAHABygJQBSDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IjPFlAD+gJwAcpoI26zkX+TJG6z4pczMwFwAcoA4w0hbrOcfwHKAAEgbvLQgAHMlTFwAcoA4skB+wALAJh/AcoAyHABygBwAcoAJG6znX8BygAEIG7y0IBQBMyWNANwAcoA4iRus51/AcoABCBu8tCAUATMljQDcAHKAOJwAcoAAn8BygACyVjMABGhhX3aiaGkAAOIP93d');
+    const __code = Cell.fromBase64('te6ccgECCwEAAj4AART/APSkE/S88sgLAQIBYgIDApLQAdDTAwFxsKMB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiFRQUwNvBPhhAvhi2zxZ2zzy4IIwyPhDAcx/AcoAye1UBAUAEaGFfdqJoaQAAwE07UTQ1AH4Y9IAMJFt4Pgo1wsKgwm68uCJ2zwGAsoBkjB/4HAh10nCH5UwINcLH94gghA761HCuo6VMNMfAYIQO+tRwrry4IHbPGwaXwp/4IIQlGqYtrqOp9MfAYIQlGqYtrry4IHTPwExyAGCEK/5D1dYyx/LP8n4QgFwbds8f+AwcAcIAAJtAOaBAQHXAIEBAdcA1AHQAdQB0AHUAdDUAdAB1AHQAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IgB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiAGBAQHXANQw0IEBAdcAMBBqEGkQaBBnATptbSJus5lbIG7y0IBvIgGRMuIQJHADBIBCUCPbPAkByshxAcoBUAcBygBwAcoCUAUg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIzxZQA/oCcAHKaCNus5F/kyRus+KXMzMBcAHKAOMNIW6znH8BygABIG7y0IABzJUxcAHKAOLJAfsACgCYfwHKAMhwAcoAcAHKACRus51/AcoABCBu8tCAUATMljQDcAHKAOIkbrOdfwHKAAQgbvLQgFAEzJY0A3ABygDicAHKAAJ/AcoAAslYzA==');
+    const __system = Cell.fromBase64('te6cckECDQEAAkgAAQHAAQEFoM0DAgEU/wD0pBP0vPLICwMCAWIEDAKS0AHQ0wMBcbCjAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IhUUFMDbwT4YQL4Yts8Wds88uCCMMj4QwHMfwHKAMntVAUHATTtRNDUAfhj0gAwkW3g+CjXCwqDCbry4InbPAYAAm0CygGSMH/gcCHXScIflTAg1wsf3iCCEDvrUcK6jpUw0x8BghA761HCuvLggds8bBpfCn/gghCUapi2uo6n0x8BghCUapi2uvLggdM/ATHIAYIQr/kPV1jLH8s/yfhCAXBt2zx/4DBwCAkA5oEBAdcAgQEB1wDUAdAB1AHQAdQB0NQB0AHUAdAB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiAH6QAEg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIAYEBAdcA1DDQgQEB1wAwEGoQaRBoEGcBOm1tIm6zmVsgbvLQgG8iAZEy4hAkcAMEgEJQI9s8CgHKyHEBygFQBwHKAHABygJQBSDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IjPFlAD+gJwAcpoI26zkX+TJG6z4pczMwFwAcoA4w0hbrOcfwHKAAEgbvLQgAHMlTFwAcoA4skB+wALAJh/AcoAyHABygBwAcoAJG6znX8BygAEIG7y0IBQBMyWNANwAcoA4iRus51/AcoABCBu8tCAUATMljQDcAHKAOJwAcoAAn8BygACyVjMABGhhX3aiaGkAAOAFs+X');
     let builder = beginCell();
     builder.storeRef(__system);
     builder.storeUint(0, 1);
@@ -499,8 +509,8 @@ const Messenger_types: ABIType[] = [
     {"name":"Deploy","header":2490013878,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
     {"name":"DeployOk","header":2952335191,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
     {"name":"FactoryDeploy","header":1829761339,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"cashback","type":{"kind":"simple","type":"address","optional":false}}]},
-    {"name":"HTLCNotification","header":null,"fields":[{"name":"htlcID","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"sender","type":{"kind":"simple","type":"address","optional":false}},{"name":"receiver","type":{"kind":"simple","type":"address","optional":false}},{"name":"amount","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"timelock","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"hashlock","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"dstAddress","type":{"kind":"simple","type":"string","optional":false}},{"name":"phtlcID","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
-    {"name":"HTLCNotify","header":3261301892,"fields":[{"name":"data","type":{"kind":"simple","type":"HTLCNotification","optional":false}}]},
+    {"name":"Notification","header":null,"fields":[{"name":"commitId","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"hashlock","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"dstChain","type":{"kind":"simple","type":"string","optional":false}},{"name":"dstAsset","type":{"kind":"simple","type":"string","optional":false}},{"name":"dstAddress","type":{"kind":"simple","type":"string","optional":false}},{"name":"srcAsset","type":{"kind":"simple","type":"string","optional":false}},{"name":"sender","type":{"kind":"simple","type":"address","optional":false}},{"name":"srcReceiver","type":{"kind":"simple","type":"address","optional":false}},{"name":"amount","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"timelock","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
+    {"name":"Notify","header":1005277634,"fields":[{"name":"data","type":{"kind":"simple","type":"Notification","optional":false}}]},
 ]
 
 const Messenger_getters: ABIGetter[] = [
@@ -510,7 +520,7 @@ export const Messenger_getterMapping: { [key: string]: string } = {
 }
 
 const Messenger_receivers: ABIReceiver[] = [
-    {"receiver":"internal","message":{"kind":"typed","type":"HTLCNotify"}},
+    {"receiver":"internal","message":{"kind":"typed","type":"Notify"}},
     {"receiver":"internal","message":{"kind":"typed","type":"Deploy"}},
 ]
 
@@ -544,11 +554,11 @@ export class Messenger implements Contract {
         this.init = init;
     }
     
-    async send(provider: ContractProvider, via: Sender, args: { value: bigint, bounce?: boolean| null | undefined }, message: HTLCNotify | Deploy) {
+    async send(provider: ContractProvider, via: Sender, args: { value: bigint, bounce?: boolean| null | undefined }, message: Notify | Deploy) {
         
         let body: Cell | null = null;
-        if (message && typeof message === 'object' && !(message instanceof Slice) && message.$$type === 'HTLCNotify') {
-            body = beginCell().store(storeHTLCNotify(message)).endCell();
+        if (message && typeof message === 'object' && !(message instanceof Slice) && message.$$type === 'Notify') {
+            body = beginCell().store(storeNotify(message)).endCell();
         }
         if (message && typeof message === 'object' && !(message instanceof Slice) && message.$$type === 'Deploy') {
             body = beginCell().store(storeDeploy(message)).endCell();

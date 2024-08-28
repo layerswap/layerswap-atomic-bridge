@@ -52,33 +52,35 @@ cell $DeployOk$_store_cell((int) v) inline {
 }
 
 ;;
-;; Type: HTLCNotification
-;; TLB: _ htlcID:int257 sender:address receiver:address amount:int257 timelock:int257 hashlock:int257 dstAddress:^string phtlcID:int257 = HTLCNotification
+;; Type: Notification
+;; TLB: _ commitId:int257 hashlock:int257 dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string sender:address srcReceiver:address amount:int257 timelock:int257 = Notification
 ;;
 
-(slice, ((int, slice, slice, int, int, int, slice, int))) $HTLCNotification$_load(slice sc_0) inline_ref {
-    var v'htlcID = sc_0~load_int(257);
-    var v'sender = sc_0~__tact_load_address();
-    var v'receiver = sc_0~__tact_load_address();
+(slice, ((int, int, slice, slice, slice, slice, slice, slice, int, int))) $Notification$_load(slice sc_0) inline_ref {
+    var v'commitId = sc_0~load_int(257);
+    var v'hashlock = sc_0~load_int(257);
+    var v'dstChain = sc_0~load_ref().begin_parse();
+    var v'dstAsset = sc_0~load_ref().begin_parse();
     slice sc_1 = sc_0~load_ref().begin_parse();
-    var v'amount = sc_1~load_int(257);
-    var v'timelock = sc_1~load_int(257);
-    var v'hashlock = sc_1~load_int(257);
     var v'dstAddress = sc_1~load_ref().begin_parse();
+    var v'srcAsset = sc_1~load_ref().begin_parse();
+    var v'sender = sc_1~__tact_load_address();
+    var v'srcReceiver = sc_1~__tact_load_address();
+    var v'amount = sc_1~load_int(257);
     slice sc_2 = sc_1~load_ref().begin_parse();
-    var v'phtlcID = sc_2~load_int(257);
-    return (sc_0, (v'htlcID, v'sender, v'receiver, v'amount, v'timelock, v'hashlock, v'dstAddress, v'phtlcID));
+    var v'timelock = sc_2~load_int(257);
+    return (sc_0, (v'commitId, v'hashlock, v'dstChain, v'dstAsset, v'dstAddress, v'srcAsset, v'sender, v'srcReceiver, v'amount, v'timelock));
 }
 
 ;;
-;; Type: HTLCNotify
-;; Header: 0xc2638484
-;; TLB: htlc_notify#c2638484 data:HTLCNotification{htlcID:int257,sender:address,receiver:address,amount:int257,timelock:int257,hashlock:int257,dstAddress:^string,phtlcID:int257} = HTLCNotify
+;; Type: Notify
+;; Header: 0x3beb51c2
+;; TLB: notify#3beb51c2 data:Notification{commitId:int257,hashlock:int257,dstChain:^string,dstAsset:^string,dstAddress:^string,srcAsset:^string,sender:address,srcReceiver:address,amount:int257,timelock:int257} = Notify
 ;;
 
-(slice, (((int, slice, slice, int, int, int, slice, int)))) $HTLCNotify$_load(slice sc_0) inline {
-    throw_unless(129, sc_0~load_uint(32) == 3261301892);
-    var v'data = sc_0~$HTLCNotification$_load();
+(slice, (((int, int, slice, slice, slice, slice, slice, slice, int, int)))) $Notify$_load(slice sc_0) inline {
+    throw_unless(129, sc_0~load_uint(32) == 1005277634);
+    var v'data = sc_0~$Notification$_load();
     return (sc_0, (v'data));
 }
 

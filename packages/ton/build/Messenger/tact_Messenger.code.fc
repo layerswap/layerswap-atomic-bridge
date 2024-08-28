@@ -19,9 +19,9 @@ tuple $Messenger$_contract_init() impure inline_ref {
 ;; Receivers of a Contract Messenger
 ;;
 
-((tuple), ()) $Messenger$_internal_binary_HTLCNotify(tuple $self, ((int, slice, slice, int, int, int, slice, int)) $msg) impure inline {
+((tuple), ()) $Messenger$_internal_binary_Notify(tuple $self, ((int, int, slice, slice, slice, slice, slice, slice, int, int)) $msg) impure inline {
     var $self = $self;
-    var (($msg'data'htlcID, $msg'data'sender, $msg'data'receiver, $msg'data'amount, $msg'data'timelock, $msg'data'hashlock, $msg'data'dstAddress, $msg'data'phtlcID)) = $msg;
+    var (($msg'data'commitId, $msg'data'hashlock, $msg'data'dstChain, $msg'data'dstAsset, $msg'data'dstAddress, $msg'data'srcAsset, $msg'data'sender, $msg'data'srcReceiver, $msg'data'amount, $msg'data'timelock)) = $msg;
     return ($self, ());
 }
 
@@ -57,10 +57,10 @@ _ lazy_deployment_completed() method_id {
     }
     
     
-    ;; Receive HTLCNotify message
-    if (op == 3261301892) {
-        var msg = in_msg~$HTLCNotify$_load();
-        self~$Messenger$_internal_binary_HTLCNotify(msg);
+    ;; Receive Notify message
+    if (op == 1005277634) {
+        var msg = in_msg~$Notify$_load();
+        self~$Messenger$_internal_binary_Notify(msg);
         return (self, true);
     }
     
