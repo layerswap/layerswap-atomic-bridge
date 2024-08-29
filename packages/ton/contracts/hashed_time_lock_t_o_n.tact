@@ -13,7 +13,7 @@ struct Notification {
     timelock: Int;
 }
 
-message Notify {
+message(0x3beb51c2) Notify {
     data: Notification;
 }
 
@@ -49,13 +49,10 @@ struct HTLC {
 }
 
 // Messages received by contract
-message Commit{
+message(0x1b564d91) Commit{
     data: CommitData;
 }
 struct CommitData{
-    hopChains: map<Int,StringImpl>;
-    hopAssets: map<Int,StringImpl>;
-    hopAddresses: map<Int,StringImpl>;
     dstChain: String;
     dstAsset: String;
     dstAddress: String;
@@ -63,9 +60,12 @@ struct CommitData{
     srcReceiver: Address;
     timelock: Int; 
     messenger: Address;
+    hopChains: map<Int,StringImpl>;
+    hopAssets: map<Int,StringImpl>;
+    hopAddresses: map<Int,StringImpl>;
 }
 
-message LockCommitment{
+message(0x5cdd41d9) LockCommitment{
     data: LockCommitmentData;
 }
 struct LockCommitmentData{
@@ -74,14 +74,14 @@ struct LockCommitmentData{
     timelock: Int;
 }
 
-message Uncommit{
+message(0xa958ac23) Uncommit{
     data: UncommitData;
 }
 struct UncommitData{
     commitId: Int;
 }
 
-message Lock {
+message(0x12e78cb1) Lock {
     data: LockData;
 }
 struct LockData {
@@ -96,7 +96,7 @@ struct LockData {
     messenger: Address?;
 }
 
-message Redeem {
+message(0x758db085) Redeem {
     data: RedeemData;
 }
 struct RedeemData {
@@ -104,14 +104,14 @@ struct RedeemData {
     secret: Int;
 }
 
-message Unlock {
+message(0xad821ef9) Unlock {
     data: UnlockData;
 }
 struct UnlockData {
     hashlock: Int;
 }
 
-message LockCommitmentSig{
+message(0xc1d818ff) LockCommitmentSig{
     data: LockCommitmentSigData;
 }
 
@@ -122,12 +122,9 @@ struct LockCommitmentSigData{
     publicKey: Int;
 }
 
-// Emitted message
-message TokenCommitted{
+// Emitted messages
+message(0x71f9f7aa) TokenCommitted{
     commitId: Int;
-    hopChains: map<Int,StringImpl>;
-    hopAssets: map<Int,StringImpl>;
-    hopAddresses: map<Int,StringImpl>;
     dstChain: String;
     dstAddress: String;
     dstAsset: String;
@@ -137,9 +134,12 @@ message TokenCommitted{
     amount: Int;
     timelock: Int; 
     messenger: Address;
+    hopChains: map<Int,StringImpl>;
+    hopAssets: map<Int,StringImpl>;
+    hopAddresses: map<Int,StringImpl>;
 }
 
-message TokenLocked{
+message(0x95b0219d) TokenLocked{
     hashlock: Int;
     dstChain: String;
     dstAddress: String;
@@ -151,19 +151,6 @@ message TokenLocked{
     timelock: Int;
     messenger: Address?;
     commitId: Int?;
-}
-
-message TokenUnlocked{
-    lockId: Int;
-}
-
-message TokenUncommitted{
-    commitId: Int;
-}
-
-message TokenRedeemed{
-    lockId: Int;
-    redeemAddress: Address;
 }
 
 // String implementation as struct
@@ -221,9 +208,6 @@ contract HashedTimeLockTON with Deployable {
 
             emit(TokenCommitted{
                                 commitId: commitId,
-                                hopChains: msg.data.hopChains,
-                                hopAssets: msg.data.hopAssets,
-                                hopAddresses: msg.data.hopAddresses,
                                 dstChain: msg.data.dstChain,
                                 dstAddress: msg.data.dstAddress,
                                 dstAsset: msg.data.dstAsset,
@@ -232,7 +216,10 @@ contract HashedTimeLockTON with Deployable {
                                 srcAsset: msg.data.srcAsset,
                                 amount: ctx.value,
                                 timelock: msg.data.timelock,
-                                messenger: msg.data.messenger
+                                messenger: msg.data.messenger,
+                                hopChains: msg.data.hopChains,
+                                hopAssets: msg.data.hopAssets,
+                                hopAddresses: msg.data.hopAddresses
                                 }.toCell());
     }
 
@@ -264,9 +251,6 @@ contract HashedTimeLockTON with Deployable {
 
         self.commits.del(msg.data.commitId);
 
-        emit(TokenUncommitted{
-                                commitId: msg.data.commitId
-                                }.toCell());
     }
 
     receive(msg: LockCommitment){
@@ -343,18 +327,18 @@ contract HashedTimeLockTON with Deployable {
                             mode: 64});
 
         emit(TokenLocked{
-                        hashlock: msg.data.hashlock,
-                        dstChain: msg.data.dstChain,
-                        dstAddress: msg.data.dstAddress,
-                        dstAsset: msg.data.dstAsset,
-                        sender: sender(),
-                        srcReceiver: msg.data.srcReceiver,
-                        srcAsset: msg.data.srcAsset,
-                        amount: ctx.value,
-                        timelock: msg.data.timelock,
-                        messenger: msg.data.messenger,
-                        commitId: msg.data.commitId
-                    }.toCell());
+                hashlock: msg.data.hashlock,
+                dstChain: msg.data.dstChain,
+                dstAddress: msg.data.dstAddress,
+                dstAsset: msg.data.dstAsset,
+                sender: sender(),
+                srcReceiver: msg.data.srcReceiver,
+                srcAsset: msg.data.srcAsset,
+                amount: ctx.value,
+                timelock: msg.data.timelock,
+                messenger: msg.data.messenger,
+                commitId: msg.data.commitId
+            }.toCell());
     }
 
     receive(msg: Redeem) {
@@ -389,11 +373,6 @@ contract HashedTimeLockTON with Deployable {
                 });
 
         self.locks.del(msg.data.lockId);
-
-        emit(TokenRedeemed{
-                lockId: msg.data.lockId,
-                redeemAddress: sender()
-        }.toCell())
     }
 
     receive(msg: Unlock){
@@ -419,11 +398,6 @@ contract HashedTimeLockTON with Deployable {
                     value: 0,
                     mode: 64
                 });
-
-        emit( TokenUnlocked{
-                            lockId: msg.data.hashlock
-                        }.toCell());
-
         self.locks.del(msg.data.hashlock);
     }
 
@@ -523,20 +497,6 @@ contract HashedTimeLockTON with Deployable {
                             bounce: false,
                             value: 0,
                             mode: 64});
-
-        emit(TokenLocked{
-                hashlock: msg.data.hashlock,
-                dstChain: commitObj.dstChain,
-                dstAddress: commitObj.dstAddress,
-                dstAsset: commitObj.dstAsset,
-                sender: commitObj.sender,
-                srcReceiver: commitObj.srcReceiver,
-                srcAsset: commitObj.srcAsset,
-                amount: commitObj.amount,
-                timelock: msg.data.timelock,
-                messenger: commitObj.messenger,
-                commitId: msg.data.commitId
-            }.toCell());
         }else{
             require(false,"No Allowance");
         }

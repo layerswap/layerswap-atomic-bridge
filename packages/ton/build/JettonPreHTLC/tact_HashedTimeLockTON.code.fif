@@ -56,12 +56,6 @@ PROGRAM{
   DECLPROC $TokenCommitted$_store_cell
   DECLPROC $TokenLocked$_store
   DECLPROC $TokenLocked$_store_cell
-  DECLPROC $TokenUnlocked$_store
-  DECLPROC $TokenUnlocked$_store_cell
-  DECLPROC $TokenUncommitted$_store
-  DECLPROC $TokenUncommitted$_store_cell
-  DECLPROC $TokenRedeemed$_store
-  DECLPROC $TokenRedeemed$_store_cell
   DECLPROC $HashedTimeLockTON$_store
   DECLPROC $HashedTimeLockTON$_load
   DECLPROC $StateInit$_not_null
@@ -84,7 +78,7 @@ PROGRAM{
   DECLPROC $HashedTimeLockTON$_fun_lockExists
   DECLPROC $HashedTimeLockTON$_fun_commitExists
   DECLPROC $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted_jettonMasterAddress_htlcJettonWalletAddress
-  DECLPROC $TokenCommitted$_constructor_commitId_hopChains_hopAssets_hopAddresses_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress
+  DECLPROC $TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress_hopChains_hopAssets_hopAddresses
   DECLPROC $HashedTimeLockTON$_fun__commit
   DECLPROC $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked_jettonMasterAddress_htlcJettonWalletAddress
   DECLPROC $SendParameters$_constructor_to_bounce_value_mode_body
@@ -106,11 +100,8 @@ PROGRAM{
   DECLPROC $HashedTimeLockTON$_fun_notify
   DECLPROC $SendParameters$_constructor_to_value_bounce_mode_body
   DECLPROC $TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload
-  DECLPROC $TokenUncommitted$_constructor_commitId
   DECLPROC $LockCommitment$_constructor_data
   DECLPROC $LockCommitmentData$_constructor_commitId_hashlock_timelock
-  DECLPROC $TokenRedeemed$_constructor_lockId_redeemAddress
-  DECLPROC $TokenUnlocked$_constructor_lockId
   DECLPROC $DeployOk$_constructor_queryId
   DECLPROC $HashedTimeLockTON$_internal_binary_TokenNotification
   DECLPROC $HashedTimeLockTON$_internal_binary_Uncommit
@@ -592,12 +583,6 @@ PROGRAM{
     }>
   }>
   $CommitData$_load PROCREF:<{
-    LDDICT
-    LDDICT
-    LDREF
-    SWAP
-    CTOS
-    LDDICT
     LDREF
     SWAP
     CTOS
@@ -607,7 +592,7 @@ PROGRAM{
     CTOS
     SWAP
     LDREF
-    DROP
+    SWAP
     CTOS
     LDREF
     SWAP
@@ -629,7 +614,11 @@ PROGRAM{
     __tact_load_address INLINECALLDICT
     SWAP
     __tact_load_address INLINECALLDICT
-    NIP
+    SWAP
+    LDDICT
+    LDDICT
+    LDDICT
+    DROP
     s10 s12 XCHG
     s10 s11 XCHG
   }>
@@ -915,59 +904,54 @@ PROGRAM{
     s1 s14 XCHG
     257 PUSHINT
     STIX
-    s1 s12 XCHG
-    STDICT
-    s1 s10 XCHG
-    STDICT
-    s0 s8 XCHG
     NEWC
-    STDICT
-    NEWC
-    s0 s8 XCHG2
+    s0 s13 XCHG2
     STSLICER
     ENDC
+    s0 s12 XCHG2
+    STREF
+    NEWC
+    s0 s11 XCHG2
+    STSLICER
+    ENDC
+    s0 s10 XCHG2
+    STREF
+    NEWC
+    NEWC
+    s0 s10 XCHG2
+    STSLICER
+    ENDC
+    s0 s9 XCHG2
+    STREF
     s0 s7 XCHG2
-    STREF
-    NEWC
-    s0 s6 XCHG2
-    STSLICER
-    ENDC
+    __tact_store_address INLINECALLDICT
     s0 s5 XCHG2
-    STREF
+    __tact_store_address INLINECALLDICT
     NEWC
-    NEWC
-    s0 s5 XCHG2
-    STSLICER
-    ENDC
     s0 s4 XCHG2
-    STREF
-    ROT
-    __tact_store_address INLINECALLDICT
-    SWAP
-    __tact_store_address INLINECALLDICT
-    NEWC
+    STSLICER
+    ENDC
     s0 s3 XCHG2
-    STSLICER
-    ENDC
+    STREF
+    257 PUSHINT
+    STIX
+    SWAP
+    NEWC
+    257 PUSHINT
+    STIX
     ROT
-    STREF
-    s1 s2 XCHG
-    257 PUSHINT
-    STIX
-    s0 s3 XCHG
-    NEWC
-    257 PUSHINT
-    STIX
-    s0 s4 XCHG2
     __tact_store_address INLINECALLDICT
-    s0 s4 XCHG2
+    ROT
     __tact_store_address INLINECALLDICT
     NEWC
-    s0 s5 XCHG2
-    __tact_store_address INLINECALLDICT
-    ENDC
     s0 s4 XCHG2
-    STREF
+    __tact_store_address INLINECALLDICT
+    s1 s4 XCHG
+    STDICT
+    s1 s4 XCHG
+    STDICT
+    s1 s4 XCHG
+    STDICT
     ENDC
     s0 s3 XCHG2
     STREF
@@ -1063,47 +1047,6 @@ PROGRAM{
     NEWC
     13 -ROLL
     $TokenLocked$_store INLINECALLDICT
-    ENDC
-  }>
-  $TokenUnlocked$_store PROCINLINE:<{
-    1769691745 PUSHINT
-    ROT
-    32 STU
-    257 PUSHINT
-    STIX
-  }>
-  $TokenUnlocked$_store_cell PROCINLINE:<{
-    NEWC
-    SWAP
-    $TokenUnlocked$_store INLINECALLDICT
-    ENDC
-  }>
-  $TokenUncommitted$_store PROCINLINE:<{
-    284178537 PUSHINT
-    ROT
-    32 STU
-    257 PUSHINT
-    STIX
-  }>
-  $TokenUncommitted$_store_cell PROCINLINE:<{
-    NEWC
-    SWAP
-    $TokenUncommitted$_store INLINECALLDICT
-    ENDC
-  }>
-  $TokenRedeemed$_store PROCINLINE:<{
-    3168185482 PUSHINT
-    s0 s3 XCHG2
-    32 STU
-    257 PUSHINT
-    STIX
-    SWAP
-    __tact_store_address INLINECALLDICT
-  }>
-  $TokenRedeemed$_store_cell PROCINLINE:<{
-    NEWC
-    -ROT
-    $TokenRedeemed$_store INLINECALLDICT
     ENDC
   }>
   $HashedTimeLockTON$_store PROCINLINE:<{
@@ -1400,7 +1343,7 @@ PROGRAM{
   }>
   $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted_jettonMasterAddress_htlcJettonWalletAddress PROCINLINE:<{
   }>
-  $TokenCommitted$_constructor_commitId_hopChains_hopAssets_hopAddresses_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress PROCINLINE:<{
+  $TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress_hopChains_hopAssets_hopAddresses PROCINLINE:<{
   }>
   $HashedTimeLockTON$_fun__commit PROCREF:<{
     s0 s2 XCHG
@@ -1410,7 +1353,7 @@ PROGRAM{
     0 NEQINT
     THROWANYIFNOT
     21683 PUSHINT
-    s4 PUSH
+    s7 PUSH
     NOW
     GREATER
     THROWANYIFNOT
@@ -1432,20 +1375,24 @@ PROGRAM{
     257 PUSHINT
     FALSE
     FALSE
-    s10 PUSH
-    s13 s2 s(-1) PUXC2
     s13 PUSH
-    s12 s2 s(-1) PUXC2
+    s0 s2 XCHG
+    16 s() PUSH
+    s0 s2 XCHG
+    16 s() PUSH
+    s15 s2 s(-1) PUXC2
     20 s() PUSH
-    s13 s2 s(-1) PUXC2
-    s13 PUSH
+    s0 s2 XCHG
+    16 s() PUSH
+    s0 s2 XCHG
+    16 s() PUSH
     s0 s2 XCHG
     24 s() PUSH
     s0 s2 XCHG
-    30 s() PUSH
+    17 s() PUSH
     -ROT
-    30 s() PUSH
-    29 s() PUSH
+    17 s() PUSH
+    17 s() PUSH
     $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted_jettonMasterAddress_htlcJettonWalletAddress INLINECALLDICT
     $PHTLC$_store_cell INLINECALLDICT
     s2 s4 XCHG
@@ -1454,17 +1401,17 @@ PROGRAM{
     __tact_dict_set_int_cell INLINECALLDICT
     s14 17 s() XCHG
     s12 s13 XCHG
-    s11 s12 XCHG
-    s10 s11 XCHG
-    s9 s10 XCHG
-    s7 s9 XCHG
-    s5 s6 XCHG
+    s10 s12 XCHG
+    s8 s9 XCHG
+    s7 17 s() XCHG
+    s6 17 s() XCHG
+    s5 17 s() XCHG
     s4 17 s() XCHG
     s3 17 s() XCHG
     s2 19 s() XCHG
     s1 18 s() XCHG
     s0 16 s() XCHG
-    $TokenCommitted$_constructor_commitId_hopChains_hopAssets_hopAddresses_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress INLINECALLDICT
+    $TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress_hopChains_hopAssets_hopAddresses INLINECALLDICT
     $TokenCommitted$_store_cell INLINECALLDICT
     $global_emit INLINECALLDICT
     s4 s3 s0 XCHG3
@@ -1749,102 +1696,86 @@ PROGRAM{
     PUSHNULL
   }>
   $HashedTimeLockTON$_fun_lockCommitment PROCREF:<{
-    DROP
-    s2 POP
-    s3 PUSH
-    s3 s10 XCHG
-    s9 s8 s7 XCHG3
+    s2 s3 XCHG
+    3 BLKDROP
+    s2 PUSH
+    s3 s9 XCHG
+    s8 s7 s6 XCHG3
     30789 PUSHINT
-    s7 s6 XCPU
+    s6 s5 XCPU
     $HashedTimeLockTON$_fun_commitExists INLINECALLDICT
     -1 EQINT
-    s1 s8 XCHG
+    s1 s7 XCHG
     THROWANYIFNOT
     s2 PUSH
     257 PUSHINT
-    s7 PUSH
+    s6 PUSH
     __tact_dict_get_int_cell INLINECALLDICT
     $PHTLC$_load_opt INLINECALLDICT
     $PHTLC$_not_null INLINECALLDICT
     s6 POP
     s7 PUSH
-    21 s() PUSH
+    20 s() PUSH
     __tact_slice_eq_bits INLINECALLDICT
     IF:<{
+      s3 POP
+      18 s() POP
       TRUE
     }>ELSE<{
-      s3 PUSH
-      21 s() PUSH
+      s0 19 s() XCHG
+      s1 s3 XCHG
       __tact_slice_eq_bits INLINECALLDICT
+      s2 18 s() XCHG
     }>
     IF:<{
-      s3 s15 XCHG
-      s14 s13 s12 XCHG3
+      s3 s13 XCHG
+      s12 s11 s10 XCHG3
       6007 PUSHINT
-      s0 19 s() XCHG
-      20 s() PUSH
+      s0 16 s() XCHG
+      17 s() PUSH
       $HashedTimeLockTON$_fun_lockExists INLINECALLDICT
       0 EQINT
-      s1 20 s() XCHG
+      s1 17 s() XCHG
       THROWANYIFNOT
       46722 PUSHINT
-      s0 s15 XCHG
+      s0 s11 XCHG
       0 EQINT
-      s1 s15 XCHG
+      s1 s11 XCHG
       THROWANYIFNOT
       42324 PUSHINT
-      s0 s13 XCHG
+      s0 17 s() XCHG
       0 EQINT
-      s1 s13 XCHG
+      s1 17 s() XCHG
       THROWANYIFNOT
+      s7 s9 XCHG
+      s6 s8 XCHG
+      s5 s7 XCHG
+      s4 s6 XCHG
+      s3 s5 XCHG
+      s2 s4 XCHG
+      s3 17 s() XCHG
       257 PUSHINT
       0 PUSHINT
-      FALSE
-      FALSE
-      s13 PUSH
-      s6 s13 XCPU
-      s6 s12 XCPU
-      s6 s14 XCHG
-      s5 s11 XCPU
-      s5 s13 XCHG
       s0 s4 XCHG
-      22 s() PUSH
-      s3 s1 s4 XCHG3
-      s2 s11 XCHG
-      29 s() PUSH
-      s15 s2 XCHG2
-      20 s() PUSH
-      s14 PUSH
+      s3 s12 XCHG
+      s2 18 s() XCHG
+      FALSE
+      s0 s2 XCHG
+      FALSE
+      s0 s2 XCHG
+      s1 21 s() XCHG
+      s0 s15 XCHG
       $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked_jettonMasterAddress_htlcJettonWalletAddress INLINECALLDICT
       $HTLC$_store_cell INLINECALLDICT
-      s3 s4 XCHG
-      s2 s6 XCHG
-      s1 16 s() XCHG
+      s8 s3 s0 XCHG3
+      s1 s5 XCHG
       __tact_dict_set_int_cell INLINECALLDICT
-      s11 s13 PUXC
+      s2 s4 XCHG2
       257 PUSHINT
       DICTIDEL
       DROP
-      s5 PUSH
-      s11 s12 XCHG
-      s5 s11 XCHG
-      s0 s10 XCHG
-      s6 s9 XCHG
-      s8 s15 XCHG
-      s2 s7 XCHG
-      s3 s6 XCHG
-      s5 16 s() XCHG
-      s4 17 s() XCHG
-      s0 s3 XCHG
-      s2 16 s() XCHG
-      s1 16 s() XCHG
-      s0 17 s() XCHG
-      $TokenLocked$_constructor_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_commitId_jettonMasterAddress_htlcJettonWalletAddress INLINECALLDICT
-      $TokenLocked$_store_cell INLINECALLDICT
-      $global_emit INLINECALLDICT
     }>ELSE<{
-      12 BLKDROP
-      s4 POP
+      10 BLKDROP
       s4 POP
       s5 POP
       s5 POP
@@ -1852,10 +1783,10 @@ PROGRAM{
       s5 POP
       31687 PUSHINT
       THROWANY
-      s1 s3 XCHG
-      s4 s4 s0 XCHG3
+      ROT
     }>
-    s1 s4 XCHG
+    s0 s3 XCHG
+    s4 s4 XCHG2
   }>
   $SendParameters$_constructor_bounce_to_value_mode_body_code_data PROCINLINE:<{
   }>
@@ -1896,15 +1827,9 @@ PROGRAM{
   }>
   $TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload PROCINLINE:<{
   }>
-  $TokenUncommitted$_constructor_commitId PROCINLINE:<{
-  }>
   $LockCommitment$_constructor_data PROCINLINE:<{
   }>
   $LockCommitmentData$_constructor_commitId_hashlock_timelock PROCINLINE:<{
-  }>
-  $TokenRedeemed$_constructor_lockId_redeemAddress PROCINLINE:<{
-  }>
-  $TokenUnlocked$_constructor_lockId PROCINLINE:<{
   }>
   $DeployOk$_constructor_queryId PROCINLINE:<{
   }>
@@ -2004,15 +1929,12 @@ PROGRAM{
     s1 s2 XCHG
     $SendParameters$_constructor_to_value_bounce_mode_body INLINECALLDICT
     $global_send INLINECALLDICT
-    s4 s2 PUXC
+    s4 s2 XCHG2
     257 PUSHINT
     DICTIDEL
     DROP
-    s0 s4 XCHG
-    $TokenUncommitted$_constructor_commitId INLINECALLDICT
-    $TokenUncommitted$_store_cell INLINECALLDICT
-    $global_emit INLINECALLDICT
-    s0 s1 s4 XCHG3
+    s4 s1 s3 XCHG3
+    s0 s2 XCHG
   }>
   $HashedTimeLockTON$_internal_binary_LockCommitment PROCINLINE:<{
     __tact_context_get INLINECALLDICT
@@ -2116,16 +2038,11 @@ PROGRAM{
     s1 s9 s0 XCHG3
     $SendParameters$_constructor_to_value_bounce_mode_body INLINECALLDICT
     $global_send INLINECALLDICT
-    s5 s(-1) PUXC
+    s1 s5 XCHG
     257 PUSHINT
     DICTIDEL
     DROP
-    __tact_context_get_sender INLINECALLDICT
-    s1 s6 XCHG
-    $TokenRedeemed$_constructor_lockId_redeemAddress INLINECALLDICT
-    $TokenRedeemed$_store_cell INLINECALLDICT
-    $global_emit INLINECALLDICT
-    s1 s3 XCHG
+    s3 s4 XCHG2
   }>
   $HashedTimeLockTON$_internal_binary_Unlock PROCINLINE:<{
     __tact_context_get INLINECALLDICT
@@ -2191,15 +2108,10 @@ PROGRAM{
     s7 s7 s0 XCHG3
     $SendParameters$_constructor_to_value_bounce_mode_body INLINECALLDICT
     $global_send INLINECALLDICT
-    s4 s1 PUXC
+    s4 s4 XCHG2
     257 PUSHINT
     DICTIDEL
     DROP
-    s0 s4 XCHG
-    $TokenUnlocked$_constructor_lockId INLINECALLDICT
-    $TokenUnlocked$_store_cell INLINECALLDICT
-    $global_emit INLINECALLDICT
-    s0 s3 XCHG
     s2 s4 XCHG2
   }>
   $HashedTimeLockTON$_internal_binary_TokenExcesses PROCINLINE:<{

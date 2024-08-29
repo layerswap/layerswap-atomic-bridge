@@ -35,7 +35,7 @@ struct Notification {
     timelock: Int;
 }
 
-message Notify {
+message(0x3beb51c2) Notify {
     data: Notification;
 }
 
@@ -57,9 +57,6 @@ struct PHTLC {
 }
 
 struct CommitData{
-    hopChains: map<Int,StringImpl>;
-    hopAssets: map<Int,StringImpl>;
-    hopAddresses: map<Int,StringImpl>;
     dstChain: String;
     dstAsset: String;
     dstAddress: String;
@@ -68,7 +65,10 @@ struct CommitData{
     timelock: Int; 
     messenger: Address;
     jettonMasterAddress: Address;
-    htlcJettonWalletAddress: Address;  
+    htlcJettonWalletAddress: Address; 
+    hopChains: map<Int,StringImpl>;
+    hopAssets: map<Int,StringImpl>;
+    hopAddresses: map<Int,StringImpl>; 
 }
 
 // Lock object
@@ -104,7 +104,7 @@ struct LockData {
 }
 
 // Messages received by contract
-message LockCommitment{
+message(0x5cdd41d9) LockCommitment{
     data: LockCommitmentData;
 }
 struct LockCommitmentData{
@@ -113,14 +113,14 @@ struct LockCommitmentData{
     timelock: Int;
 }
 
-message Uncommit{
+message(0xa958ac23) Uncommit{
     data: UncommitData;
 }
 struct UncommitData{
     commitId: Int;
 }
 
-message Redeem {
+message(0x758db085) Redeem {
     data: RedeemData;
 }
 struct RedeemData {
@@ -128,14 +128,14 @@ struct RedeemData {
     secret: Int;
 }
 
-message Unlock {
+message(0xad821ef9) Unlock {
     data: UnlockData;
 }
 struct UnlockData {
     hashlock: Int;
 }
 
-message LockCommitmentSig{
+message(0xc1d818ff) LockCommitmentSig{
     data: LockCommitmentSigData;
 }
 
@@ -147,11 +147,8 @@ struct LockCommitmentSigData{
 }
 
 // Emitted message
-message TokenCommitted{
+message(0xbf3d24d1) TokenCommitted{
     commitId: Int;
-    hopChains: map<Int,StringImpl>;
-    hopAssets: map<Int,StringImpl>;
-    hopAddresses: map<Int,StringImpl>;
     dstChain: String;
     dstAddress: String;
     dstAsset: String;
@@ -163,9 +160,12 @@ message TokenCommitted{
     messenger: Address;
     jettonMasterAddress: Address;
     htlcJettonWalletAddress: Address; 
+    hopChains: map<Int,StringImpl>;
+    hopAssets: map<Int,StringImpl>;
+    hopAddresses: map<Int,StringImpl>;
 }
 
-message TokenLocked{
+message(0x0f47e1b8) TokenLocked{
     hashlock: Int;
     dstChain: String;
     dstAddress: String;
@@ -179,19 +179,6 @@ message TokenLocked{
     commitId: Int?;
     jettonMasterAddress: Address;
     htlcJettonWalletAddress: Address; 
-}
-
-message TokenUnlocked{
-    lockId: Int;
-}
-
-message TokenUncommitted{
-    commitId: Int;
-}
-
-message TokenRedeemed{
-    lockId: Int;
-    redeemAddress: Address;
 }
 
 // String implementation as struct
@@ -267,9 +254,6 @@ contract HashedTimeLockTON with Deployable {
                                                 });
             emit(TokenCommitted{
                                 commitId: commitId,
-                                hopChains: msg.hopChains,
-                                hopAssets: msg.hopAssets,
-                                hopAddresses: msg.hopAddresses,
                                 dstChain: msg.dstChain,
                                 dstAddress: msg.dstAddress,
                                 dstAsset: msg.dstAsset,
@@ -280,7 +264,10 @@ contract HashedTimeLockTON with Deployable {
                                 timelock: msg.timelock, 
                                 messenger: msg.messenger,
                                 jettonMasterAddress: msg.jettonMasterAddress,
-                                htlcJettonWalletAddress: msg.htlcJettonWalletAddress
+                                htlcJettonWalletAddress: msg.htlcJettonWalletAddress,
+                                hopChains: msg.hopChains,
+                                hopAssets: msg.hopAssets,
+                                hopAddresses: msg.hopAddresses
                             }.toCell());
     }
 
@@ -314,10 +301,6 @@ contract HashedTimeLockTON with Deployable {
         );
 
         self.commits.del(msg.data.commitId);
-
-        emit(TokenUncommitted{
-                                commitId: msg.data.commitId
-                            }.toCell());
     }
 
     receive(msg: LockCommitment){
@@ -438,11 +421,6 @@ contract HashedTimeLockTON with Deployable {
             }
         ); 
         self.locks.del(msg.data.lockId);
-
-        emit(TokenRedeemed{
-                            lockId: msg.data.lockId,
-                            redeemAddress: sender()
-                        }.toCell());
     }
 
     receive(msg: Unlock){
@@ -475,10 +453,6 @@ contract HashedTimeLockTON with Deployable {
         );
 
         self.locks.del(msg.data.hashlock);
-
-        emit(TokenUnlocked{
-                            lockId: msg.data.hashlock
-                        }.toCell());
     }
 
     receive(msg: TokenExcesses){}
@@ -577,22 +551,6 @@ contract HashedTimeLockTON with Deployable {
                                                    }); 
 
                     self.commits.del(msg.data.commitId);
-
-                    emit(TokenLocked{
-                                    hashlock: msg.data.hashlock,
-                                    dstChain: commitObj.dstChain,
-                                    dstAddress: commitObj.dstAddress,
-                                    dstAsset: commitObj.dstAddress,
-                                    sender: ctx.sender,
-                                    srcReceiver: commitObj.srcReceiver,
-                                    srcAsset: commitObj.srcAsset,
-                                    amount: ctx.value,
-                                    timelock: msg.data.timelock,
-                                    messenger: commitObj.messenger,
-                                    commitId: msg.data.commitId,
-                                    jettonMasterAddress: commitObj.jettonMasterAddress,
-                                    htlcJettonWalletAddress: commitObj.htlcJettonWalletAddress
-                                }.toCell());
         }else{
             require(false,"No Allowance");
         }

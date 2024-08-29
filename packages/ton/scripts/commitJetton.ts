@@ -29,7 +29,7 @@ export async function run() {
 
   const queryId = BigInt(Date.now()); 
   const amount = 5n; 
-  const destination = Address.parse("kQAGAGYM3nX_wACqnjycPtalQLV_a_StzBMfP-ZgZ-YTeAxR"); 
+  const destination = Address.parse("EQCgdFMEG5zFJ5PTeIAOY80-hQE0DuKdHHShsdG03iqYkRJB"); 
   const response_destination = Address.parse("kQAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B9D3"); 
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell(); 
   const forward_ton_amount = toNano("0.1"); 
@@ -62,25 +62,23 @@ const hopChains = createStrMap([
   const jettonMasterAddress = Address.parse("kQCdbtPwe4P8eF_rH-o0vu4Plfqrhmr9MR-pKkzH487BLJOQ");
   const htlcJettonWalletAddress = Address.parse("0:fcf3a7b27feceddbef0672ed56f301dfda5fa3fdd020b9fe3dcb72986cd080b7");
 
-        let b_0 = new Builder();
-        b_0.storeDict(hopChains, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-        b_0.storeDict(hopAssets, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-        let b_1 = new Builder();
-        b_1.storeDict(hopAddresses, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-        b_1.storeStringRefTail(dstChain);
-        b_1.storeStringRefTail(dstAsset);
-        let b_2 = new Builder();
-        b_2.storeStringRefTail(dstAddress);
-        b_2.storeStringRefTail(srcAsset);
-        b_2.storeAddress(srcReceiver);
-        b_2.storeInt(timelock, 257);
-        b_2.storeAddress(messenger);
-        let b_3 = new Builder();
-        b_3.storeAddress(jettonMasterAddress);
-        b_3.storeAddress(htlcJettonWalletAddress);
-        b_2.storeRef(b_3.endCell());
-        b_1.storeRef(b_2.endCell());
-        b_0.storeRef(b_1.endCell());
+  let b_0 = new Builder();
+  b_0.storeStringRefTail(dstChain);
+  b_0.storeStringRefTail(dstAsset);
+  let b_1 = new Builder();
+  b_1.storeStringRefTail(dstAddress);
+  b_1.storeStringRefTail(srcAsset);
+  b_1.storeAddress(srcReceiver);
+  b_1.storeInt(timelock, 257);
+  b_1.storeAddress(messenger);
+  let b_2 = new Builder();
+  b_2.storeAddress(jettonMasterAddress);
+  b_2.storeAddress(htlcJettonWalletAddress);
+  b_2.storeDict(hopChains, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
+  b_2.storeDict(hopAssets, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
+  b_2.storeDict(hopAddresses, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
+  b_1.storeRef(b_2.endCell());
+  b_0.storeRef(b_1.endCell());
   
   const forward_payload = beginCell().storeUint(1, 1).storeRef(beginCell().storeUint(1734998782, 32).storeBuilder(b_0).endCell()).endCell();
 

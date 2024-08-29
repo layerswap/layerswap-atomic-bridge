@@ -46,7 +46,7 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQBCCZc8Rpjv0I0NdCVl4ysfeNyc0FDYLd81aLQ6UHOxzQ0M"); 
+  const contractAddress = Address.parse("kQBni1b2nJyY1OaExMDjHlWnZR4-WD4x4vx6UaLA_3AIaC25"); 
 
   const newContract = HashedTimeLockTON.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);

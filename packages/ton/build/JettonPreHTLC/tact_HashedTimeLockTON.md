@@ -1,9 +1,9 @@
 # TACT Compilation Report
 Contract: HashedTimeLockTON
-BOC Size: 5381 bytes
+BOC Size: 5162 bytes
 
 # Types
-Total Types: 31
+Total Types: 28
 
 ## StateInit
 TLB: `_ code:^cell data:^cell = StateInit`
@@ -54,8 +54,8 @@ TLB: `_ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string se
 Signature: `PHTLC{dstAddress:^string,dstChain:^string,dstAsset:^string,srcAsset:^string,sender:address,srcReceiver:address,timelock:int257,amount:int257,messenger:address,locked:bool,uncommitted:bool,jettonMasterAddress:address,htlcJettonWalletAddress:address}`
 
 ## CommitData
-TLB: `_ hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string srcReceiver:address timelock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address = CommitData`
-Signature: `CommitData{hopChains:dict<int, ^StringImpl{data:^string}>,hopAssets:dict<int, ^StringImpl{data:^string}>,hopAddresses:dict<int, ^StringImpl{data:^string}>,dstChain:^string,dstAsset:^string,dstAddress:^string,srcAsset:^string,srcReceiver:address,timelock:int257,messenger:address,jettonMasterAddress:address,htlcJettonWalletAddress:address}`
+TLB: `_ dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string srcReceiver:address timelock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = CommitData`
+Signature: `CommitData{dstChain:^string,dstAsset:^string,dstAddress:^string,srcAsset:^string,srcReceiver:address,timelock:int257,messenger:address,jettonMasterAddress:address,htlcJettonWalletAddress:address,hopChains:dict<int, ^StringImpl{data:^string}>,hopAssets:dict<int, ^StringImpl{data:^string}>,hopAddresses:dict<int, ^StringImpl{data:^string}>}`
 
 ## HTLC
 TLB: `_ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string sender:address srcReceiver:address hashlock:int257 secret:int257 amount:int257 timelock:int257 redeemed:bool unlocked:bool jettonMasterAddress:address htlcJettonWalletAddress:address = HTLC`
@@ -106,24 +106,12 @@ TLB: `_ commitId:int257 data:^slice signature:^slice publicKey:int257 = LockComm
 Signature: `LockCommitmentSigData{commitId:int257,data:^slice,signature:^slice,publicKey:int257}`
 
 ## TokenCommitted
-TLB: `token_committed#bf3d24d1 commitId:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address = TokenCommitted`
-Signature: `TokenCommitted{commitId:int257,hopChains:dict<int, ^StringImpl{data:^string}>,hopAssets:dict<int, ^StringImpl{data:^string}>,hopAddresses:dict<int, ^StringImpl{data:^string}>,dstChain:^string,dstAddress:^string,dstAsset:^string,sender:address,srcReceiver:address,srcAsset:^string,amount:int257,timelock:int257,messenger:address,jettonMasterAddress:address,htlcJettonWalletAddress:address}`
+TLB: `token_committed#bf3d24d1 commitId:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = TokenCommitted`
+Signature: `TokenCommitted{commitId:int257,dstChain:^string,dstAddress:^string,dstAsset:^string,sender:address,srcReceiver:address,srcAsset:^string,amount:int257,timelock:int257,messenger:address,jettonMasterAddress:address,htlcJettonWalletAddress:address,hopChains:dict<int, ^StringImpl{data:^string}>,hopAssets:dict<int, ^StringImpl{data:^string}>,hopAddresses:dict<int, ^StringImpl{data:^string}>}`
 
 ## TokenLocked
 TLB: `token_locked#0f47e1b8 hashlock:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:Maybe address commitId:Maybe int257 jettonMasterAddress:address htlcJettonWalletAddress:address = TokenLocked`
 Signature: `TokenLocked{hashlock:int257,dstChain:^string,dstAddress:^string,dstAsset:^string,sender:address,srcReceiver:address,srcAsset:^string,amount:int257,timelock:int257,messenger:Maybe address,commitId:Maybe int257,jettonMasterAddress:address,htlcJettonWalletAddress:address}`
-
-## TokenUnlocked
-TLB: `token_unlocked#697b5a61 lockId:int257 = TokenUnlocked`
-Signature: `TokenUnlocked{lockId:int257}`
-
-## TokenUncommitted
-TLB: `token_uncommitted#10f03869 commitId:int257 = TokenUncommitted`
-Signature: `TokenUncommitted{commitId:int257}`
-
-## TokenRedeemed
-TLB: `token_redeemed#bcd6ac8a lockId:int257 redeemAddress:address = TokenRedeemed`
-Signature: `TokenRedeemed{lockId:int257,redeemAddress:address}`
 
 ## StringImpl
 TLB: `_ data:^string = StringImpl`

@@ -135,7 +135,6 @@
         $self'locks~__tact_dict_set_int_cell(257, $lockId, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_hashlock_secret_amount_timelock_redeemed_unlocked($commitObj'dstAddress, $commitObj'dstChain, $commitObj'dstAsset, $commitObj'srcAsset, $commitObj'sender, $commitObj'srcReceiver, $msg'data'hashlock, 0, $commitObj'amount, $msg'data'timelock, false, false)));
         $self'commits~__tact_dict_delete_int(257, $msg'data'commitId);
         $global_send($SendParameters$_constructor_to_bounce_value_mode(__tact_context_get_sender(), false, 0, 64));
-        $global_emit($TokenLocked$_store_cell($TokenLocked$_constructor_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_commitId($msg'data'hashlock, $commitObj'dstChain, $commitObj'dstAddress, $commitObj'dstAsset, $commitObj'sender, $commitObj'srcReceiver, $commitObj'srcAsset, $commitObj'amount, $msg'data'timelock, $commitObj'messenger, $msg'data'commitId)));
     } else {
         throw_unless(31687, false);
     }
@@ -146,9 +145,9 @@
 ;; Receivers of a Contract HashedTimeLockTON
 ;;
 
-(((cell, cell, cell, int, int)), ()) $HashedTimeLockTON$_internal_binary_Commit((cell, cell, cell, int, int) $self, ((cell, cell, cell, slice, slice, slice, slice, slice, int, slice)) $msg) impure inline {
+(((cell, cell, cell, int, int)), ()) $HashedTimeLockTON$_internal_binary_Commit((cell, cell, cell, int, int) $self, ((slice, slice, slice, slice, slice, int, slice, cell, cell, cell)) $msg) impure inline {
     var ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed) = $self;
-    var (($msg'data'hopChains, $msg'data'hopAssets, $msg'data'hopAddresses, $msg'data'dstChain, $msg'data'dstAsset, $msg'data'dstAddress, $msg'data'srcAsset, $msg'data'srcReceiver, $msg'data'timelock, $msg'data'messenger)) = $msg;
+    var (($msg'data'dstChain, $msg'data'dstAsset, $msg'data'dstAddress, $msg'data'srcAsset, $msg'data'srcReceiver, $msg'data'timelock, $msg'data'messenger, $msg'data'hopChains, $msg'data'hopAssets, $msg'data'hopAddresses)) = $msg;
     var ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
     throw_unless(4670, ($ctx'value != 0));
     throw_unless(21683, ($msg'data'timelock > now()));
@@ -156,7 +155,7 @@
     int $commitId = ($self'seed ^ $self'contractNonce);
     throw_unless(22150, (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_commitExists($commitId) == false));
     $self'commits~__tact_dict_set_int_cell(257, $commitId, $PHTLC$_store_cell($PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted($msg'data'dstAddress, $msg'data'dstChain, $msg'data'dstAsset, $msg'data'srcAsset, $ctx'sender, $msg'data'srcReceiver, $msg'data'timelock, $ctx'value, $msg'data'messenger, false, false)));
-    $global_emit($TokenCommitted$_store_cell($TokenCommitted$_constructor_commitId_hopChains_hopAssets_hopAddresses_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger($commitId, $msg'data'hopChains, $msg'data'hopAssets, $msg'data'hopAddresses, $msg'data'dstChain, $msg'data'dstAddress, $msg'data'dstAsset, __tact_context_get_sender(), $msg'data'srcReceiver, $msg'data'srcAsset, $ctx'value, $msg'data'timelock, $msg'data'messenger)));
+    $global_emit($TokenCommitted$_store_cell($TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_hopChains_hopAssets_hopAddresses($commitId, $msg'data'dstChain, $msg'data'dstAddress, $msg'data'dstAsset, __tact_context_get_sender(), $msg'data'srcReceiver, $msg'data'srcAsset, $ctx'value, $msg'data'timelock, $msg'data'messenger, $msg'data'hopChains, $msg'data'hopAssets, $msg'data'hopAddresses)));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
@@ -172,7 +171,6 @@
     $global_send($SendParameters$_constructor_to_bounce_value_mode($commitObj'sender, false, $commitObj'amount, 1));
     $global_send($SendParameters$_constructor_to_bounce_value_mode(__tact_context_get_sender(), false, 0, 64));
     $self'commits~__tact_dict_delete_int(257, $msg'data'commitId);
-    $global_emit($TokenUncommitted$_store_cell($TokenUncommitted$_constructor_commitId($msg'data'commitId)));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
@@ -232,7 +230,6 @@
     $global_send($SendParameters$_constructor_to_bounce_value_mode($recieverAddr, false, $contractValue, 1));
     $global_send($SendParameters$_constructor_to_bounce_value_mode(__tact_context_get_sender(), false, 0, 64));
     $self'locks~__tact_dict_delete_int(257, $msg'data'lockId);
-    $global_emit($TokenRedeemed$_store_cell($TokenRedeemed$_constructor_lockId_redeemAddress($msg'data'lockId, __tact_context_get_sender())));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
@@ -247,7 +244,6 @@
     throw_unless(38239, ($lock'timelock < now()));
     $global_send($SendParameters$_constructor_to_bounce_value_mode($lock'sender, false, $lock'amount, 1));
     $global_send($SendParameters$_constructor_to_bounce_value_mode($ctx'sender, false, 0, 64));
-    $global_emit($TokenUnlocked$_store_cell($TokenUnlocked$_constructor_lockId($msg'data'hashlock)));
     $self'locks~__tact_dict_delete_int(257, $msg'data'hashlock);
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
