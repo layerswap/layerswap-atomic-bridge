@@ -6,23 +6,23 @@
 //            |___/                            |_|
 
 use starknet::ContractAddress;
-#[starknet::interface]
-pub trait IMessenger<TContractState> {
-    fn notify(
-        ref self: TContractState,
-        commitId: u256,
-        hashlock: u256,
-        dstChain: felt252,
-        dstAsset: felt252,
-        dstAddress: felt252,
-        srcAsset: felt252,
-        sender: ContractAddress,
-        srcReceiver: ContractAddress,
-        amount: u256,
-        timelock: u256,
-        tokenContract: ContractAddress,
-    );
-}
+// #[starknet::interface]
+// pub trait IMessenger<TContractState> {
+//     fn notify(
+//         ref self: TContractState,
+//         commitId: u256,
+//         hashlock: u256,
+//         dstChain: felt252,
+//         dstAsset: felt252,
+//         dstAddress: felt252,
+//         srcAsset: felt252,
+//         sender: ContractAddress,
+//         srcReceiver: ContractAddress,
+//         amount: u256,
+//         timelock: u256,
+//         tokenContract: ContractAddress,
+//     );
+// }
 
 #[starknet::interface]
 pub trait IHashedTimelockERC20<TContractState> {
@@ -74,7 +74,7 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn getCommitDetails(self: @TContractState, commitId: u256) -> HashedTimelockERC20::PHTLC;
     fn getLockDetails(self: @TContractState, lockId: u256) -> HashedTimelockERC20::HTLC;
     fn getCommits(self: @TContractState, sender: ContractAddress) -> Span<u256>;
-    fn getLocks(self: @TContractState, sender: ContractAddress) -> Span<u256>;
+    // fn getLocks(self: @TContractState, sender: ContractAddress) -> Span<u256>;
     fn getLockIdByCommitId(self: @TContractState, commitId: u256) -> u256;
 }
 
@@ -102,17 +102,17 @@ mod HashedTimelockERC20 {
     //TODO: Check if this should be IERC20SafeDispatcher
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use alexandria_bytes::{Bytes, BytesTrait};
-    use super::{IMessengerDispatcher, IMessengerDispatcherTrait};
+    // use super::{IMessengerDispatcher, IMessengerDispatcherTrait};
 
     #[storage]
     struct Storage {
         commitCounter: u256,
-        lockCounter: u256,
+        // lockCounter: u256,
         block_number: u256,
         locks: Map::<u256, HTLC>,
         commits: Map::<u256, PHTLC>,
         commitIds: Map::<u256, u256>,
-        lockIds: Map::<u256, u256>,
+        // lockIds: Map::<u256, u256>,
         commitIdToLockId: Map::<u256, u256>,
     }
 
@@ -215,7 +215,7 @@ mod HashedTimelockERC20 {
     #[constructor]
     fn constructor(ref self: ContractState) {
         self.commitCounter.write(0);
-        self.lockCounter.write(0);
+        // self.lockCounter.write(0);
         let block_info = get_block_info().unbox();
         let cur_block = block_info.block_number;
         self.block_number.write(cur_block.try_into().unwrap());
@@ -453,28 +453,28 @@ mod HashedTimelockERC20 {
                         commitId: commitId,
                     }
                 );
-            if !messenger.is_zero() {
-                let messenger: IMessengerDispatcher = IMessengerDispatcher {
-                    contract_address: messenger
-                };
-                messenger
-                    .notify(
-                        commitId,
-                        hashlock,
-                        dstChain,
-                        dstAsset,
-                        dstAddress,
-                        srcAsset,
-                        get_caller_address(),
-                        srcReceiver,
-                        amount,
-                        timelock,
-                        tokenContract,
-                    );
-            }
-            let curId = self.lockCounter.read() + 1;
-            self.lockCounter.write(curId);
-            self.lockIds.write(curId, lockId);
+            // if !messenger.is_zero() {
+            //     let messenger: IMessengerDispatcher = IMessengerDispatcher {
+            //         contract_address: messenger
+            //     };
+            //     messenger
+            //         .notify(
+            //             commitId,
+            //             hashlock,
+            //             dstChain,
+            //             dstAsset,
+            //             dstAddress,
+            //             srcAsset,
+            //             get_caller_address(),
+            //             srcReceiver,
+            //             amount,
+            //             timelock,
+            //             tokenContract,
+            //         );
+            // }
+            // let curId = self.lockCounter.read() + 1;
+            // self.lockCounter.write(curId);
+            // self.lockIds.write(curId, lockId);
 
             self.commitIdToLockId.write(commitId, lockId);
 
@@ -565,12 +565,11 @@ mod HashedTimelockERC20 {
             assert!(!self.hasLockId(lockId), "Lock Id Already Exist");
             assert!(
                 get_caller_address() == phtlc.sender || get_caller_address() == phtlc.messenger,
-                "No Allowance"
+                "Not The Messenger"
             );
 
             self.commits.entry(commitId).lockId.write(hashlock);
             self.commits.entry(commitId).locked.write(true);
-
             self
                 .locks
                 .write(
@@ -608,9 +607,9 @@ mod HashedTimelockERC20 {
                         commitId: commitId,
                     }
                 );
-            let curId = self.lockCounter.read() + 1;
-            self.lockCounter.write(curId);
-            self.lockIds.write(curId, lockId);
+            // let curId = self.lockCounter.read() + 1;
+            // self.lockCounter.write(curId);
+            // self.lockIds.write(curId, lockId);
             lockId
         }
 
@@ -666,18 +665,18 @@ mod HashedTimelockERC20 {
             };
             arr.span()
         }
-        fn getLocks(self: @ContractState, sender: ContractAddress) -> Span<u256> {
-            let mut arr: Array<u256> = Default::default();
-            let mut i: u256 = 1;
-            while i <= self.lockCounter.read() {
-                let lockId = self.lockIds.read(i);
-                if self.locks.entry(lockId).sender.read() == sender {
-                    arr.append(lockId);
-                }
-                i += 1;
-            };
-            arr.span()
-        }
+        // fn getLocks(self: @ContractState, sender: ContractAddress) -> Span<u256> {
+        //     let mut arr: Array<u256> = Default::default();
+        //     let mut i: u256 = 1;
+        //     while i <= self.lockCounter.read() {
+        //         let lockId = self.lockIds.read(i);
+        //         if self.locks.entry(lockId).sender.read() == sender {
+        //             arr.append(lockId);
+        //         }
+        //         i += 1;
+        //     };
+        //     arr.span()
+        // }
         fn getLockIdByCommitId(self: @ContractState, commitId: u256) -> u256 {
             self.commitIdToLockId.read(commitId)
         }
