@@ -7,6 +7,7 @@ import {
     loadRedeem,
     loadUnlock,
     loadUncommit,
+    loadLockCommitmentSig
 } from "../wrappers/HashedTimeLockTON";
 import { Cell, Slice } from '@ton/core';
 import { Address } from 'ton';
@@ -23,7 +24,8 @@ const msgTypes: MsgTypeMap = {
     '12e78cb1': 'Lock',
     '758db085': 'Redeem',
     'ad821ef9': 'Unlock',
-    '946a98b6': 'Deploy'
+    '946a98b6': 'Deploy',
+    'c1d818ff': 'LockCommitmentSig'
 };
 
 const functionMap: { [key: string]: (slice: Slice) => any } = {
@@ -34,6 +36,7 @@ const functionMap: { [key: string]: (slice: Slice) => any } = {
     'Uncommit': loadUncommit,
     'LockCommitment': loadLockCommitment,
     'Commit': loadCommit,
+    'LockCommitmentSig' : loadLockCommitmentSig
 };
 
 async function parseTx(address: string, token: string, index: number): Promise<any> {
@@ -53,7 +56,13 @@ async function parseTx(address: string, token: string, index: number): Promise<a
         const tx = await client.blockchain.getBlockchainAccountTransactions(Address.parse(address).toString());
         const rawBody = tx.transactions[index].in_msg?.raw_body || "";  
         const result = findType(rawBody);
-        if (result && functionMap[result]) {
+        if (result === 'LockCommitmentSig') {
+            let slc = Cell.fromBase64(hexToBase64(rawBody)).beginParse();
+            let dataObj =  functionMap[result](slc);
+            console.log("hashlock: ",dataObj.data.data.loadIntBig(257));
+            console.log("timelock: ",dataObj.data.data.loadIntBig(257));
+            return (dataObj);
+        }else if (result && functionMap[result]) {
             let slc = Cell.fromBase64(hexToBase64(rawBody)).beginParse();
             return functionMap[result](slc);
         } else {
@@ -64,7 +73,7 @@ async function parseTx(address: string, token: string, index: number): Promise<a
     }
 }
 
-const address = 'EQDaRJ4kpwOh9_2uJIe4lH7jlACPwYtDpXFdRxlOOsyDCgOm'; 
+const address = 'kQDE-fn0oaZARLE1x-JZ9HNMOghiQ6QWzPOIUS2p7XJhWhsA'; 
 const token = 'AGVYQVBYQDB6KRAAAAAFWAOS73LJHXPEWONMCFRIRGOBL7WIDI5D5G2GRWOD347TUUFWPUA'; 
 
 parseTx(address, token, 0).then(result => {

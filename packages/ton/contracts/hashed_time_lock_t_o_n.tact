@@ -13,7 +13,7 @@ struct Notification {
     timelock: Int;
 }
 
-message Notify {
+message(0x3beb51c2) Notify {
     data: Notification;
 }
 
@@ -49,13 +49,10 @@ struct HTLC {
 }
 
 // Messages received by contract
-message Commit{
+message(0x1b564d91) Commit{
     data: CommitData;
 }
 struct CommitData{
-    hopChains: map<Int,StringImpl>;
-    hopAssets: map<Int,StringImpl>;
-    hopAddresses: map<Int,StringImpl>;
     dstChain: String;
     dstAsset: String;
     dstAddress: String;
@@ -63,9 +60,12 @@ struct CommitData{
     srcReceiver: Address;
     timelock: Int; 
     messenger: Address;
+    hopChains: map<Int,StringImpl>;
+    hopAssets: map<Int,StringImpl>;
+    hopAddresses: map<Int,StringImpl>;
 }
 
-message LockCommitment{
+message(0x5cdd41d9) LockCommitment{
     data: LockCommitmentData;
 }
 struct LockCommitmentData{
@@ -74,14 +74,14 @@ struct LockCommitmentData{
     timelock: Int;
 }
 
-message Uncommit{
+message(0xa958ac23) Uncommit{
     data: UncommitData;
 }
 struct UncommitData{
     commitId: Int;
 }
 
-message Lock {
+message(0x12e78cb1) Lock {
     data: LockData;
 }
 struct LockData {
@@ -96,7 +96,7 @@ struct LockData {
     messenger: Address?;
 }
 
-message Redeem {
+message(0x758db085) Redeem {
     data: RedeemData;
 }
 struct RedeemData {
@@ -104,16 +104,53 @@ struct RedeemData {
     secret: Int;
 }
 
-message Unlock {
+message(0xad821ef9) Unlock {
     data: UnlockData;
 }
 struct UnlockData {
     hashlock: Int;
 }
 
-// Emitted message
-message CommitId {
+message(0xc1d818ff) LockCommitmentSig{
+    data: LockCommitmentSigData;
+}
+
+struct LockCommitmentSigData{
     commitId: Int;
+    data: Slice; 
+    signature: Slice;
+    publicKey: Int;
+}
+
+// Emitted messages
+message(0x71f9f7aa) TokenCommitted{
+    commitId: Int;
+    dstChain: String;
+    dstAddress: String;
+    dstAsset: String;
+    sender: Address;
+    srcReceiver: Address;
+    srcAsset: String;
+    amount: Int;
+    timelock: Int; 
+    messenger: Address;
+    hopChains: map<Int,StringImpl>;
+    hopAssets: map<Int,StringImpl>;
+    hopAddresses: map<Int,StringImpl>;
+}
+
+message(0x95b0219d) TokenLocked{
+    hashlock: Int;
+    dstChain: String;
+    dstAddress: String;
+    dstAsset: String;
+    sender: Address;
+    srcReceiver: Address;
+    srcAsset: String;
+    amount: Int;
+    timelock: Int;
+    messenger: Address?;
+    commitId: Int?;
 }
 
 // String implementation as struct
@@ -168,7 +205,22 @@ contract HashedTimeLockTON with Deployable {
                                                 locked: false,
                                                 uncommitted: false
                                                 });
-            emit(CommitId {commitId: commitId}.toCell());
+
+            emit(TokenCommitted{
+                                commitId: commitId,
+                                dstChain: msg.data.dstChain,
+                                dstAddress: msg.data.dstAddress,
+                                dstAsset: msg.data.dstAsset,
+                                sender: sender(),
+                                srcReceiver: msg.data.srcReceiver,
+                                srcAsset: msg.data.srcAsset,
+                                amount: ctx.value,
+                                timelock: msg.data.timelock,
+                                messenger: msg.data.messenger,
+                                hopChains: msg.data.hopChains,
+                                hopAssets: msg.data.hopAssets,
+                                hopAddresses: msg.data.hopAddresses
+                                }.toCell());
     }
 
     receive(msg: Uncommit){
@@ -181,50 +233,44 @@ contract HashedTimeLockTON with Deployable {
 
         let ctx: Context = context();
 
+        // sends to user commited amount 
+        // mode:1 to pay fees seperately,
+        // so user can get exactly as much as he committed
+
         send(SendParameters{to: commitObj.sender,
-                            bounce: true,
-                            value: commitObj.amount + ctx.value,
-                            mode: 64}); 
+                            bounce: false,
+                            value: commitObj.amount,
+                            mode: 1}); 
+
+        // sends tx sender the remaining amount after msg processing
+        // value: 0 (only remaining amount)  mode:64 (fees will be payed from remaining amount)
+        send(SendParameters{to: sender(),
+                            bounce: false,
+                            value: 0,
+                            mode: 64});
 
         self.commits.del(msg.data.commitId);
+
     }
 
     receive(msg: LockCommitment){
+        self.lockCommitment(msg,context());
+    }
+
+    receive(msg: LockCommitmentSig){
+        require(self.commitExists(msg.data.commitId),"Commitment does not exist");
+        require(checkSignature(msg.data.data.hash(),msg.data.signature,msg.data.publicKey),"Invalid signature");
+        let hashlock: Int = msg.data.data.loadInt(257);
+        let timelock: Int = msg.data.data.loadInt(257);
+        let lockCommitmentMessage: LockCommitment = LockCommitment{
+                                                                    data: LockCommitmentData{
+                                                                        commitId: msg.data.commitId,
+                                                                        hashlock: hashlock,
+                                                                        timelock: timelock
+                                                                    }
+                                                                };
         let ctx: Context = context();
-        let lockId: Int = msg.data.hashlock;
-        require(self.commitExists(msg.data.commitId) == true,"Commit Does Not Exist");
-        let commitObj: PHTLC = (self.commits.get(msg.data.commitId)!!);
-
-        if(ctx.sender == commitObj.sender || ctx.sender == commitObj.messenger){
-                    require(self.lockExists(lockId) == false ,"Lock Already Exists");
-                    require(commitObj.locked == false,"Already Locked");
-                    require(commitObj.uncommitted == false,"Already Uncommitted");
-    
-                    self.locks.set(lockId,HTLC{       
-                                                    dstAddress: commitObj.dstAddress,
-                                                    dstChain: commitObj.dstChain,
-                                                    dstAsset: commitObj.dstAsset,
-                                                    srcAsset: commitObj.srcAsset,
-                                                    sender: commitObj.sender,
-                                                    srcReceiver: commitObj.srcReceiver,
-                                                    hashlock: msg.data.hashlock,
-                                                    secret: 0x0,
-                                                    amount: commitObj.amount,
-                                                    timelock: msg.data.timelock,
-                                                    redeemed: false,
-                                                    unlocked: false
-                                                   }); 
-
-                    self.commits.del(msg.data.commitId);
-
-                    send(SendParameters{to: ctx.sender,
-                                        bounce: true,
-                                        value: ctx.value,
-                                        mode: 64});
-                                    
-        }else{
-            require(false,"No Allowance");
-        }
+        self.lockCommitment(lockCommitmentMessage,ctx);
     }
 
     receive(msg: Lock){ 
@@ -254,10 +300,12 @@ contract HashedTimeLockTON with Deployable {
         }
 
         if(msg.data.messenger != null && msg.data.commitId != null){
+            // notify messenger
+            // value:0 (as we dont send TON) mode:1 (fees will be payed separetly)
             send(SendParameters{to: msg.data.messenger!!,
                                 bounce: true,
-                                value: 20000000,
-                                mode: 0,
+                                value: 0,
+                                mode: 1,
                                 body: Notify {data: Notification {
                                                                             commitId: msg.data.commitId!!,
                                                                             hashlock: msg.data.hashlock,
@@ -271,7 +319,26 @@ contract HashedTimeLockTON with Deployable {
                                                                             timelock: msg.data.timelock,
                                                                         }}.toCell()});  
         }
- 
+
+        // mode:64 will be sent tx sender remaining amount after msg processing
+        send(SendParameters{to: sender(),
+                            bounce: true,
+                            value: 0,
+                            mode: 64});
+
+        emit(TokenLocked{
+                hashlock: msg.data.hashlock,
+                dstChain: msg.data.dstChain,
+                dstAddress: msg.data.dstAddress,
+                dstAsset: msg.data.dstAsset,
+                sender: sender(),
+                srcReceiver: msg.data.srcReceiver,
+                srcAsset: msg.data.srcAsset,
+                amount: ctx.value,
+                timelock: msg.data.timelock,
+                messenger: msg.data.messenger,
+                commitId: msg.data.commitId
+            }.toCell());
     }
 
     receive(msg: Redeem) {
@@ -288,28 +355,22 @@ contract HashedTimeLockTON with Deployable {
         let contractValue: Int = lockObj.amount;
         let recieverAddr: Address = lockObj.srcReceiver;
 
-        if(recieverAddr == sender()){
-            send(SendParameters{
-                    to: sender(),
-                    bounce: true,
-                    value: contractValue + ctx.value,
-                    mode: 64
-                    }); 
-        }else{
-            send(SendParameters{
+        // receiver will get the exact amount which was locked for him,
+        // as fee will be payed seperately
+        send(SendParameters{
                     to: recieverAddr,
-                    bounce: true,
+                    bounce: false,
                     value: contractValue,
-                    mode: 0
+                    mode: 1
                     }); 
 
-            send(SendParameters{
-                    to: sender(),
-                    bounce: true,
-                    value: ctx.value,
-                    mode: 64
-                    });
-        }  
+        // tx sender will get only remaining amount of ton after msg processing
+        send(SendParameters{
+                to: sender(),
+                bounce: false,
+                value: 0,
+                mode: 64
+                });
 
         self.locks.del(msg.data.lockId);
     }
@@ -321,29 +382,22 @@ contract HashedTimeLockTON with Deployable {
         require(lock.unlocked == false,"Already Unlocked");
         require(lock.redeemed == false,"Already Redeemed");
         require(lock.timelock < now(), "Not Passed Timelock");
-            
-        if(lock.sender == ctx.sender){
-            send(SendParameters{
-                                to: ctx.sender,
-                                bounce: true,
-                                value: lock.amount + ctx.value,
-                                mode: 64
-                            });
-        }else{
-            send(SendParameters{
+
+        // user will get exact amount he locked
+        send(SendParameters{
                     to: lock.sender,
-                    bounce: true,
+                    bounce: false,
                     value: lock.amount,
-                    mode: 0
+                    mode: 1
                 });
-            send(SendParameters{
+
+        // tx sender will get remainig amount after msg processing
+        send(SendParameters{
                     to: ctx.sender,
-                    bounce: true,
-                    value: ctx.value,
+                    bounce: false,
+                    value: 0,
                     mode: 64
                 });
-        }
-
         self.locks.del(msg.data.hashlock);
     }
 
@@ -412,7 +466,39 @@ contract HashedTimeLockTON with Deployable {
         return null;
     }
 
+    fun lockCommitment(msg: LockCommitment,ctx: Context){
+        let lockId: Int = msg.data.hashlock;
+        require(self.commitExists(msg.data.commitId) == true,"Commit Does Not Exist");
+        let commitObj: PHTLC = (self.commits.get(msg.data.commitId)!!);
+
+        if(ctx.sender == commitObj.sender || ctx.sender == commitObj.messenger){
+                    require(self.lockExists(lockId) == false ,"Lock Already Exists");
+                    require(commitObj.locked == false,"Already Locked");
+                    require(commitObj.uncommitted == false,"Already Uncommitted");
+    
+                    self.locks.set(lockId,HTLC{       
+                                                dstAddress: commitObj.dstAddress,
+                                                dstChain: commitObj.dstChain,
+                                                dstAsset: commitObj.dstAsset,
+                                                srcAsset: commitObj.srcAsset,
+                                                sender: commitObj.sender,
+                                                srcReceiver: commitObj.srcReceiver,
+                                                hashlock: msg.data.hashlock,
+                                                secret: 0x0,
+                                                amount: commitObj.amount,
+                                                timelock: msg.data.timelock,
+                                                redeemed: false,
+                                                unlocked: false
+                                                }); 
+
+                    self.commits.del(msg.data.commitId);
+
+         send(SendParameters{to: sender(),
+                            bounce: false,
+                            value: 0,
+                            mode: 64});
+        }else{
+            require(false,"No Allowance");
+        }
+    }
 }
-
-
-

@@ -8,7 +8,7 @@ export async function run() {
   const endpoint = await getHttpEndpoint({ network: "testnet" });
   const client = new TonClient({ endpoint });
 
-  const mnemonic = "thunder ignore ankle edit height leader drip motor leave expect dune online favorite ankle tail spoon detail glory flush inform estate field swear reason"; 
+  const mnemonic = "pretty electric october neck alley tiger action assault garlic divide oppose exist online cluster luxury clump kangaroo number away analyst attitude digital zebra world"; 
   const key = await mnemonicToWalletKey(mnemonic.split(" "));
   const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
   if (!await client.isContractDeployed(wallet.address)) {
@@ -19,11 +19,11 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQBZrfDyC4__ByU_1jL1APW_CtQZDrqk1QxAybM2mTMYFTsp"); 
+  const contractAddress = Address.parse("kQAHLS7cZ4bzUBFInEP4NG_bJsMMcjHbEYjPWYfpeABR_TpU"); 
   const newContract = HashedTimeLockTON.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
-  const hashlock = BigInt("76219910109473444521808997444489938649556655003314251740408195813776056501749"); 
+  const hashlock = BigInt("95834839512827776901986325239264454031944797482888037141762408015567291439797"); 
 
   const unlockData: UnlockData = {
     hashlock: hashlock,

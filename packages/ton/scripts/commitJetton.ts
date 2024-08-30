@@ -29,7 +29,7 @@ export async function run() {
 
   const queryId = BigInt(Date.now()); 
   const amount = 5n; 
-  const destination = Address.parse("EQDUdA1NLqaognvWvgk--471bY09NIc2qf7qYxmpi-CgrCyJ"); 
+  const destination = Address.parse("EQCgdFMEG5zFJ5PTeIAOY80-hQE0DuKdHHShsdG03iqYkRJB"); 
   const response_destination = Address.parse("kQAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B9D3"); 
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell(); 
   const forward_ton_amount = toNano("0.1"); 
@@ -59,24 +59,24 @@ const hopChains = createStrMap([
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 1000); 
   const messenger: Address = Address.parse("EQBIgdusaVOdJbcN9r0O65iCF7KH9aUzS8kK-pDGJKs4ZHc_");
   
-  const jettonMasterAddress = beginCell().storeAddress(Address.parse("kQCdbtPwe4P8eF_rH-o0vu4Plfqrhmr9MR-pKkzH487BLJOQ")).endCell();
-  const htlcJettonWalletAddress = beginCell().storeAddress(Address.parse("0:fcf3a7b27feceddbef0672ed56f301dfda5fa3fdd020b9fe3dcb72986cd080b7")).endCell();;
+  const jettonMasterAddress = Address.parse("kQCdbtPwe4P8eF_rH-o0vu4Plfqrhmr9MR-pKkzH487BLJOQ");
+  const htlcJettonWalletAddress = Address.parse("0:fcf3a7b27feceddbef0672ed56f301dfda5fa3fdd020b9fe3dcb72986cd080b7");
 
   let b_0 = new Builder();
-  b_0.storeDict(hopChains, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-  b_0.storeDict(hopAssets, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
+  b_0.storeStringRefTail(dstChain);
+  b_0.storeStringRefTail(dstAsset);
   let b_1 = new Builder();
-  b_1.storeDict(hopAddresses, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-  b_1.storeStringRefTail(dstChain);
-  b_1.storeStringRefTail(dstAsset);
+  b_1.storeStringRefTail(dstAddress);
+  b_1.storeStringRefTail(srcAsset);
+  b_1.storeAddress(srcReceiver);
+  b_1.storeInt(timelock, 257);
+  b_1.storeAddress(messenger);
   let b_2 = new Builder();
-  b_2.storeStringRefTail(dstAddress);
-  b_2.storeStringRefTail(srcAsset);
-  b_2.storeAddress(srcReceiver);
-  b_2.storeInt(timelock, 257);
-  b_2.storeAddress(messenger);
-  b_2.storeRef(jettonMasterAddress);
-  b_2.storeRef(htlcJettonWalletAddress);
+  b_2.storeAddress(jettonMasterAddress);
+  b_2.storeAddress(htlcJettonWalletAddress);
+  b_2.storeDict(hopChains, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
+  b_2.storeDict(hopAssets, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
+  b_2.storeDict(hopAddresses, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
   b_1.storeRef(b_2.endCell());
   b_0.storeRef(b_1.endCell());
   

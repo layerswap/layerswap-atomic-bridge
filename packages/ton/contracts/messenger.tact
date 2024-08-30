@@ -1,20 +1,21 @@
 import "@stdlib/deploy";
 
-    struct HTLCNotification {
-        htlcID: Int;
-        sender: Address;
-        receiver: Address;
-        amount: Int;
-        timelock: Int;
-        hashlock: Int;
-        dstAddress: String;
-        phtlcID: Int;
-    }
+struct Notification {
+    commitId: Int;
+    hashlock: Int;
+    dstChain: String;
+    dstAsset: String;
+    dstAddress: String;
+    srcAsset: String;
+    sender: Address;
+    srcReceiver: Address;
+    amount: Int;
+    timelock: Int;
+}
 
-    message HTLCNotify {
-        data: HTLCNotification;
-    }
-
+message Notify {
+    data: Notification;
+}
 
 
 contract Messenger with Deployable {
@@ -22,12 +23,10 @@ contract Messenger with Deployable {
         
     }
 
-    receive(msg: HTLCNotify) {
+    receive(msg: Notify) {
 
     }
 
 }
-
-
 
 
