@@ -47,7 +47,7 @@
     int $length = 0;
     var ($key, $value, $fresh$flag_0) = __tact_dict_min_int_cell($self'commits, 257);
     while ($fresh$flag_0) {
-        var ($value'dstAddress, $value'dstChain, $value'dstAsset, $value'srcAsset, $value'sender, $value'srcReceiver, $value'timelock, $value'amount, $value'messenger, $value'locked, $value'uncommitted) = $PHTLC$_not_null($PHTLC$_load_opt($value));
+        var ($value'dstAddress, $value'dstChain, $value'dstAsset, $value'srcAsset, $value'sender, $value'senderPubKey, $value'srcReceiver, $value'timelock, $value'amount, $value'messenger, $value'locked, $value'uncommitted) = $PHTLC$_not_null($PHTLC$_load_opt($value));
         $length = $length + 1;
         ($key, $value, $fresh$flag_0) = __tact_dict_next_int_cell($self'commits, 257, $key);
     }
@@ -83,7 +83,7 @@
     int $i = 0;
     var ($key, $value, $fresh$flag_3) = __tact_dict_min_int_cell($self'commits, 257);
     while ($fresh$flag_3) {
-        var ($value'dstAddress, $value'dstChain, $value'dstAsset, $value'srcAsset, $value'sender, $value'srcReceiver, $value'timelock, $value'amount, $value'messenger, $value'locked, $value'uncommitted) = $PHTLC$_not_null($PHTLC$_load_opt($value));
+        var ($value'dstAddress, $value'dstChain, $value'dstAsset, $value'srcAsset, $value'sender, $value'senderPubKey, $value'srcReceiver, $value'timelock, $value'amount, $value'messenger, $value'locked, $value'uncommitted) = $PHTLC$_not_null($PHTLC$_load_opt($value));
         if (( __tact_slice_eq_bits($senderAddr, $value'sender) )) {
             $result~__tact_dict_set_int_int(257, $i, $key, 257);
             $i = $i + 1;
@@ -127,7 +127,7 @@
     var (($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw)) = $ctx;
     int $lockId = $msg'data'hashlock;
     throw_unless(30789, (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_commitExists($msg'data'commitId) == true));
-    var ($commitObj'dstAddress, $commitObj'dstChain, $commitObj'dstAsset, $commitObj'srcAsset, $commitObj'sender, $commitObj'srcReceiver, $commitObj'timelock, $commitObj'amount, $commitObj'messenger, $commitObj'locked, $commitObj'uncommitted) = $PHTLC$_not_null($PHTLC$_load_opt(__tact_dict_get_int_cell($self'commits, 257, $msg'data'commitId)));
+    var ($commitObj'dstAddress, $commitObj'dstChain, $commitObj'dstAsset, $commitObj'srcAsset, $commitObj'sender, $commitObj'senderPubKey, $commitObj'srcReceiver, $commitObj'timelock, $commitObj'amount, $commitObj'messenger, $commitObj'locked, $commitObj'uncommitted) = $PHTLC$_not_null($PHTLC$_load_opt(__tact_dict_get_int_cell($self'commits, 257, $msg'data'commitId)));
     if (( (( __tact_slice_eq_bits($commitObj'sender, $ctx'sender) )) ? (true) : (( __tact_slice_eq_bits($commitObj'messenger, $ctx'sender) )) )) {
         throw_unless(6007, (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_lockExists($lockId) == false));
         throw_unless(46722, ($commitObj'locked == false));
@@ -145,17 +145,17 @@
 ;; Receivers of a Contract HashedTimeLockTON
 ;;
 
-(((cell, cell, cell, int, int)), ()) $HashedTimeLockTON$_internal_binary_Commit((cell, cell, cell, int, int) $self, ((slice, slice, slice, slice, slice, int, slice, cell, cell, cell)) $msg) impure inline {
+(((cell, cell, cell, int, int)), ()) $HashedTimeLockTON$_internal_binary_Commit((cell, cell, cell, int, int) $self, ((slice, slice, slice, slice, slice, int, slice, int, cell, cell, cell)) $msg) impure inline {
     var ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed) = $self;
-    var (($msg'data'dstChain, $msg'data'dstAsset, $msg'data'dstAddress, $msg'data'srcAsset, $msg'data'srcReceiver, $msg'data'timelock, $msg'data'messenger, $msg'data'hopChains, $msg'data'hopAssets, $msg'data'hopAddresses)) = $msg;
+    var (($msg'data'dstChain, $msg'data'dstAsset, $msg'data'dstAddress, $msg'data'srcAsset, $msg'data'srcReceiver, $msg'data'timelock, $msg'data'messenger, $msg'data'senderPubKey, $msg'data'hopChains, $msg'data'hopAssets, $msg'data'hopAddresses)) = $msg;
     var ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
     throw_unless(4670, ($ctx'value != 0));
     throw_unless(21683, ($msg'data'timelock > now()));
     $self'contractNonce = $self'contractNonce + 1;
     int $commitId = ($self'seed ^ $self'contractNonce);
     throw_unless(22150, (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_commitExists($commitId) == false));
-    $self'commits~__tact_dict_set_int_cell(257, $commitId, $PHTLC$_store_cell($PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted($msg'data'dstAddress, $msg'data'dstChain, $msg'data'dstAsset, $msg'data'srcAsset, $ctx'sender, $msg'data'srcReceiver, $msg'data'timelock, $ctx'value, $msg'data'messenger, false, false)));
-    $global_emit($TokenCommitted$_store_cell($TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_hopChains_hopAssets_hopAddresses($commitId, $msg'data'dstChain, $msg'data'dstAddress, $msg'data'dstAsset, __tact_context_get_sender(), $msg'data'srcReceiver, $msg'data'srcAsset, $ctx'value, $msg'data'timelock, $msg'data'messenger, $msg'data'hopChains, $msg'data'hopAssets, $msg'data'hopAddresses)));
+    $self'commits~__tact_dict_set_int_cell(257, $commitId, $PHTLC$_store_cell($PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_timelock_amount_messenger_locked_uncommitted($msg'data'dstAddress, $msg'data'dstChain, $msg'data'dstAsset, $msg'data'srcAsset, $ctx'sender, $msg'data'senderPubKey, $msg'data'srcReceiver, $msg'data'timelock, $ctx'value, $msg'data'messenger, false, false)));
+    $global_emit($TokenCommitted$_store_cell($TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_senderPubKey_srcReceiver_srcAsset_amount_timelock_messenger_hopChains_hopAssets_hopAddresses($commitId, $msg'data'dstChain, $msg'data'dstAddress, $msg'data'dstAsset, __tact_context_get_sender(), $msg'data'senderPubKey, $msg'data'srcReceiver, $msg'data'srcAsset, $ctx'value, $msg'data'timelock, $msg'data'messenger, $msg'data'hopChains, $msg'data'hopAssets, $msg'data'hopAddresses)));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
@@ -163,7 +163,7 @@
     var ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed) = $self;
     var (($msg'data'commitId)) = $msg;
     throw_unless(30789, (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_commitExists($msg'data'commitId) == true));
-    var ($commitObj'dstAddress, $commitObj'dstChain, $commitObj'dstAsset, $commitObj'srcAsset, $commitObj'sender, $commitObj'srcReceiver, $commitObj'timelock, $commitObj'amount, $commitObj'messenger, $commitObj'locked, $commitObj'uncommitted) = $PHTLC$_not_null($PHTLC$_load_opt(__tact_dict_get_int_cell($self'commits, 257, $msg'data'commitId)));
+    var ($commitObj'dstAddress, $commitObj'dstChain, $commitObj'dstAsset, $commitObj'srcAsset, $commitObj'sender, $commitObj'senderPubKey, $commitObj'srcReceiver, $commitObj'timelock, $commitObj'amount, $commitObj'messenger, $commitObj'locked, $commitObj'uncommitted) = $PHTLC$_not_null($PHTLC$_load_opt(__tact_dict_get_int_cell($self'commits, 257, $msg'data'commitId)));
     throw_unless(42324, ($commitObj'uncommitted == false));
     throw_unless(46722, ($commitObj'locked == false));
     throw_unless(38239, ($commitObj'timelock <= now()));
@@ -181,11 +181,12 @@
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
 }
 
-(((cell, cell, cell, int, int)), ()) $HashedTimeLockTON$_internal_binary_LockCommitmentSig((cell, cell, cell, int, int) $self, ((int, slice, slice, int)) $msg) impure inline {
+(((cell, cell, cell, int, int)), ()) $HashedTimeLockTON$_internal_binary_LockCommitmentSig((cell, cell, cell, int, int) $self, ((int, slice, slice)) $msg) impure inline {
     var ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed) = $self;
-    var (($msg'data'commitId, $msg'data'data, $msg'data'signature, $msg'data'publicKey)) = $msg;
+    var (($msg'data'commitId, $msg'data'data, $msg'data'signature)) = $msg;
     throw_unless(20173, ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_commitExists($msg'data'commitId));
-    throw_unless(48401, check_signature(slice_hash($msg'data'data), $msg'data'signature, $msg'data'publicKey));
+    var ($commitObj'dstAddress, $commitObj'dstChain, $commitObj'dstAsset, $commitObj'srcAsset, $commitObj'sender, $commitObj'senderPubKey, $commitObj'srcReceiver, $commitObj'timelock, $commitObj'amount, $commitObj'messenger, $commitObj'locked, $commitObj'uncommitted) = $PHTLC$_not_null($PHTLC$_load_opt(__tact_dict_get_int_cell($self'commits, 257, $msg'data'commitId)));
+    throw_unless(48401, check_signature(slice_hash($msg'data'data), $msg'data'signature, $commitObj'senderPubKey));
     int $hashlock = $msg'data'data~load_int(257);
     int $timelock = $msg'data'data~load_int(257);
     var (($lockCommitmentMessage'data'commitId, $lockCommitmentMessage'data'hashlock, $lockCommitmentMessage'data'timelock)) = $LockCommitment$_constructor_data($LockCommitmentData$_constructor_commitId_hashlock_timelock($msg'data'commitId, $hashlock, $timelock));
@@ -227,7 +228,7 @@
     throw_unless(46887, ($lockObj'redeemed == false));
     int $contractValue = $lockObj'amount;
     slice $recieverAddr = $lockObj'srcReceiver;
-    $global_send($SendParameters$_constructor_to_bounce_value_mode($recieverAddr, false, $contractValue, 1));
+    $global_send($SendParameters$_constructor_to_bounce_value_mode($recieverAddr, false, $contractValue, 64));
     $global_send($SendParameters$_constructor_to_bounce_value_mode(__tact_context_get_sender(), false, 0, 64));
     $self'locks~__tact_dict_delete_int(257, $msg'data'lockId);
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());

@@ -79,16 +79,16 @@ builder $Notify$_store(builder build_0, ((int, int, slice, slice, slice, slice, 
 cell $Notify$_store_cell(((int, int, slice, slice, slice, slice, slice, slice, int, int)) v) inline;
 
 ;; $PHTLC$_store
-builder $PHTLC$_store(builder build_0, (slice, slice, slice, slice, slice, slice, int, int, slice, int, int) v) inline_ref;
+builder $PHTLC$_store(builder build_0, (slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int) v) inline_ref;
 
 ;; $PHTLC$_store_cell
-cell $PHTLC$_store_cell((slice, slice, slice, slice, slice, slice, int, int, slice, int, int) v) inline;
+cell $PHTLC$_store_cell((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int) v) inline;
 
 ;; $PHTLC$_load
-(slice, ((slice, slice, slice, slice, slice, slice, int, int, slice, int, int))) $PHTLC$_load(slice sc_0) inline_ref;
+(slice, ((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int))) $PHTLC$_load(slice sc_0) inline_ref;
 
 ;; $PHTLC$_as_optional
-tuple $PHTLC$_as_optional((slice, slice, slice, slice, slice, slice, int, int, slice, int, int) v) inline;
+tuple $PHTLC$_as_optional((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int) v) inline;
 
 ;; $PHTLC$_load_opt
 tuple $PHTLC$_load_opt(cell cl) inline;
@@ -109,10 +109,10 @@ tuple $HTLC$_as_optional((slice, slice, slice, slice, slice, slice, int, int, in
 tuple $HTLC$_load_opt(cell cl) inline;
 
 ;; $CommitData$_load
-(slice, ((slice, slice, slice, slice, slice, int, slice, cell, cell, cell))) $CommitData$_load(slice sc_0) inline_ref;
+(slice, ((slice, slice, slice, slice, slice, int, slice, int, cell, cell, cell))) $CommitData$_load(slice sc_0) inline_ref;
 
 ;; $Commit$_load
-(slice, (((slice, slice, slice, slice, slice, int, slice, cell, cell, cell)))) $Commit$_load(slice sc_0) inline;
+(slice, (((slice, slice, slice, slice, slice, int, slice, int, cell, cell, cell)))) $Commit$_load(slice sc_0) inline;
 
 ;; $LockCommitmentData$_load
 (slice, ((int, int, int))) $LockCommitmentData$_load(slice sc_0) inline;
@@ -145,16 +145,16 @@ tuple $HTLC$_load_opt(cell cl) inline;
 (slice, (((int)))) $Unlock$_load(slice sc_0) inline;
 
 ;; $LockCommitmentSigData$_load
-(slice, ((int, slice, slice, int))) $LockCommitmentSigData$_load(slice sc_0) inline;
+(slice, ((int, slice, slice))) $LockCommitmentSigData$_load(slice sc_0) inline;
 
 ;; $LockCommitmentSig$_load
-(slice, (((int, slice, slice, int)))) $LockCommitmentSig$_load(slice sc_0) inline;
+(slice, (((int, slice, slice)))) $LockCommitmentSig$_load(slice sc_0) inline;
 
 ;; $TokenCommitted$_store
-builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, cell, cell, cell) v) inline_ref;
+builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell) v) inline_ref;
 
 ;; $TokenCommitted$_store_cell
-cell $TokenCommitted$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, cell, cell, cell) v) inline;
+cell $TokenCommitted$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell) v) inline;
 
 ;; $TokenLocked$_store
 builder $TokenLocked$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, int) v) inline_ref;
@@ -172,10 +172,10 @@ builder $HashedTimeLockTON$_store(builder build_0, (cell, cell, cell, int, int) 
 ((cell, cell)) $StateInit$_not_null(tuple v) inline;
 
 ;; $PHTLC$_not_null
-((slice, slice, slice, slice, slice, slice, int, int, slice, int, int)) $PHTLC$_not_null(tuple v) inline;
+((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int)) $PHTLC$_not_null(tuple v) inline;
 
 ;; $PHTLC$_to_tuple
-tuple $PHTLC$_to_tuple(((slice, slice, slice, slice, slice, slice, int, int, slice, int, int)) v) inline;
+tuple $PHTLC$_to_tuple(((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int)) v) inline;
 
 ;; $PHTLC$_to_opt_tuple
 tuple $PHTLC$_to_opt_tuple(tuple v) inline;
@@ -264,11 +264,11 @@ slice $Builder$_fun_asSlice(builder $self) impure inline;
 ;; $HashedTimeLockTON$_fun_notify
 ((cell, cell, cell, int, int), ()) $HashedTimeLockTON$_fun_notify((cell, cell, cell, int, int) $self, cell $body) impure inline;
 
-;; $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted
-((slice, slice, slice, slice, slice, slice, int, int, slice, int, int)) $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, slice $srcReceiver, int $timelock, int $amount, slice $messenger, int $locked, int $uncommitted) inline;
+;; $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_timelock_amount_messenger_locked_uncommitted
+((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int)) $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_timelock_amount_messenger_locked_uncommitted(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, int $senderPubKey, slice $srcReceiver, int $timelock, int $amount, slice $messenger, int $locked, int $uncommitted) inline;
 
-;; $TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_hopChains_hopAssets_hopAddresses
-((int, slice, slice, slice, slice, slice, slice, int, int, slice, cell, cell, cell)) $TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_hopChains_hopAssets_hopAddresses(int $commitId, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, cell $hopChains, cell $hopAssets, cell $hopAddresses) inline;
+;; $TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_senderPubKey_srcReceiver_srcAsset_amount_timelock_messenger_hopChains_hopAssets_hopAddresses
+((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell)) $TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_senderPubKey_srcReceiver_srcAsset_amount_timelock_messenger_hopChains_hopAssets_hopAddresses(int $commitId, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, int $senderPubKey, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, cell $hopChains, cell $hopAssets, cell $hopAddresses) inline;
 
 ;; $LockCommitment$_constructor_data
 (((int, int, int))) $LockCommitment$_constructor_data((int, int, int) $data) inline;

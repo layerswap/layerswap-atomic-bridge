@@ -19,12 +19,12 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQDj4UDbdWSJm4jVZOkr_hOFMkeUG8BahxApftBKOG4mhPjP"); 
+  const contractAddress = Address.parse("kQBM6ThZis6a5Zxd5ddfxVWbCGJfUCmnZZVxQJ4Th9h1jy03"); 
   const newContract = HashedTimeLockTON.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
-  const lockId = BigInt("58176249714542312020208442982137995642944563469145106924669911026287930636180");
-  const secret = BigInt("87562466615021115273923358655790804049477827703244008055029249926713965109410"); 
+  const lockId = BigInt("66281763433596058795635477366290197584828204308153459951051320666201413942154");
+  const secret = BigInt("53471859568453023350508915562483685963002972655043732148592290075919844900864"); 
 
   const redeemData: RedeemData = {
     lockId: lockId,

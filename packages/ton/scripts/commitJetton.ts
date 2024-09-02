@@ -29,38 +29,32 @@ export async function run() {
 
   const queryId = BigInt(Date.now()); 
   const amount = 5n; 
-  const destination = Address.parse("EQCgdFMEG5zFJ5PTeIAOY80-hQE0DuKdHHShsdG03iqYkRJB"); 
-  const response_destination = Address.parse("kQAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B9D3"); 
+  const destination = Address.parse("EQBzzuWERO02K1DZpjJ8vUhbMD-OK1pPm9y99EhIuPpjyFZC"); 
+  const response_destination = Address.parse("0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y"); 
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell(); 
   const forward_ton_amount = toNano("0.1"); 
 const hopChains = createStrMap([
-    [0n, { $$type: 'StringImpl', data: "chain 1" }],
-    [1n, { $$type: 'StringImpl', data: "chain 2" }],
-    [2n, { $$type: 'StringImpl', data: "chain 3" }]
+    [0n, { $$type: 'StringImpl', data: "STARKNET SEPOLIA" }]
   ]);
   
   const hopAssets = createStrMap([
-    [0n, { $$type: 'StringImpl', data: "asset 1" }],
-    [1n, { $$type: 'StringImpl', data: "asset 2" }],
-    [2n, { $$type: 'StringImpl', data: "asset 3" }]
+    [0n, { $$type: 'StringImpl', data: "STARKNET ETHEREUM" }]
   ]);
   
   const hopAddresses = createStrMap([
-    [0n, { $$type: 'StringImpl', data: "address 1" }],
-    [1n, { $$type: 'StringImpl', data: "address 2" }],
-    [2n, { $$type: 'StringImpl', data: "address 3" }]
+    [0n, { $$type: 'StringImpl', data: "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f" }]
   ]);
   
   const dstChain: string = "STARKNET SEPOLIA";
-  const dstAsset: string = "STARKNET SEPOLIA";
+  const dstAsset: string = "STARKNET ETHEREUM";
   const dstAddress: string = "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f";
   const srcAsset: string = "Jetton V8";
   const srcReceiver: Address = Address.parse("UQCA5WdfZ_il-bFktDYao5h4zf7sw_64KZRx1Yc2eJrRC4vm");
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 1000); 
   const messenger: Address = Address.parse("EQBIgdusaVOdJbcN9r0O65iCF7KH9aUzS8kK-pDGJKs4ZHc_");
-  
+  const senderPubKey = BigInt("93313405977870926073550938810831536324369550307664963791822499149910443974887");
   const jettonMasterAddress = Address.parse("kQCdbtPwe4P8eF_rH-o0vu4Plfqrhmr9MR-pKkzH487BLJOQ");
-  const htlcJettonWalletAddress = Address.parse("0:fcf3a7b27feceddbef0672ed56f301dfda5fa3fdd020b9fe3dcb72986cd080b7");
+  const htlcJettonWalletAddress = Address.parse("0:07f14205c4cb64f8fe37a91fa44956ee19f75e6bab5a82dc562b073543e93433");
 
   let b_0 = new Builder();
   b_0.storeStringRefTail(dstChain);
@@ -74,6 +68,7 @@ const hopChains = createStrMap([
   let b_2 = new Builder();
   b_2.storeAddress(jettonMasterAddress);
   b_2.storeAddress(htlcJettonWalletAddress);
+  b_2.storeInt(senderPubKey, 257);
   b_2.storeDict(hopChains, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
   b_2.storeDict(hopAssets, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
   b_2.storeDict(hopAddresses, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());

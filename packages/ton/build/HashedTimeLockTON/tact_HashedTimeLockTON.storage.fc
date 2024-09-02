@@ -110,20 +110,21 @@ cell $Notify$_store_cell(((int, int, slice, slice, slice, slice, slice, slice, i
 
 ;;
 ;; Type: PHTLC
-;; TLB: _ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string sender:address srcReceiver:address timelock:int257 amount:int257 messenger:address locked:bool uncommitted:bool = PHTLC
+;; TLB: _ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string sender:address senderPubKey:int257 srcReceiver:address timelock:int257 amount:int257 messenger:address locked:bool uncommitted:bool = PHTLC
 ;;
 
-builder $PHTLC$_store(builder build_0, (slice, slice, slice, slice, slice, slice, int, int, slice, int, int) v) inline_ref {
-    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted) = v;
+builder $PHTLC$_store(builder build_0, (slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int) v) inline_ref {
+    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted) = v;
     build_0 = build_0.store_ref(begin_cell().store_slice(v'dstAddress).end_cell());
     build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
     var build_1 = begin_cell();
     build_1 = build_1.store_ref(begin_cell().store_slice(v'dstAsset).end_cell());
     build_1 = build_1.store_ref(begin_cell().store_slice(v'srcAsset).end_cell());
     build_1 = __tact_store_address(build_1, v'sender);
+    build_1 = build_1.store_int(v'senderPubKey, 257);
     build_1 = __tact_store_address(build_1, v'srcReceiver);
-    build_1 = build_1.store_int(v'timelock, 257);
     var build_2 = begin_cell();
+    build_2 = build_2.store_int(v'timelock, 257);
     build_2 = build_2.store_int(v'amount, 257);
     build_2 = __tact_store_address(build_2, v'messenger);
     build_2 = build_2.store_int(v'locked, 1);
@@ -133,30 +134,31 @@ builder $PHTLC$_store(builder build_0, (slice, slice, slice, slice, slice, slice
     return build_0;
 }
 
-cell $PHTLC$_store_cell((slice, slice, slice, slice, slice, slice, int, int, slice, int, int) v) inline {
+cell $PHTLC$_store_cell((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int) v) inline {
     return $PHTLC$_store(begin_cell(), v).end_cell();
 }
 
-(slice, ((slice, slice, slice, slice, slice, slice, int, int, slice, int, int))) $PHTLC$_load(slice sc_0) inline_ref {
+(slice, ((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int))) $PHTLC$_load(slice sc_0) inline_ref {
     var v'dstAddress = sc_0~load_ref().begin_parse();
     var v'dstChain = sc_0~load_ref().begin_parse();
     slice sc_1 = sc_0~load_ref().begin_parse();
     var v'dstAsset = sc_1~load_ref().begin_parse();
     var v'srcAsset = sc_1~load_ref().begin_parse();
     var v'sender = sc_1~__tact_load_address();
+    var v'senderPubKey = sc_1~load_int(257);
     var v'srcReceiver = sc_1~__tact_load_address();
-    var v'timelock = sc_1~load_int(257);
     slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'timelock = sc_2~load_int(257);
     var v'amount = sc_2~load_int(257);
     var v'messenger = sc_2~__tact_load_address();
     var v'locked = sc_2~load_int(1);
     var v'uncommitted = sc_2~load_int(1);
-    return (sc_0, (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted));
+    return (sc_0, (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted));
 }
 
-tuple $PHTLC$_as_optional((slice, slice, slice, slice, slice, slice, int, int, slice, int, int) v) inline {
-    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted) = v;
-    return __tact_tuple_create_11(v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted);
+tuple $PHTLC$_as_optional((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int) v) inline {
+    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted) = v;
+    return __tact_tuple_create_12(v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted);
 }
 
 tuple $PHTLC$_load_opt(cell cl) inline {
@@ -167,15 +169,15 @@ tuple $PHTLC$_load_opt(cell cl) inline {
     return $PHTLC$_as_optional(sc~$PHTLC$_load());
 }
 
-((slice, slice, slice, slice, slice, slice, int, int, slice, int, int)) $PHTLC$_not_null(tuple v) inline {
+((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int)) $PHTLC$_not_null(tuple v) inline {
     throw_if(128, null?(v));
-    var (slice vvv'dstAddress, slice vvv'dstChain, slice vvv'dstAsset, slice vvv'srcAsset, slice vvv'sender, slice vvv'srcReceiver, int vvv'timelock, int vvv'amount, slice vvv'messenger, int vvv'locked, int vvv'uncommitted) = __tact_tuple_destroy_11(v);
-    return (vvv'dstAddress, vvv'dstChain, vvv'dstAsset, vvv'srcAsset, vvv'sender, vvv'srcReceiver, vvv'timelock, vvv'amount, vvv'messenger, vvv'locked, vvv'uncommitted);
+    var (slice vvv'dstAddress, slice vvv'dstChain, slice vvv'dstAsset, slice vvv'srcAsset, slice vvv'sender, int vvv'senderPubKey, slice vvv'srcReceiver, int vvv'timelock, int vvv'amount, slice vvv'messenger, int vvv'locked, int vvv'uncommitted) = __tact_tuple_destroy_12(v);
+    return (vvv'dstAddress, vvv'dstChain, vvv'dstAsset, vvv'srcAsset, vvv'sender, vvv'senderPubKey, vvv'srcReceiver, vvv'timelock, vvv'amount, vvv'messenger, vvv'locked, vvv'uncommitted);
 }
 
-tuple $PHTLC$_to_tuple(((slice, slice, slice, slice, slice, slice, int, int, slice, int, int)) v) inline {
-    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted) = v;
-    return __tact_tuple_create_11(v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted);
+tuple $PHTLC$_to_tuple(((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int)) v) inline {
+    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted) = v;
+    return __tact_tuple_create_12(v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'timelock, v'amount, v'messenger, v'locked, v'uncommitted);
 }
 
 tuple $PHTLC$_to_opt_tuple(tuple v) inline {
@@ -192,8 +194,8 @@ tuple $PHTLC$_to_opt_external(tuple v) inline {
     }
 }
 
-((slice, slice, slice, slice, slice, slice, int, int, slice, int, int)) $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_srcReceiver_timelock_amount_messenger_locked_uncommitted(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, slice $srcReceiver, int $timelock, int $amount, slice $messenger, int $locked, int $uncommitted) inline {
-    return ($dstAddress, $dstChain, $dstAsset, $srcAsset, $sender, $srcReceiver, $timelock, $amount, $messenger, $locked, $uncommitted);
+((slice, slice, slice, slice, slice, int, slice, int, int, slice, int, int)) $PHTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_timelock_amount_messenger_locked_uncommitted(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, int $senderPubKey, slice $srcReceiver, int $timelock, int $amount, slice $messenger, int $locked, int $uncommitted) inline {
+    return ($dstAddress, $dstChain, $dstAsset, $srcAsset, $sender, $senderPubKey, $srcReceiver, $timelock, $amount, $messenger, $locked, $uncommitted);
 }
 
 ;;
@@ -288,10 +290,10 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
 
 ;;
 ;; Type: CommitData
-;; TLB: _ dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string srcReceiver:address timelock:int257 messenger:address hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = CommitData
+;; TLB: _ dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string srcReceiver:address timelock:int257 messenger:address senderPubKey:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = CommitData
 ;;
 
-(slice, ((slice, slice, slice, slice, slice, int, slice, cell, cell, cell))) $CommitData$_load(slice sc_0) inline_ref {
+(slice, ((slice, slice, slice, slice, slice, int, slice, int, cell, cell, cell))) $CommitData$_load(slice sc_0) inline_ref {
     var v'dstChain = sc_0~load_ref().begin_parse();
     var v'dstAsset = sc_0~load_ref().begin_parse();
     slice sc_1 = sc_0~load_ref().begin_parse();
@@ -300,20 +302,21 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
     var v'srcReceiver = sc_1~__tact_load_address();
     var v'timelock = sc_1~load_int(257);
     var v'messenger = sc_1~__tact_load_address();
-    var v'hopChains = sc_1~load_dict();
     slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'senderPubKey = sc_2~load_int(257);
+    var v'hopChains = sc_2~load_dict();
     var v'hopAssets = sc_2~load_dict();
     var v'hopAddresses = sc_2~load_dict();
-    return (sc_0, (v'dstChain, v'dstAsset, v'dstAddress, v'srcAsset, v'srcReceiver, v'timelock, v'messenger, v'hopChains, v'hopAssets, v'hopAddresses));
+    return (sc_0, (v'dstChain, v'dstAsset, v'dstAddress, v'srcAsset, v'srcReceiver, v'timelock, v'messenger, v'senderPubKey, v'hopChains, v'hopAssets, v'hopAddresses));
 }
 
 ;;
 ;; Type: Commit
 ;; Header: 0x1b564d91
-;; TLB: commit#1b564d91 data:CommitData{dstChain:^string,dstAsset:^string,dstAddress:^string,srcAsset:^string,srcReceiver:address,timelock:int257,messenger:address,hopChains:dict<int, ^StringImpl{data:^string}>,hopAssets:dict<int, ^StringImpl{data:^string}>,hopAddresses:dict<int, ^StringImpl{data:^string}>} = Commit
+;; TLB: commit#1b564d91 data:CommitData{dstChain:^string,dstAsset:^string,dstAddress:^string,srcAsset:^string,srcReceiver:address,timelock:int257,messenger:address,senderPubKey:int257,hopChains:dict<int, ^StringImpl{data:^string}>,hopAssets:dict<int, ^StringImpl{data:^string}>,hopAddresses:dict<int, ^StringImpl{data:^string}>} = Commit
 ;;
 
-(slice, (((slice, slice, slice, slice, slice, int, slice, cell, cell, cell)))) $Commit$_load(slice sc_0) inline {
+(slice, (((slice, slice, slice, slice, slice, int, slice, int, cell, cell, cell)))) $Commit$_load(slice sc_0) inline {
     throw_unless(129, sc_0~load_uint(32) == 458640785);
     var v'data = sc_0~$CommitData$_load();
     return (sc_0, (v'data));
@@ -451,24 +454,23 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
 
 ;;
 ;; Type: LockCommitmentSigData
-;; TLB: _ commitId:int257 data:^slice signature:^slice publicKey:int257 = LockCommitmentSigData
+;; TLB: _ commitId:int257 data:^slice signature:^slice = LockCommitmentSigData
 ;;
 
-(slice, ((int, slice, slice, int))) $LockCommitmentSigData$_load(slice sc_0) inline {
+(slice, ((int, slice, slice))) $LockCommitmentSigData$_load(slice sc_0) inline {
     var v'commitId = sc_0~load_int(257);
     var v'data = sc_0~load_ref().begin_parse();
     var v'signature = sc_0~load_ref().begin_parse();
-    var v'publicKey = sc_0~load_int(257);
-    return (sc_0, (v'commitId, v'data, v'signature, v'publicKey));
+    return (sc_0, (v'commitId, v'data, v'signature));
 }
 
 ;;
 ;; Type: LockCommitmentSig
 ;; Header: 0xc1d818ff
-;; TLB: lock_commitment_sig#c1d818ff data:LockCommitmentSigData{commitId:int257,data:^slice,signature:^slice,publicKey:int257} = LockCommitmentSig
+;; TLB: lock_commitment_sig#c1d818ff data:LockCommitmentSigData{commitId:int257,data:^slice,signature:^slice} = LockCommitmentSig
 ;;
 
-(slice, (((int, slice, slice, int)))) $LockCommitmentSig$_load(slice sc_0) inline {
+(slice, (((int, slice, slice)))) $LockCommitmentSig$_load(slice sc_0) inline {
     throw_unless(129, sc_0~load_uint(32) == 3252164863);
     var v'data = sc_0~$LockCommitmentSigData$_load();
     return (sc_0, (v'data));
@@ -477,11 +479,11 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
 ;;
 ;; Type: TokenCommitted
 ;; Header: 0x71f9f7aa
-;; TLB: token_committed#71f9f7aa commitId:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = TokenCommitted
+;; TLB: token_committed#71f9f7aa commitId:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address senderPubKey:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = TokenCommitted
 ;;
 
-builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, cell, cell, cell) v) inline_ref {
-    var (v'commitId, v'dstChain, v'dstAddress, v'dstAsset, v'sender, v'srcReceiver, v'srcAsset, v'amount, v'timelock, v'messenger, v'hopChains, v'hopAssets, v'hopAddresses) = v;
+builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell) v) inline_ref {
+    var (v'commitId, v'dstChain, v'dstAddress, v'dstAsset, v'sender, v'srcReceiver, v'srcAsset, v'amount, v'timelock, v'messenger, v'senderPubKey, v'hopChains, v'hopAssets, v'hopAddresses) = v;
     build_0 = store_uint(build_0, 1912207274, 32);
     build_0 = build_0.store_int(v'commitId, 257);
     build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
@@ -495,6 +497,7 @@ builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice
     var build_2 = begin_cell();
     build_2 = build_2.store_int(v'timelock, 257);
     build_2 = __tact_store_address(build_2, v'messenger);
+    build_2 = build_2.store_int(v'senderPubKey, 257);
     build_2 = build_2.store_dict(v'hopChains);
     build_2 = build_2.store_dict(v'hopAssets);
     build_2 = build_2.store_dict(v'hopAddresses);
@@ -503,12 +506,12 @@ builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice
     return build_0;
 }
 
-cell $TokenCommitted$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, cell, cell, cell) v) inline {
+cell $TokenCommitted$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell) v) inline {
     return $TokenCommitted$_store(begin_cell(), v).end_cell();
 }
 
-((int, slice, slice, slice, slice, slice, slice, int, int, slice, cell, cell, cell)) $TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_hopChains_hopAssets_hopAddresses(int $commitId, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, cell $hopChains, cell $hopAssets, cell $hopAddresses) inline {
-    return ($commitId, $dstChain, $dstAddress, $dstAsset, $sender, $srcReceiver, $srcAsset, $amount, $timelock, $messenger, $hopChains, $hopAssets, $hopAddresses);
+((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell)) $TokenCommitted$_constructor_commitId_dstChain_dstAddress_dstAsset_sender_senderPubKey_srcReceiver_srcAsset_amount_timelock_messenger_hopChains_hopAssets_hopAddresses(int $commitId, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, int $senderPubKey, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, cell $hopChains, cell $hopAssets, cell $hopAddresses) inline {
+    return ($commitId, $dstChain, $dstAddress, $dstAsset, $sender, $srcReceiver, $srcAsset, $amount, $timelock, $messenger, $senderPubKey, $hopChains, $hopAssets, $hopAddresses);
 }
 
 ;;

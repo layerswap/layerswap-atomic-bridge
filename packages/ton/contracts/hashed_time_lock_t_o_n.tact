@@ -24,6 +24,7 @@ struct PHTLC {
     dstAsset: String;
     srcAsset: String;
     sender: Address;
+    senderPubKey: Int;
     srcReceiver: Address;
     timelock: Int; 
     amount: Int;
@@ -60,6 +61,7 @@ struct CommitData{
     srcReceiver: Address;
     timelock: Int; 
     messenger: Address;
+    senderPubKey: Int;
     hopChains: map<Int,StringImpl>;
     hopAssets: map<Int,StringImpl>;
     hopAddresses: map<Int,StringImpl>;
@@ -119,7 +121,6 @@ struct LockCommitmentSigData{
     commitId: Int;
     data: Slice; 
     signature: Slice;
-    publicKey: Int;
 }
 
 // Emitted messages
@@ -134,6 +135,7 @@ message(0x71f9f7aa) TokenCommitted{
     amount: Int;
     timelock: Int; 
     messenger: Address;
+    senderPubKey: Int;
     hopChains: map<Int,StringImpl>;
     hopAssets: map<Int,StringImpl>;
     hopAddresses: map<Int,StringImpl>;
@@ -198,6 +200,7 @@ contract HashedTimeLockTON with Deployable {
                                                 dstAsset: msg.data.dstAsset,
                                                 srcAsset: msg.data.srcAsset,
                                                 sender: ctx.sender,
+                                                senderPubKey: msg.data.senderPubKey,
                                                 srcReceiver: msg.data.srcReceiver,
                                                 timelock: msg.data.timelock, 
                                                 amount: ctx.value,
@@ -212,6 +215,7 @@ contract HashedTimeLockTON with Deployable {
                                 dstAddress: msg.data.dstAddress,
                                 dstAsset: msg.data.dstAsset,
                                 sender: sender(),
+                                senderPubKey: msg.data.senderPubKey,
                                 srcReceiver: msg.data.srcReceiver,
                                 srcAsset: msg.data.srcAsset,
                                 amount: ctx.value,
@@ -259,7 +263,8 @@ contract HashedTimeLockTON with Deployable {
 
     receive(msg: LockCommitmentSig){
         require(self.commitExists(msg.data.commitId),"Commitment does not exist");
-        require(checkSignature(msg.data.data.hash(),msg.data.signature,msg.data.publicKey),"Invalid signature");
+        let commitObj: PHTLC = (self.commits.get(msg.data.commitId)!!);
+        require(checkSignature(msg.data.data.hash(),msg.data.signature,commitObj.senderPubKey),"Invalid signature");
         let hashlock: Int = msg.data.data.loadInt(257);
         let timelock: Int = msg.data.data.loadInt(257);
         let lockCommitmentMessage: LockCommitment = LockCommitment{
@@ -355,13 +360,11 @@ contract HashedTimeLockTON with Deployable {
         let contractValue: Int = lockObj.amount;
         let recieverAddr: Address = lockObj.srcReceiver;
 
-        // receiver will get the exact amount which was locked for him,
-        // as fee will be payed seperately
         send(SendParameters{
                     to: recieverAddr,
                     bounce: false,
                     value: contractValue,
-                    mode: 1
+                    mode: 64
                     }); 
 
         // tx sender will get only remaining amount of ton after msg processing
