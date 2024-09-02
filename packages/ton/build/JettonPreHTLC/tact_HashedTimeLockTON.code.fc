@@ -58,7 +58,7 @@
         $self'commitIdToLockId~__tact_dict_set_int_int(257, $id, $msg'hashlock, 257);
     }
     if (( ((~ null?($msg'messenger))) ? ((~ null?($msg'commitId))) : (false) )) {
-        $global_send($SendParameters$_constructor_to_bounce_value_mode_body(__tact_not_null($msg'messenger), true, 0, 1, $Notify$_store_cell($Notify$_constructor_data($Notification$_constructor_commitId_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock(__tact_not_null($msg'commitId), $msg'hashlock, $msg'dstChain, $msg'dstAsset, $msg'dstAddress, $msg'srcAsset, $sender, $msg'srcReceiver, $value, $msg'timelock)))));
+        $global_send($SendParameters$_constructor_to_bounce_value_mode_body(__tact_not_null($msg'messenger), true, 20000000, 0, $Notify$_store_cell($Notify$_constructor_data($Notification$_constructor_commitId_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock(__tact_not_null($msg'commitId), $msg'hashlock, $msg'dstChain, $msg'dstAsset, $msg'dstAddress, $msg'srcAsset, $sender, $msg'srcReceiver, $value, $msg'timelock)))));
     }
     $global_emit($TokenLocked$_store_cell($TokenLocked$_constructor_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_commitId_jettonMasterAddress_htlcJettonWalletAddress($msg'hashlock, $msg'dstChain, $msg'dstAddress, $msg'dstAddress, $sender, $msg'srcReceiver, $msg'srcAsset, $value, $msg'timelock, __tact_not_null($msg'messenger), __tact_not_null($msg'commitId), $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress)));
     return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());

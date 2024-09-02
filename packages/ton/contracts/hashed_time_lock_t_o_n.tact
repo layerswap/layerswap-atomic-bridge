@@ -244,7 +244,7 @@ contract HashedTimeLockTON with Deployable {
         send(SendParameters{to: commitObj.sender,
                             bounce: false,
                             value: commitObj.amount,
-                            mode: 1}); 
+                            mode: 0}); 
 
         // sends tx sender the remaining amount after msg processing
         // value: 0 (only remaining amount)  mode:64 (fees will be payed from remaining amount)
@@ -309,8 +309,8 @@ contract HashedTimeLockTON with Deployable {
             // value:0 (as we dont send TON) mode:1 (fees will be payed separetly)
             send(SendParameters{to: msg.data.messenger!!,
                                 bounce: true,
-                                value: 0,
-                                mode: 1,
+                                value: 20000000,
+                                mode: 0,
                                 body: Notify {data: Notification {
                                                                             commitId: msg.data.commitId!!,
                                                                             hashlock: msg.data.hashlock,
@@ -364,7 +364,7 @@ contract HashedTimeLockTON with Deployable {
                     to: recieverAddr,
                     bounce: false,
                     value: contractValue,
-                    mode: 64
+                    mode: 0
                     }); 
 
         // tx sender will get only remaining amount of ton after msg processing
@@ -391,7 +391,7 @@ contract HashedTimeLockTON with Deployable {
                     to: lock.sender,
                     bounce: false,
                     value: lock.amount,
-                    mode: 1
+                    mode: 0
                 });
 
         // tx sender will get remainig amount after msg processing
