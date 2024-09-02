@@ -156,8 +156,7 @@ contract LayerswapV8 {
   mapping(bytes32 => bytes32) commitIdToLockId;
   bytes32[] lockIds;
   bytes32[] commitIds;
-  bytes32 blockHash = blockhash(block.number - 1);
-  uint256 blockHashAsUint = uint256(blockHash);
+  uint256 blockHashAsUint = uint256(blockhash(block.number - 1));
   uint256 contractNonce = 0;
 
   function commit(
@@ -236,31 +235,30 @@ contract LayerswapV8 {
     uint256 timelock
   ) external _committed(commitId) returns (bytes32 lockId) {
     lockId = hashlock;
-    if (commits[commitId].uncommitted == true) {
+    PHTLC storage phtlc = commits[commitId];
+    if (phtlc.uncommitted == true) {
       revert AlreadyUncommitted();
     }
-    if (commits[commitId].locked == true) {
+    if (phtlc.locked == true) {
       revert AlreadyLocked();
     }
     if (hasHTLC(lockId)) {
       revert LockAlreadyExists();
     }
-    if (
-      msg.sender == commits[commitId].sender || msg.sender == commits[commitId].messenger || msg.sender == address(this)
-    ) {
-      commits[commitId].locked = true;
-      commits[commitId].lockId = hashlock;
+    if (msg.sender == phtlc.sender || msg.sender == phtlc.messenger || msg.sender == address(this)) {
+      phtlc.locked = true;
+      phtlc.lockId = hashlock;
 
       locks[lockId] = HTLC(
-        commits[commitId].dstAddress,
-        commits[commitId].dstChain,
-        commits[commitId].dstAsset,
-        commits[commitId].srcAsset,
-        payable(commits[commitId].sender),
-        commits[commitId].srcReceiver,
+        phtlc.dstAddress,
+        phtlc.dstChain,
+        phtlc.dstAsset,
+        phtlc.srcAsset,
+        payable(phtlc.sender),
+        phtlc.srcReceiver,
         hashlock,
         0x0,
-        commits[commitId].amount,
+        phtlc.amount,
         timelock,
         false,
         false
@@ -268,15 +266,15 @@ contract LayerswapV8 {
       lockIds.push(hashlock);
       emit TokenLocked(
         hashlock,
-        commits[commitId].dstChain,
-        commits[commitId].dstAddress,
-        commits[commitId].dstAsset,
-        commits[commitId].sender,
-        commits[commitId].srcReceiver,
-        commits[commitId].srcAsset,
-        commits[commitId].amount,
+        phtlc.dstChain,
+        phtlc.dstAddress,
+        phtlc.dstAsset,
+        phtlc.sender,
+        phtlc.srcReceiver,
+        phtlc.srcAsset,
+        phtlc.amount,
         timelock,
-        commits[commitId].messenger,
+        phtlc.messenger,
         commitId
       );
     } else {
