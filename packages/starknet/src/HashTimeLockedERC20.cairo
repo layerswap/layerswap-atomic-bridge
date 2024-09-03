@@ -486,26 +486,7 @@ mod HashedTimelockERC20 {
             assert!(htlc.hashlock == hash, "Does Not Match the Hashlock");
             assert!(!htlc.redeemed, "Funds Are Alredy Redeemed");
             assert!(!htlc.unlocked, "Funds Are Alredy Unlocked");
-            // self
-            //     .contracts
-            //     .write(
-            //         Id,
-            //         HTLC {
-            //             dstAddress: htlc.dstAddress,
-            //             dstChain: htlc.dstChain,
-            //             dstAsset: htlc.dstAsset,
-            //             srcAsset: htlc.srcAsset,
-            //             sender: htlc.sender,
-            //             srcReceiver: htlc.srcReceiver,
-            //             hashlock: htlc.hashlock,
-            //             secret: secret,
-            //             amount: htlc.amount,
-            //             timelock: htlc.timelock,
-            //             tokenContract: htlc.tokenContract,
-            //             redeemed: true,
-            //             unlocked: htlc.unlocked
-            //         }
-            //     );
+
             self.contracts.entry(Id).secret.write(secret);
             self.contracts.entry(Id).redeemed.write(true);
             IERC20Dispatcher { contract_address: htlc.tokenContract }
@@ -527,26 +508,6 @@ mod HashedTimelockERC20 {
             assert!(!htlc.unlocked, "Funds Are Already Unlocked");
             assert!(htlc.timelock <= get_block_timestamp().into(), "Not Passed Timelock");
 
-            // self
-            //     .contracts
-            //     .write(
-            //         Id,
-            //         HTLC {
-            //             dstAddress: htlc.dstAddress,
-            //             dstChain: htlc.dstChain,
-            //             dstAsset: htlc.dstAsset,
-            //             srcAsset: htlc.srcAsset,
-            //             sender: htlc.sender,
-            //             srcReceiver: htlc.srcReceiver,
-            //             hashlock: htlc.hashlock,
-            //             secret: htlc.secret,
-            //             amount: htlc.amount,
-            //             timelock: htlc.timelock,
-            //             tokenContract: htlc.tokenContract,
-            //             redeemed: htlc.redeemed,
-            //             unlocked: true
-            //         }
-            //     );
             self.contracts.entry(Id).unlocked.write(true);
             IERC20Dispatcher { contract_address: htlc.tokenContract }
                 .transfer(htlc.sender, htlc.amount);
@@ -584,31 +545,10 @@ mod HashedTimelockERC20 {
                         timelock: timelock,
                     }
                 );
-            // let curId = self.lockCounter.read() + 1;
-            // self.lockCounter.write(curId);
-            // self.lockIds.write(curId, Id);
             Id
         }
 
         fn getDetails(self: @ContractState, Id: u256) -> HTLC {
-            // if !self.hasHTLC(Id) {
-            //     return HTLC {
-            //         dstAddress: "0",
-            //         dstChain: 0,
-            //         dstAsset: 0,
-            //         srcAsset: 0,
-            //         sender: Zero::zero(),
-            //         srcReceiver: Zero::zero(),
-            //         hashlock: 0,
-            //         secret: 0,
-            //         amount: 0,
-            //         timelock: 0,
-            //         messenger: Zero::zero(),
-            //         tokenContract: Zero::zero(),
-            //         redeemed: false,
-            //         unlocked: false
-            //     };
-            // }
             self.contracts.read(Id)
         }
         fn getCommits(self: @ContractState, sender: ContractAddress) -> Span<u256> {
