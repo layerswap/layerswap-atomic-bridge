@@ -1518,8 +1518,8 @@ PROGRAM{
       16 s() PUSH
       __tact_not_null INLINECALLDICT
       TRUE
+      20000000 PUSHINT
       0 PUSHINT
-      1 PUSHINT
       21 s() PUSH
       __tact_not_null INLINECALLDICT
       s15 s11 s1 PU2XC

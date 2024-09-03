@@ -1648,7 +1648,7 @@ PROGRAM{
     THROWANYIFNOT
     FALSE
     SWAP
-    1 PUSHINT
+    0 PUSHINT
     $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
     $global_send INLINECALLDICT
     __tact_context_get_sender INLINECALLDICT
@@ -1776,8 +1776,8 @@ PROGRAM{
       s12 PUSH
       __tact_not_null INLINECALLDICT
       TRUE
+      20000000 PUSHINT
       0 PUSHINT
-      1 PUSHINT
       17 s() PUSH
       __tact_not_null INLINECALLDICT
       __tact_context_get_sender INLINECALLDICT
@@ -1855,7 +1855,7 @@ PROGRAM{
     FALSE
     ROT
     s0 s8 XCHG
-    64 PUSHINT
+    0 PUSHINT
     $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
     $global_send INLINECALLDICT
     __tact_context_get_sender INLINECALLDICT
@@ -1913,7 +1913,7 @@ PROGRAM{
     s1 s5 XCHG
     FALSE
     s0 s7 XCHG2
-    1 PUSHINT
+    0 PUSHINT
     $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
     $global_send INLINECALLDICT
     FALSE

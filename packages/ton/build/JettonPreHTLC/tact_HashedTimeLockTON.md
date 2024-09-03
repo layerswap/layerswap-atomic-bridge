@@ -1,6 +1,6 @@
 # TACT Compilation Report
 Contract: HashedTimeLockTON
-BOC Size: 5236 bytes
+BOC Size: 5240 bytes
 
 # Types
 Total Types: 28

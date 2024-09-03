@@ -29,27 +29,27 @@ export async function run() {
 
   const queryId = BigInt(Date.now()); 
   const amount = 5n; 
-  const destination = Address.parse("EQBzzuWERO02K1DZpjJ8vUhbMD-OK1pPm9y99EhIuPpjyFZC"); 
+  const destination = Address.parse("kQB38RP_LNV_9z1s4I3Qy_cp44cvZq9tIOzTp7-CgHvIICe-"); 
   const response_destination = Address.parse("0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y"); 
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell(); 
   const forward_ton_amount = toNano("0.1"); 
 const hopChains = createStrMap([
-    [0n, { $$type: 'StringImpl', data: "STARKNET SEPOLIA" }]
+    [0n, { $$type: 'StringImpl', data: "STARKNET_SEPOLIA" }]
   ]);
   
   const hopAssets = createStrMap([
-    [0n, { $$type: 'StringImpl', data: "STARKNET ETHEREUM" }]
+    [0n, { $$type: 'StringImpl', data: "ETH" }]
   ]);
   
   const hopAddresses = createStrMap([
     [0n, { $$type: 'StringImpl', data: "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f" }]
   ]);
   
-  const dstChain: string = "STARKNET SEPOLIA";
-  const dstAsset: string = "STARKNET ETHEREUM";
+  const dstChain: string = "STARKNET_SEPOLIA";
+  const dstAsset: string = "ETH";
   const dstAddress: string = "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f";
   const srcAsset: string = "Jetton V8";
-  const srcReceiver: Address = Address.parse("UQCA5WdfZ_il-bFktDYao5h4zf7sw_64KZRx1Yc2eJrRC4vm");
+  const srcReceiver: Address = Address.parse("0QCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw64m1");
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 1000); 
   const messenger: Address = Address.parse("EQBIgdusaVOdJbcN9r0O65iCF7KH9aUzS8kK-pDGJKs4ZHc_");
   const senderPubKey = BigInt("93313405977870926073550938810831536324369550307664963791822499149910443974887");

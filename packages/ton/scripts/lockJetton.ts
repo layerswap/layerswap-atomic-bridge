@@ -29,18 +29,18 @@ export async function run() {
 
   const queryId = BigInt(Date.now()); 
   const amount = 19n;
-  const destination = Address.parse("EQDgEgN3StWZXGtSsosc1x9Fedj1eyoGNglISGFSyv7Vb609");
+  const destination = Address.parse("kQB38RP_LNV_9z1s4I3Qy_cp44cvZq9tIOzTp7-CgHvIICe-");
   const response_destination = Address.parse("0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y");
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell(); 
   const forward_ton_amount = toNano("0.1"); 
   
   const hashlock = BigInt("295302520933523434524523953486162027915865536417638551712283177493");
   const commitId = BigInt(100n); 
-  const dstChain: string = "ETH SEPOLIA";
-  const dstAsset: string = "STARKNET SEPOLIA ETH";
+  const dstChain: string = "STARKNET_SEPOLIA";
+  const dstAsset: string = "ETH";
   const dstAddress: string = "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f";
   const asset: string = "Jetton V8";
-  const receiver: Address = Address.parse("UQCA5WdfZ_il-bFktDYao5h4zf7sw_64KZRx1Yc2eJrRC4vm");
+  const receiver: Address = Address.parse("0QCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw64m1");
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600); 
   const messenger: Address = Address.parse("EQB6ZTgwl_FX_fqvrAPTl4MspD_mSMdW4TZ0j7wEfSxqEty9");
   

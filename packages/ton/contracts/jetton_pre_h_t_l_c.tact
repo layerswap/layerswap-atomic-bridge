@@ -359,8 +359,8 @@ contract HashedTimeLockTON with Deployable {
         if(msg.messenger != null && msg.commitId != null){
             send(SendParameters{to: msg.messenger!!,
                                 bounce: true,
-                                value: 0,
-                                mode: 1,
+                                value: 20000000,
+                                mode: 0,
                                 body: Notify {data: Notification {
                                                                             commitId: msg.commitId!!,
                                                                             hashlock: msg.hashlock,
