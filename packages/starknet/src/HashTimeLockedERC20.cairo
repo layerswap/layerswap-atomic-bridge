@@ -10,7 +10,7 @@ use starknet::ContractAddress;
 // pub trait IMessenger<TContractState> {
 //     fn notify(
 //         ref self: TContractState,
-//         commitId: u256,
+//         srcId: u256,
 //         hashlock: u256,
 //         dstChain: felt252,
 //         dstAsset: felt252,
@@ -63,7 +63,7 @@ pub trait IHashedTimelockERC20<TContractState> {
         dstChain: felt252,
         dstAddress: ByteArray,
         dstAsset: felt252,
-        commitId: u256,
+        srcId: u256,
         messenger: ContractAddress,
         tokenContract: ContractAddress,
     ) -> u256;
@@ -71,8 +71,8 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn unlock(ref self: TContractState, Id: u256) -> bool;
     fn lockCommit(ref self: TContractState, Id: u256, hashlock: u256, timelock: u256) -> u256;
     fn getDetails(self: @TContractState, Id: u256) -> HashedTimelockERC20::HTLC;
-    fn getContracts(self: @TContractState, sender: ContractAddress) -> Span<u256>;
-    fn getLockIdByCommitId(self: @TContractState, commitId: u256) -> u256;
+    fn getCommits(self: @TContractState, sender: ContractAddress) -> Span<u256>;
+    fn getIdBySrcId(self: @TContractState, srcId: u256) -> u256;
 }
 
 /// @title Pre Hashed Timelock Contracts (PHTLCs) on Starknet ERC20 tokens.
@@ -107,7 +107,7 @@ mod HashedTimelockERC20 {
         block_number: u256,
         contracts: Map::<u256, HTLC>,
         commitIds: Map::<u256, u256>,
-        commitIdToLockId: Map::<u256, u256>,
+        srcIdToId: Map::<u256, u256>,
     }
 
     //TODO: check if this should be public or Not?
@@ -134,6 +134,7 @@ mod HashedTimelockERC20 {
     enum Event {
         TokenCommitted: TokenCommitted,
         TokenLocked: TokenLocked,
+        TokenLockCommitted: TokenLockCommitted,
         TokenRedeemed: TokenRedeemed,
         TokenUnlocked: TokenUnlocked,
     }
@@ -172,7 +173,16 @@ mod HashedTimelockERC20 {
         timelock: u256,
         messenger: ContractAddress,
         tokenContract: ContractAddress,
-        commitId: u256,
+        srcId: u256,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct TokenLockCommitted {
+        #[key]
+        Id: u256,
+        #[key]
+        messenger: ContractAddress,
+        hashlock: u256,
+        timelock: u256,
     }
     #[derive(Drop, starknet::Event)]
     struct TokenRedeemed {
@@ -374,7 +384,7 @@ mod HashedTimelockERC20 {
             dstChain: felt252,
             dstAddress: ByteArray,
             dstAsset: felt252,
-            commitId: u256,
+            srcId: u256,
             messenger: ContractAddress,
             tokenContract: ContractAddress,
         ) -> u256 {
@@ -427,7 +437,7 @@ mod HashedTimelockERC20 {
                         timelock: timelock,
                         messenger: messenger,
                         tokenContract: tokenContract,
-                        commitId: commitId,
+                        srcId: srcId,
                     }
                 );
             // if !messenger.is_zero() {
@@ -436,7 +446,7 @@ mod HashedTimelockERC20 {
             //     };
             //     messenger
             //         .notify(
-            //             commitId,
+            //             srcId,
             //             hashlock,
             //             dstChain,
             //             dstAsset,
@@ -452,8 +462,9 @@ mod HashedTimelockERC20 {
             // let curId = self.lockCounter.read() + 1;
             // self.lockCounter.write(curId);
             // self.lockIds.write(curId, Id);
-
-            self.commitIdToLockId.write(commitId, Id);
+            if self.srcIdToId.entry(srcId).read() == 0 {
+                self.srcIdToId.write(srcId, Id);
+            }
 
             Id
         }
@@ -475,7 +486,26 @@ mod HashedTimelockERC20 {
             assert!(htlc.hashlock == hash, "Does Not Match the Hashlock");
             assert!(!htlc.redeemed, "Funds Are Alredy Redeemed");
             assert!(!htlc.unlocked, "Funds Are Alredy Unlocked");
-
+            // self
+            //     .contracts
+            //     .write(
+            //         Id,
+            //         HTLC {
+            //             dstAddress: htlc.dstAddress,
+            //             dstChain: htlc.dstChain,
+            //             dstAsset: htlc.dstAsset,
+            //             srcAsset: htlc.srcAsset,
+            //             sender: htlc.sender,
+            //             srcReceiver: htlc.srcReceiver,
+            //             hashlock: htlc.hashlock,
+            //             secret: secret,
+            //             amount: htlc.amount,
+            //             timelock: htlc.timelock,
+            //             tokenContract: htlc.tokenContract,
+            //             redeemed: true,
+            //             unlocked: htlc.unlocked
+            //         }
+            //     );
             self.contracts.entry(Id).secret.write(secret);
             self.contracts.entry(Id).redeemed.write(true);
             IERC20Dispatcher { contract_address: htlc.tokenContract }
@@ -497,6 +527,26 @@ mod HashedTimelockERC20 {
             assert!(!htlc.unlocked, "Funds Are Already Unlocked");
             assert!(htlc.timelock <= get_block_timestamp().into(), "Not Passed Timelock");
 
+            // self
+            //     .contracts
+            //     .write(
+            //         Id,
+            //         HTLC {
+            //             dstAddress: htlc.dstAddress,
+            //             dstChain: htlc.dstChain,
+            //             dstAsset: htlc.dstAsset,
+            //             srcAsset: htlc.srcAsset,
+            //             sender: htlc.sender,
+            //             srcReceiver: htlc.srcReceiver,
+            //             hashlock: htlc.hashlock,
+            //             secret: htlc.secret,
+            //             amount: htlc.amount,
+            //             timelock: htlc.timelock,
+            //             tokenContract: htlc.tokenContract,
+            //             redeemed: htlc.redeemed,
+            //             unlocked: true
+            //         }
+            //     );
             self.contracts.entry(Id).unlocked.write(true);
             IERC20Dispatcher { contract_address: htlc.tokenContract }
                 .transfer(htlc.sender, htlc.amount);
@@ -527,48 +577,41 @@ mod HashedTimelockERC20 {
             self.contracts.entry(Id).timelock.write(timelock);
             self
                 .emit(
-                    TokenLocked {
+                    TokenLockCommitted {
                         Id: Id,
+                        messenger: get_caller_address(),
                         hashlock: hashlock,
-                        dstAddress: htlc.dstAddress,
-                        dstChain: htlc.dstChain,
-                        dstAsset: htlc.dstAsset,
-                        sender: htlc.sender,
-                        srcReceiver: htlc.srcReceiver,
-                        srcAsset: htlc.srcAsset,
-                        amount: htlc.amount,
                         timelock: timelock,
-                        messenger: htlc.messenger,
-                        tokenContract: htlc.tokenContract,
-                        //TODO: check this event
-                        commitId: 0,
                     }
                 );
+            // let curId = self.lockCounter.read() + 1;
+            // self.lockCounter.write(curId);
+            // self.lockIds.write(curId, Id);
             Id
         }
 
         fn getDetails(self: @ContractState, Id: u256) -> HTLC {
-            if !self.hasHTLC(Id) {
-                return HTLC {
-                    dstAddress: "0",
-                    dstChain: 0,
-                    dstAsset: 0,
-                    srcAsset: 0,
-                    sender: Zero::zero(),
-                    srcReceiver: Zero::zero(),
-                    hashlock: 0,
-                    secret: 0,
-                    amount: 0,
-                    timelock: 0,
-                    messenger: Zero::zero(),
-                    tokenContract: Zero::zero(),
-                    redeemed: false,
-                    unlocked: false
-                };
-            }
+            // if !self.hasHTLC(Id) {
+            //     return HTLC {
+            //         dstAddress: "0",
+            //         dstChain: 0,
+            //         dstAsset: 0,
+            //         srcAsset: 0,
+            //         sender: Zero::zero(),
+            //         srcReceiver: Zero::zero(),
+            //         hashlock: 0,
+            //         secret: 0,
+            //         amount: 0,
+            //         timelock: 0,
+            //         messenger: Zero::zero(),
+            //         tokenContract: Zero::zero(),
+            //         redeemed: false,
+            //         unlocked: false
+            //     };
+            // }
             self.contracts.read(Id)
         }
-        fn getContracts(self: @ContractState, sender: ContractAddress) -> Span<u256> {
+        fn getCommits(self: @ContractState, sender: ContractAddress) -> Span<u256> {
             let mut arr: Array<u256> = Default::default();
             let mut i: u256 = 1;
             while i <= self.commitCounter.read() {
@@ -580,13 +623,13 @@ mod HashedTimelockERC20 {
             };
             arr.span()
         }
-        fn getLockIdByCommitId(self: @ContractState, commitId: u256) -> u256 {
-            self.commitIdToLockId.read(commitId)
+        fn getIdBySrcId(self: @ContractState, srcId: u256) -> u256 {
+            self.srcIdToId.read(srcId)
         }
     }
 
     #[generate_trait]
-    //TODO: Check if this functions be inline?
+    //TODO: Check if this function should be inline?
     impl InternalFunctions of InternalFunctionsTrait {
         /// @dev Check if there is a HTLC with the given Id.
         /// @param Id into HTLC mapping.
