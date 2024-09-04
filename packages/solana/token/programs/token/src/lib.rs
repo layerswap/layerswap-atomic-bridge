@@ -14,7 +14,7 @@ use anchor_spl::{
 };
 use sha2::{Digest, Sha256};
 use std::mem::size_of;
-declare_id!("9GKpxBRPqXo8zQPp9QZYbQjqcnNHn6sRjb6tEsPhxTnh");
+declare_id!("AaRbHQHZ8pRwK1giVB2gC3Ka5uXhdRwh8a8g7DXXPoAU");
 
 const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 
@@ -191,37 +191,22 @@ pub mod anchor_htlc {
 
         emit!(TokenCommitted {
             commitId: commitId,
-            hopChains: hopChains.clone(),
-            hopAssets: hopAssets.clone(),
-            hopAddress: hopAddress.clone(),
-            dst_chain: dst_chain.clone(),
-            dst_address: dst_address.clone(),
-            dst_asset: dst_asset.clone(),
+            hopChains: hopChains,
+            hopAssets: hopAssets,
+            hopAddress: hopAddress,
+            dst_chain: dst_chain,
+            dst_address: dst_address,
+            dst_asset: dst_asset,
             sender: *ctx.accounts.sender.to_account_info().key,
             srcReceiver: srcReceiver,
-            src_asset: src_asset.clone(),
+            src_asset: src_asset,
             amount: amount,
             timelock: timelock,
             messenger: messenger,
             token_contract: *ctx.accounts.token_contract.to_account_info().key,
         });
         msg!("commitId: {:?}", hex::encode(commitId));
-        // msg!("hopChains: {:?}", hopChains);
-        // msg!("hopAssets: {:?}", hopAssets);
-        // msg!("hopAddresses: {:?}", hopAddress);
-        // msg!("dst_chain: {:?}", dst_chain);
-        // msg!("dst_address: {:?}", dst_address);
-        // msg!("dst_asset: {:?}", dst_asset);
-        // msg!("sender: {:?}", *ctx.accounts.sender.to_account_info().key);
-        // msg!("srcReceiver: {:?}", srcReceiver);
-        // msg!("src_asset: {:?}", src_asset);
-        // msg!("amount: {:?}", amount);
-        // msg!("timelock: {:?}", timelock);
-        // msg!("messenger: {:?}", messenger);
-        // msg!(
-        //     "token_contract: {:?}",
-        //     *ctx.accounts.token_contract.to_account_info().key
-        // );
+
         let commit_counter = &mut ctx.accounts.commitCounter;
         commit_counter.count += 1;
         let commits = &mut ctx.accounts.commits;
@@ -272,14 +257,14 @@ pub mod anchor_htlc {
         );
         anchor_spl::token::transfer(transfer_context, amount)?;
 
-        htlc.dst_address = dst_address.clone();
-        htlc.dst_chain = dst_chain.clone();
-        htlc.dst_asset = dst_asset.clone();
-        htlc.src_asset = src_asset.clone();
+        htlc.dst_address = dst_address;
+        htlc.dst_chain = dst_chain;
+        htlc.dst_asset = dst_asset;
+        htlc.src_asset = src_asset;
         htlc.sender = *ctx.accounts.sender.to_account_info().key;
         htlc.srcReceiver = srcReceiver;
         htlc.hashlock = lockId;
-        htlc.secret = Vec::new();
+        htlc.secret = [0u8; 32];
         htlc.amount = amount;
         htlc.timelock = timelock;
         htlc.token_contract = *ctx.accounts.token_contract.to_account_info().key;
@@ -287,20 +272,6 @@ pub mod anchor_htlc {
         htlc.redeemed = false;
         htlc.unlocked = false;
 
-        emit!(TokenLocked {
-            hashlock: lockId,
-            dst_chain: dst_chain.clone(),
-            dst_address: dst_address.clone(),
-            dst_asset: dst_asset.clone(),
-            sender: *ctx.accounts.sender.to_account_info().key,
-            srcReceiver: srcReceiver,
-            src_asset: src_asset.clone(),
-            amount: amount,
-            timelock: timelock,
-            messenger: messenger,
-            commitId: commitId.clone(),
-            token_contract: *ctx.accounts.token_contract.to_account_info().key,
-        });
         msg!("lockId: {:?}", hex::encode(lockId));
         let lockIdStruct = &mut ctx.accounts.lockIdStruct;
         lockIdStruct.lock_id = lockId;
@@ -353,7 +324,7 @@ pub mod anchor_htlc {
         htlc.src_asset = phtlc.src_asset.clone();
 
         htlc.hashlock = lockId;
-        htlc.secret = Vec::new();
+        htlc.secret = [0u8; 32];
         htlc.amount = amount;
         htlc.timelock = timelock;
         htlc.token_contract = *ctx.accounts.token_contract.to_account_info().key;
@@ -376,8 +347,6 @@ pub mod anchor_htlc {
             token_contract: *ctx.accounts.token_contract.to_account_info().key,
         });
         msg!("commitId: {:?}", hex::encode(commitId));
-        msg!("lockId: {:?}", hex::encode(lockId));
-        // msg!("timelock: {:?}", timelock);
 
         Ok(())
     }
@@ -390,17 +359,17 @@ pub mod anchor_htlc {
     pub fn redeem(
         ctx: Context<Redeem>,
         lockId: [u8; 32],
-        secret: Vec<u8>,
+        secret: [u8; 32],
         htlc_bump: u8,
     ) -> Result<bool> {
         let htlc = &mut ctx.accounts.htlc;
         let mut hasher = Sha256::new();
-        hasher.update(secret.clone());
+        hasher.update(secret);
         let hash = hasher.finalize();
         require!(hash == htlc.hashlock.into(), HTLCError::HashlockNoMatch);
 
-        htlc.secret = secret;
         htlc.redeemed = true;
+        htlc.secret = secret;
 
         transfer_htlc_out(
             ctx.accounts.sender.to_account_info(),
@@ -565,7 +534,6 @@ pub mod anchor_htlc {
     }
     pub fn getCommits(ctx: Context<GetCommits>, user: Pubkey) -> Result<Vec<[u8; 32]>> {
         let commits = &ctx.accounts.commits;
-        // msg!("lockIdStruct.lock_id {:?}", lockIdStruct.lock_id);
         Ok(commits.commitIds.clone())
     }
     // pub fn getLocks(ctx: Context<GetLocks>, user: Pubkey) -> Result<Vec<[u8; 32]>> {
@@ -634,9 +602,9 @@ pub struct HTLC {
     pub sender: Pubkey,
     pub srcReceiver: Pubkey,
     pub hashlock: [u8; 32],
-    pub secret: Vec<u8>, //[u8; 32],
-    pub amount: u64,     //TODO: check if this should be u256, though the spl uses u64
-    pub timelock: u64,   //TODO: check if this should be u256
+    pub secret: [u8; 32],
+    pub amount: u64,   //TODO: check if this should be u256, though the spl uses u64
+    pub timelock: u64, //TODO: check if this should be u256
     pub token_contract: Pubkey,
     pub token_wallet: Pubkey,
     pub redeemed: bool,
