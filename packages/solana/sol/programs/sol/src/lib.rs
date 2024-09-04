@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 use sha2::{Digest, Sha256};
 use std::mem::size_of;
-declare_id!("C5pqRkE3So12oijp44sMEf3MmNMYUrYFqBS9KotXhycs");
+declare_id!("FNMXmXVjiETt3brSdpP5oGGFXaPXJpaW6PJXLUiTjKWT");
 
 const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 
@@ -91,12 +91,12 @@ pub mod native_htlc {
         htlc.sender = *ctx.accounts.sender.to_account_info().key;
         htlc.src_receiver = src_receiver;
         htlc.hashlock = [0u8; 32];
-        htlc.secret = Vec::new();
         htlc.amount = amount;
         htlc.timelock = timelock;
         htlc.messenger = messenger;
         htlc.redeemed = false;
         htlc.unlocked = false;
+        htlc.secret = [0u8; 32];
 
         let bump_vector = commit_bump.to_le_bytes();
         let inner = vec![Id.as_ref(), bump_vector.as_ref()];
@@ -118,8 +118,6 @@ pub mod native_htlc {
 
         let commit_counter = &mut ctx.accounts.commitCounter;
         commit_counter.count += 1;
-        let commits = &mut ctx.accounts.commits;
-        commits.commitIds.push(Id);
 
         Ok(())
     }
@@ -161,7 +159,7 @@ pub mod native_htlc {
         htlc.sender = *ctx.accounts.sender.to_account_info().key;
         htlc.src_receiver = src_receiver;
         htlc.hashlock = Id;
-        htlc.secret = Vec::new();
+        htlc.secret = [0u8; 32];
         htlc.amount = amount;
         htlc.timelock = timelock;
         htlc.messenger = messenger;
@@ -182,6 +180,8 @@ pub mod native_htlc {
         system_program::transfer(transfer_context, amount)?;
 
         msg!("Id: {:?}", Id);
+        // msg!("Id: {:?}", hex::encode(Id));
+        // if messenger != Pubkey::default(){}
         let idStruct = &mut ctx.accounts.idStruct;
         if idStruct.id == [0u8; 32] {
             idStruct.id = Id;
@@ -210,6 +210,7 @@ pub mod native_htlc {
 
         htlc.hashlock = hashlock;
         htlc.timelock = timelock;
+        // msg!("Id: {:?}", hex::encode(Id));
         msg!("Id: {:?}", Id);
 
         Ok(())
@@ -220,16 +221,16 @@ pub mod native_htlc {
     ///
     /// @param Id of the HTLC.
     /// @param secret sha256(secret) should equal the contract hashlock.
-    pub fn redeem(ctx: Context<Redeem>, Id: [u8; 32], secret: Vec<u8>) -> Result<bool> {
+    pub fn redeem(ctx: Context<Redeem>, Id: [u8; 32], secret: [u8; 32]) -> Result<bool> {
         let htlc = &mut ctx.accounts.htlc;
         let mut hasher = Sha256::new();
-        hasher.update(secret.clone());
+        hasher.update(secret);
         let hash = hasher.finalize();
         require!([0u8; 32] != htlc.hashlock, HTLCError::HashlockNotSet);
         require!(hash == htlc.hashlock.into(), HTLCError::HashlockNoMatch);
 
-        htlc.secret = secret;
         htlc.redeemed = true;
+        htlc.secret = secret;
 
         let amount = htlc.amount;
 
@@ -281,17 +282,6 @@ pub mod native_htlc {
         let idStruct = &ctx.accounts.idStruct;
         Ok(idStruct.id)
     }
-
-    pub fn getCommits(ctx: Context<GetCommits>, user: Pubkey) -> Result<Vec<[u8; 32]>> {
-        let commits = &ctx.accounts.commits;
-        Ok(commits.commitIds.clone())
-    }
-}
-
-#[account]
-#[derive(Default)]
-pub struct Commits {
-    pub commitIds: Vec<[u8; 32]>,
 }
 
 #[account]
@@ -341,7 +331,7 @@ pub struct HTLC {
     pub sender: Pubkey,
     pub src_receiver: Pubkey,
     pub hashlock: [u8; 32],
-    pub secret: Vec<u8>,
+    pub secret: [u8; 32],
     pub amount: u64,
     pub timelock: u64,
     pub messenger: Pubkey,
@@ -371,17 +361,6 @@ pub struct Commit<'info> {
         bump,
     )]
     pub commitCounter: Box<Account<'info, CommitCounter>>,
-    #[account(
-        init_if_needed,
-        payer = sender,
-        space = size_of::<Commits>() + 128,
-        seeds = [
-            b"commits".as_ref(),
-            sender.key().as_ref()
-        ],
-        bump,
-    )]
-    pub commits: Box<Account<'info, Commits>>,
 
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
@@ -518,19 +497,6 @@ pub struct GetIdBySrcId<'info> {
         bump,
     )]
     pub idStruct: Box<Account<'info, IdStruct>>,
-}
-
-#[derive(Accounts)]
-#[instruction(user: Pubkey)]
-pub struct GetCommits<'info> {
-    #[account(
-        seeds = [
-            b"commits".as_ref(),
-            user.key().as_ref()
-        ],
-        bump,
-    )]
-    pub commits: Box<Account<'info, Commits>>,
 }
 
 #[event]
