@@ -10,7 +10,6 @@ interface PDAParameters {
   htlcBump: number;
   commitCounter: anchor.web3.PublicKey;
   idStruct: anchor.web3.PublicKey;
-  commits: anchor.web3.PublicKey;
 }
 
 describe("safe_pay", () => {
@@ -33,7 +32,7 @@ describe("safe_pay", () => {
   const DSTCHAIN = "ETHEREUM";
   const DSTASSET = "ETH";
   const SRCASSET = "SOL";
-  const DSTADDRESS = "0";
+  const DSTADDRESS = "0x021b6a2ff227f1c71cc6536e7b9e8ecd0d5599b3a934279011e2f2b923d3a782";
   const HOPCHAINS = [DSTCHAIN];
   const HOPASSETS = [DSTASSET];
   const HOPADDRESSES = [DSTADDRESS];
@@ -62,16 +61,11 @@ describe("safe_pay", () => {
       [Buffer.from("srcId_to_Id"), src_id],
       program.programId
     );
-    let [commits, commits_bump] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("commits"), user.toBuffer()],
-      program.programId
-    );
     return {
       htlc,
       htlcBump,
       commitCounter,
       idStruct,
-      commits,
     };
   };
 
@@ -98,127 +92,126 @@ describe("safe_pay", () => {
   before(async () => {
     bob = await createUser();
   });
-  it("create prehtlc", async () => {
+  // it("create prehtlc", async () => {
 
-    pda = await getPdaParams(wallet.publicKey, COMMITID, COMMITID);
+  //   pda = await getPdaParams(wallet.publicKey, COMMITID, COMMITID);
 
-    // const txIn = await program.methods
-    //   .initialize()
-    //   .accountsPartial({
-    //     owner: wallet.publicKey,
-    //     commitCounter: pda.commitCounter,
-    //   })
-    //   .signers([wallet.payer])
-    //   .rpc();
+  //   // const txIn = await program.methods
+  //   //   .initialize()
+  //   //   .accountsPartial({
+  //   //     owner: wallet.publicKey,
+  //   //     commitCounter: pda.commitCounter,
+  //   //   })
+  //   //   .signers([wallet.payer])
+  //   //   .rpc();
 
-    const CTIME = new Date().getTime() / 1000;
-    console.log(`[${CTIME * 1000}] CURRENT TIME`);
-    const TIME = new Date().getTime() + 35000;
-    const TIMELOCK = new anchor.BN(TIME / 1000);
-    console.log(`[${TIME}] the Timelock`);
-    const IDArray: number[] = Array.from(ID);
-    const COMMITIDArray: number[] = Array.from(COMMITID);
-
-    const tx1 = await program.methods
-      .commit(COMMITIDArray, HOPCHAINS, HOPASSETS, HOPADDRESSES, DSTCHAIN, DSTASSET, DSTADDRESS, SRCASSET, bob.publicKey, TIMELOCK, wallet.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
-      .accountsPartial({
-        sender: wallet.publicKey,
-        htlc: pda.htlc,
-        commitCounter: pda.commitCounter,
-        commits: pda.commits,
-      })
-      .signers([wallet.payer])
-      .rpc();
-    console.log(`Initialized a new HTLC. Alice will pay bob 0.01 sol`);
-
-    const tx3 = await program.methods.lockCommit(COMMITIDArray, IDArray, TIMELOCK).
-      accountsPartial({
-        messenger: wallet.publicKey,
-        htlc: pda.htlc,
-      })
-      .signers([wallet.payer])
-      .rpc();//.catch(e => console.error(e));
-    console.log(`can lockCommit`);
-
-    // const details = await program.methods.getDetails(COMMITIDArray).accountsPartial({ htlc: pda.htlc }).view();
-    // console.log(`${details} details`);
-    // const tx4 = await program.methods.redeem(COMMITIDArray, SECRET).
-    //   accountsPartial({
-    //     userSigning: wallet.publicKey,
-    //     htlc: pda.htlc,
-    //     srcReceiver: bob.publicKey,
-    //   })
-    //   .signers([wallet.payer])
-    //   .rpc();
-
-
-    await wait(40000);
-    const tx5 = await program.methods.unlock(COMMITIDArray).
-      accountsPartial({
-        userSigning: wallet.publicKey,
-        htlc: pda.htlc,
-        sender: wallet.publicKey,
-      })
-      .signers([wallet.payer])
-      .rpc();
-  });
-
-
-
-
-
-
-
-  // it("Bob can redeem", async () => {
-  //   pda = await getPdaParams(wallet.publicKey, ID, COMMITID);
-
-  //   const TIME = new Date().getTime();
-  //   const TIMELOC = (TIME + 35000) / 1000;
-  //   const TIMELOCK = new anchor.BN(TIMELOC);
-  //   console.log(`[${TIMELOC * 1000}] the Timelock`);
-  //   console.log("lamport balance of htlc at the beginning",
-  //     await anchor.getProvider().connection.getBalance(pda.htlc));
-  //   console.log("lamport balance of alice before creation",
-  //     await anchor.getProvider().connection.getBalance(wallet.publicKey));
+  //   const CTIME = new Date().getTime() / 1000;
+  //   console.log(`[${CTIME * 1000}] CURRENT TIME`);
+  //   const TIME = new Date().getTime() + 35000;
+  //   const TIMELOCK = new anchor.BN(TIME / 1000);
+  //   console.log(`[${TIME}] the Timelock`);
   //   const IDArray: number[] = Array.from(ID);
-  //   const SRCIDArray: number[] = Array.from(COMMITID);
+  //   const COMMITIDArray: number[] = Array.from(COMMITID);
+
   //   const tx1 = await program.methods
-  //     .lock(IDArray, SRCIDArray, TIMELOCK, new anchor.BN(AMOUNT), DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, wallet.publicKey, pda.htlcBump)
+  //     .commit(COMMITIDArray, HOPCHAINS, HOPASSETS, HOPADDRESSES, DSTCHAIN, DSTASSET, DSTADDRESS, SRCASSET, bob.publicKey, TIMELOCK, wallet.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
   //     .accountsPartial({
   //       sender: wallet.publicKey,
   //       htlc: pda.htlc,
-  //       idStruct: pda.idStruct,
-  //     })
-  //     .signers([wallet.payer])
-  //     .rpc();//.catch(e => console.error(e));
-  //   console.log(`Initialized a new Safe Pay instance. Alice will pay bob 20 tokens`);
-
-  //   const details = await program.methods.getDetails(IDArray).accountsPartial({ htlc: pda.htlc }).view();
-  //   console.log(`${details} details`);
-
-  //   console.log("lamport balance of hltc after creation",
-  //     await anchor.getProvider().connection.getBalance(pda.htlc));
-  //   console.log("lamport balance of bob before redeem",
-  //     await anchor.getProvider().connection.getBalance(bob.publicKey));
-  //   const tx2 = await program.methods.redeem(IDArray, SECRET).
-  //     accountsPartial({
-  //       userSigning: wallet.publicKey,
-  //       htlc: pda.htlc,
-  //       srcReceiver: bob.publicKey
+  //       commitCounter: pda.commitCounter,
   //     })
   //     .signers([wallet.payer])
   //     .rpc();
-  //   console.log("lamport balance of alice after creation",
-  //     await anchor.getProvider().connection.getBalance(wallet.publicKey));
-  //   console.log(`can redeem`);
-  //   console.log("lamport balance of hltc after redeem",
-  //     await anchor.getProvider().connection.getBalance(pda.htlc));
-  //   console.log("lamport balance of bob after redeem",
-  //     await anchor.getProvider().connection.getBalance(bob.publicKey));
+  //   console.log(`Initialized a new HTLC. Alice will pay bob 0.01 sol`);
 
-  //   const lockId = await program.methods.getIdBySrcId(SRCIDArray).accountsPartial({ idStruct: pda.idStruct }).view();
-  //   console.log(`${lockId} the lockId from the commitId`);
+  //   const tx3 = await program.methods.lockCommit(COMMITIDArray, IDArray, TIMELOCK).
+  //     accountsPartial({
+  //       messenger: wallet.publicKey,
+  //       htlc: pda.htlc,
+  //     })
+  //     .signers([wallet.payer])
+  //     .rpc();//.catch(e => console.error(e));
+  //   console.log(`can lockCommit`);
+
+  //   // const details = await program.methods.getDetails(COMMITIDArray).accountsPartial({ htlc: pda.htlc }).view();
+  //   // console.log(`${details} details`);
+  //   const tx4 = await program.methods.redeem(COMMITIDArray, SECRET).
+  //     accountsPartial({
+  //       userSigning: wallet.publicKey,
+  //       htlc: pda.htlc,
+  //       srcReceiver: bob.publicKey,
+  //     })
+  //     .signers([wallet.payer])
+  //     .rpc();
+
+
+  //   // await wait(40000);
+  //   // const tx5 = await program.methods.unlock(COMMITIDArray).
+  //   //   accountsPartial({
+  //   //     userSigning: wallet.publicKey,
+  //   //     htlc: pda.htlc,
+  //   //     sender: wallet.publicKey,
+  //   //   })
+  //   //   .signers([wallet.payer])
+  //   //   .rpc();
   // });
+
+
+
+
+
+
+
+  it("Bob can redeem", async () => {
+    pda = await getPdaParams(wallet.publicKey, ID, COMMITID);
+
+    const TIME = new Date().getTime();
+    const TIMELOC = (TIME + 35000) / 1000;
+    const TIMELOCK = new anchor.BN(TIMELOC);
+    console.log(`[${TIMELOC * 1000}] the Timelock`);
+    console.log("lamport balance of htlc at the beginning",
+      await anchor.getProvider().connection.getBalance(pda.htlc));
+    console.log("lamport balance of alice before creation",
+      await anchor.getProvider().connection.getBalance(wallet.publicKey));
+    const IDArray: number[] = Array.from(ID);
+    const SRCIDArray: number[] = Array.from(COMMITID);
+    const tx1 = await program.methods
+      .lock(IDArray, SRCIDArray, TIMELOCK, new anchor.BN(AMOUNT), DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, wallet.publicKey, pda.htlcBump)
+      .accountsPartial({
+        sender: wallet.publicKey,
+        htlc: pda.htlc,
+        idStruct: pda.idStruct,
+      })
+      .signers([wallet.payer])
+      .rpc();//.catch(e => console.error(e));
+    console.log(`Initialized a new Safe Pay instance. Alice will pay bob 20 tokens`);
+
+    const details = await program.methods.getDetails(IDArray).accountsPartial({ htlc: pda.htlc }).view();
+    console.log(`${details} details`);
+
+    console.log("lamport balance of hltc after creation",
+      await anchor.getProvider().connection.getBalance(pda.htlc));
+    console.log("lamport balance of bob before redeem",
+      await anchor.getProvider().connection.getBalance(bob.publicKey));
+    const tx2 = await program.methods.redeem(IDArray, SECRET).
+      accountsPartial({
+        userSigning: wallet.publicKey,
+        htlc: pda.htlc,
+        srcReceiver: bob.publicKey
+      })
+      .signers([wallet.payer])
+      .rpc();
+    console.log("lamport balance of alice after creation",
+      await anchor.getProvider().connection.getBalance(wallet.publicKey));
+    console.log(`can redeem`);
+    console.log("lamport balance of hltc after redeem",
+      await anchor.getProvider().connection.getBalance(pda.htlc));
+    console.log("lamport balance of bob after redeem",
+      await anchor.getProvider().connection.getBalance(bob.publicKey));
+
+    const lockId = await program.methods.getIdBySrcId(SRCIDArray).accountsPartial({ idStruct: pda.idStruct }).view();
+    console.log(`${lockId} the lockId from the commitId`);
+  });
 
 
 
