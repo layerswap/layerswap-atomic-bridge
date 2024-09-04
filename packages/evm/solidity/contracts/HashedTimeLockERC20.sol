@@ -15,7 +15,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 /**
- * @title Hashed Timelock locks (HTLCs) on Ethereum ERC20 tokens.
+ * @title Hashed Timelock contracts (HTLCs) on Ethereum ERC20 tokens.
  *
  * This contract provides a way to lock and keep HTLCs for ERC20 tokens.
  *
@@ -40,7 +40,7 @@ struct EIP712Domain {
 
 interface IMessenger {
   function notify(
-    bytes32 commitId,
+    bytes32 srcId,
     bytes32 hashlock,
     string memory dstChain,
     string memory dstAsset,
@@ -77,19 +77,18 @@ contract LayerswapV8ERC20 {
   error NotFutureTimelock();
   error NotPassedTimelock();
   error LockAlreadyExists();
-  error CommitIdAlreadyExists();
-  error LockNotExists();
+  error HTLCAlreadyExists();
+  error HTLCNotExists();
   error HashlockNotMatch();
   error AlreadyRedeemed();
   error AlreadyUnlocked();
   error NoMessenger();
-  error CommitmentNotExists();
   error IncorrectData();
   error InsufficientBalance();
   error NoAllowance();
   error AlreadyLocked();
-  error AlreadyUncommitted();
   error InvalidSigniture();
+  error HashlockAlreadySet();
 
   struct HTLC {
     string dstAddress;
@@ -99,28 +98,13 @@ contract LayerswapV8ERC20 {
     address payable sender;
     address payable srcReceiver;
     bytes32 hashlock;
-    uint256 secret;
-    uint256 amount;
     uint256 timelock;
+    uint256 amount;
+    uint256 secret;
     address tokenContract;
+    address messenger;
     bool redeemed;
     bool unlocked;
-  }
-
-  struct PHTLC {
-    string dstAddress;
-    string dstChain;
-    string dstAsset;
-    string srcAsset;
-    address payable sender;
-    address payable srcReceiver;
-    bytes32 lockId;
-    uint timelock;
-    uint amount;
-    address messenger;
-    address tokenContract;
-    bool locked;
-    bool uncommitted;
   }
 
   struct lockCommitmentMsg {
@@ -129,33 +113,15 @@ contract LayerswapV8ERC20 {
   }
 
   using SafeERC20 for IERC20;
-  mapping(bytes32 => HTLC) locks;
-  mapping(bytes32 => PHTLC) commits;
-  mapping(bytes32 => bytes32) commitIdToLockId;
+  mapping(bytes32 => HTLC) contracts;
+  mapping(bytes32 => bytes32) srcIdToId;
   bytes32[] lockIds;
   bytes32[] commitIds;
   uint256 blockHashAsUint = uint256(blockhash(block.number - 1));
   uint256 contractNonce = 0;
 
-  event TokenLocked(
-    bytes32 indexed hashlock,
-    string dstChain,
-    string dstAddress,
-    string dstAsset,
-    address indexed sender,
-    address indexed srcReceiver,
-    string srcAsset,
-    uint amount,
-    uint timelock,
-    address messenger,
-    bytes32 commitId,
-    address tokenContract
-  );
-  event TokenRedeemed(bytes32 indexed lockId, address redeemAddress);
-  event TokenUnlocked(bytes32 indexed lockId);
-
   event TokenCommitted(
-    bytes32 commitId,
+    bytes32 Id,
     string[] hopChains,
     string[] hopAssets,
     string[] hopAddresses,
@@ -171,16 +137,28 @@ contract LayerswapV8ERC20 {
     address tokenContract
   );
 
+  event TokenLocked(
+    bytes32 indexed hashlock,
+    string dstChain,
+    string dstAddress,
+    string dstAsset,
+    address indexed sender,
+    address indexed srcReceiver,
+    string srcAsset,
+    uint amount,
+    uint timelock,
+    address messenger,
+    bytes32 srcId,
+    address tokenContract
+  );
+
+  event TokenLockCommitted(bytes32 Id, address messenger, bytes32 hashlock, uint256 timelock);
+  event TokenRedeemed(bytes32 indexed Id, address redeemAddress);
+  event TokenUnlocked(bytes32 indexed Id);
   event LowLevelErrorOccurred(bytes lowLevelData);
-  event TokenUncommitted(bytes32 indexed commitId);
 
-  modifier _committed(bytes32 commitId) {
-    if (!hasPHTLC(commitId)) revert CommitmentNotExists();
-    _;
-  }
-
-  modifier _locked(bytes32 lockId) {
-    if (!hasHTLC(lockId)) revert LockNotExists();
+  modifier _exists(bytes32 Id) {
+    if (!hasHTLC(Id)) revert HTLCNotExists();
     _;
   }
 
@@ -197,7 +175,7 @@ contract LayerswapV8ERC20 {
     address messenger,
     uint amount,
     address tokenContract
-  ) external returns (bytes32 commitId) {
+  ) external returns (bytes32 Id) {
     if (amount == 0) {
       revert FundsNotSent();
     }
@@ -218,12 +196,12 @@ contract LayerswapV8ERC20 {
     token.safeTransferFrom(msg.sender, address(this), amount);
 
     contractNonce += 1;
-    commitId = bytes32(blockHashAsUint ^ contractNonce);
-    if (hasPHTLC(commitId)) {
-      revert CommitIdAlreadyExists();
+    Id = bytes32(blockHashAsUint ^ contractNonce);
+    if (hasHTLC(Id)) {
+      revert HTLCAlreadyExists();
     }
-    commitIds.push(commitId);
-    commits[commitId] = PHTLC(
+    commitIds.push(Id);
+    contracts[Id] = HTLC(
       dstAddress,
       dstChain,
       dstAsset,
@@ -233,13 +211,15 @@ contract LayerswapV8ERC20 {
       bytes32(0),
       timelock,
       amount,
-      messenger,
+      uint256(0),
       tokenContract,
+      messenger,
       false,
       false
     );
+
     emit TokenCommitted(
-      commitId,
+      Id,
       hopChains,
       hopAssets,
       hopAddresses,
@@ -256,69 +236,41 @@ contract LayerswapV8ERC20 {
     );
   }
 
-  function lockCommitment(
-    bytes32 commitId,
-    bytes32 hashlock,
-    uint256 timelock
-  ) external _committed(commitId) returns (bytes32 lockId) {
-    lockId = hashlock;
-    PHTLC storage phtlc = commits[commitId];
-    if (phtlc.uncommitted == true) {
-      revert AlreadyUncommitted();
+  function lockCommitment(bytes32 Id, bytes32 hashlock, uint256 timelock) external _exists(Id) returns (bytes32) {
+    HTLC storage htlc = contracts[Id];
+    if (htlc.unlocked == true) {
+      revert AlreadyUnlocked();
     }
-    if (phtlc.locked == true) {
-      revert AlreadyLocked();
-    }
-    if (hasHTLC(lockId)) {
+    if (hasHTLC(hashlock)) {
       revert LockAlreadyExists();
     }
-    if (msg.sender == phtlc.sender || msg.sender == phtlc.messenger || msg.sender == address(this)) {
-      phtlc.locked = true;
-      phtlc.lockId = hashlock;
-      locks[lockId] = HTLC(
-        phtlc.dstAddress,
-        phtlc.dstChain,
-        phtlc.dstAsset,
-        phtlc.srcAsset,
-        payable(phtlc.sender),
-        phtlc.srcReceiver,
-        hashlock,
-        0x0,
-        phtlc.amount,
-        timelock,
-        phtlc.tokenContract,
-        false,
-        false
-      );
+    if (timelock <= block.timestamp) {
+      revert NotFutureTimelock();
+    }
+    if (msg.sender == htlc.sender || msg.sender == htlc.messenger || msg.sender == address(this)) {
+      if (htlc.hashlock == 0) {
+        htlc.hashlock = hashlock;
+        htlc.timelock = timelock;
+      } else {
+        revert HashlockAlreadySet();
+      }
       lockIds.push(hashlock);
-      emit TokenLocked(
-        hashlock,
-        phtlc.dstChain,
-        phtlc.dstAddress,
-        phtlc.dstAsset,
-        phtlc.sender,
-        phtlc.srcReceiver,
-        phtlc.srcAsset,
-        phtlc.amount,
-        timelock,
-        phtlc.messenger,
-        commitId,
-        phtlc.tokenContract
-      );
+      emit TokenLockCommitted(Id, msg.sender, hashlock, timelock);
+      return hashlock;
     } else {
       revert NoAllowance();
     }
   }
 
   function lockCommitmentSig(
-    bytes32 commitId,
+    bytes32 Id,
     lockCommitmentMsg memory message,
     uint8 v,
     bytes32 r,
     bytes32 s
-  ) external _committed(commitId) returns (bytes32 lockId) {
+  ) external _exists(Id) returns (bytes32 lockId) {
     if (verifyMessage(msg.sender, message, v, r, s)) {
-      lockId = this.lockCommitment(commitId, message.hashlock, message.timelock);
+      lockId = this.lockCommitment(Id, message.hashlock, message.timelock);
       return lockId;
     } else {
       revert InvalidSigniture();
@@ -344,20 +296,18 @@ contract LayerswapV8ERC20 {
     string memory dstChain,
     string memory dstAddress,
     string memory dstAsset,
-    bytes32 commitId,
+    bytes32 srcId,
     address messenger,
     uint256 amount,
     address tokenContract
-  ) external returns (bytes32 lockId) {
+  ) external returns (bytes32) {
     if (timelock <= block.timestamp) {
       revert NotFutureTimelock();
     }
     if (amount == 0) {
       revert FundsNotSent();
     }
-    lockId = hashlock;
-
-    if (hasHTLC(lockId)) {
+    if (hasHTLC(hashlock)) {
       revert LockAlreadyExists();
     }
     IERC20 token = IERC20(tokenContract);
@@ -371,7 +321,7 @@ contract LayerswapV8ERC20 {
     }
 
     token.safeTransferFrom(msg.sender, address(this), amount);
-    locks[lockId] = HTLC(
+    contracts[hashlock] = HTLC(
       dstAddress,
       dstChain,
       dstAsset,
@@ -379,15 +329,17 @@ contract LayerswapV8ERC20 {
       payable(msg.sender),
       payable(srcReceiver),
       hashlock,
-      0x0,
-      amount,
       timelock,
+      amount,
+      0x0,
       tokenContract,
+      messenger,
       false,
       false
     );
+
     lockIds.push(hashlock);
-    commitIdToLockId[commitId] = lockId;
+    srcIdToId[srcId] = hashlock;
     emit TokenLocked(
       hashlock,
       dstChain,
@@ -399,9 +351,10 @@ contract LayerswapV8ERC20 {
       amount,
       timelock,
       messenger,
-      commitId,
+      srcId,
       tokenContract
     );
+
     if (messenger != address(0)) {
       uint256 codeSize;
       assembly {
@@ -410,7 +363,7 @@ contract LayerswapV8ERC20 {
       if (codeSize > 0) {
         try
           IMessenger(messenger).notify(
-            commitId,
+            srcId,
             hashlock,
             dstChain,
             dstAsset,
@@ -434,18 +387,19 @@ contract LayerswapV8ERC20 {
         revert NoMessenger();
       }
     }
+    return hashlock;
   }
 
   /**
    * @dev Called by the srcReceiver once they know the secret of the hashlock.
    * This will transfer the locked funds to their address.
    *
-   * @param lockId Id of the HTLC.
+   * @param Id Id of the HTLC.
    * @param secret sha256(secret) should equal the contract hashlock.
    * @return bool true on success
    */
-  function redeem(bytes32 lockId, uint256 secret) external _locked(lockId) returns (bool) {
-    HTLC storage htlc = locks[lockId];
+  function redeem(bytes32 Id, uint256 secret) external _exists(Id) returns (bool) {
+    HTLC storage htlc = contracts[Id];
 
     if (htlc.hashlock != sha256(abi.encodePacked(secret))) revert HashlockNotMatch();
     if (htlc.redeemed) revert AlreadyRedeemed();
@@ -454,18 +408,18 @@ contract LayerswapV8ERC20 {
     htlc.secret = secret;
     htlc.redeemed = true;
     IERC20(htlc.tokenContract).safeTransfer(htlc.srcReceiver, htlc.amount);
-    emit TokenRedeemed(lockId, msg.sender);
+    emit TokenRedeemed(Id, msg.sender);
     return true;
   }
 
   /**
    * @dev Called by the sender if there was no redeem AND the time lock has
    * expired. This will unlock the contract amount.
-   * @param lockId Id of HTLC to unlock from.
+   * @param Id Id of HTLC to unlock from.
    * @return bool true on success
    */
-  function unlock(bytes32 lockId) external _locked(lockId) returns (bool) {
-    HTLC storage htlc = locks[lockId];
+  function unlock(bytes32 Id) external _exists(Id) returns (bool) {
+    HTLC storage htlc = contracts[Id];
 
     if (htlc.unlocked) revert AlreadyUnlocked();
     if (htlc.redeemed) revert AlreadyRedeemed();
@@ -473,20 +427,7 @@ contract LayerswapV8ERC20 {
 
     htlc.unlocked = true;
     IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
-    emit TokenUnlocked(lockId);
-    return true;
-  }
-
-  function uncommit(bytes32 commitId) external _committed(commitId) returns (bool) {
-    PHTLC storage phtlc = commits[commitId];
-
-    if (phtlc.uncommitted) revert AlreadyUncommitted();
-    if (phtlc.locked) revert AlreadyLocked();
-    if (phtlc.timelock > block.timestamp) revert NotPassedTimelock();
-
-    phtlc.uncommitted = true;
-    IERC20(phtlc.tokenContract).safeTransfer(phtlc.sender, phtlc.amount);
-    emit TokenUncommitted(commitId);
+    emit TokenUnlocked(Id);
     return true;
   }
 
@@ -495,68 +436,22 @@ contract LayerswapV8ERC20 {
    * @param lockId HTLC contract id
    */
   function getLockDetails(bytes32 lockId) external view returns (HTLC memory) {
-    if (hasHTLC(lockId) == false) {
-      HTLC memory emptyHTLC = HTLC({
-        dstAddress: '',
-        dstChain: '',
-        dstAsset: '',
-        srcAsset: '',
-        sender: payable(address(0)),
-        srcReceiver: payable(address(0)),
-        hashlock: bytes32(0x0),
-        secret: uint256(0),
-        amount: uint256(0),
-        timelock: uint256(0),
-        tokenContract: address(0),
-        redeemed: false,
-        unlocked: false
-      });
-      return emptyHTLC;
-    }
-    HTLC storage htlc = locks[lockId];
-    return htlc;
-  }
-
-  function getCommitDetails(bytes32 commitId) public view returns (PHTLC memory) {
-    if (!hasPHTLC(commitId)) {
-      PHTLC memory empyPHTLC = PHTLC({
-        dstAddress: '',
-        dstChain: '',
-        dstAsset: '',
-        srcAsset: '',
-        sender: payable(address(0)),
-        srcReceiver: payable(address(0)),
-        lockId: bytes32(0),
-        timelock: uint256(0),
-        amount: uint256(0),
-        messenger: address(0),
-        tokenContract: address(0),
-        locked: false,
-        uncommitted: false
-      });
-      return empyPHTLC;
-    }
-    PHTLC storage phtlc = commits[commitId];
-    return phtlc;
+    return contracts[lockId];
   }
 
   /**
    * @dev Check if there is a contract with a given id.
-   * @param lockId Id into locks mapping.
+   * @param Id Id into contracts mapping.
    */
-  function hasHTLC(bytes32 lockId) internal view returns (bool exists) {
-    exists = (locks[lockId].sender != address(0));
-  }
-
-  function hasPHTLC(bytes32 commitId) internal view returns (bool exists) {
-    exists = (commits[commitId].sender != address(0));
+  function hasHTLC(bytes32 Id) internal view returns (bool exists) {
+    exists = (contracts[Id].sender != address(0));
   }
 
   function getLocks(address senderAddr) public view returns (bytes32[] memory) {
     uint count = 0;
 
     for (uint i = 0; i < lockIds.length; i++) {
-      HTLC memory htlc = locks[lockIds[i]];
+      HTLC memory htlc = contracts[lockIds[i]];
       if (htlc.sender == senderAddr) {
         count++;
       }
@@ -566,7 +461,7 @@ contract LayerswapV8ERC20 {
     uint j = 0;
 
     for (uint i = 0; i < lockIds.length; i++) {
-      if (locks[lockIds[i]].sender == senderAddr) {
+      if (contracts[lockIds[i]].sender == senderAddr) {
         result[j] = lockIds[i];
         j++;
       }
@@ -579,8 +474,8 @@ contract LayerswapV8ERC20 {
     uint count = 0;
 
     for (uint i = 0; i < commitIds.length; i++) {
-      PHTLC memory phtlc = commits[commitIds[i]];
-      if (phtlc.sender == senderAddr) {
+      HTLC memory htlc = contracts[commitIds[i]];
+      if (htlc.sender == senderAddr) {
         count++;
       }
     }
@@ -589,7 +484,7 @@ contract LayerswapV8ERC20 {
     uint j = 0;
 
     for (uint i = 0; i < commitIds.length; i++) {
-      if (commits[commitIds[i]].sender == senderAddr) {
+      if (contracts[commitIds[i]].sender == senderAddr) {
         result[j] = commitIds[i];
         j++;
       }
@@ -598,8 +493,8 @@ contract LayerswapV8ERC20 {
     return result;
   }
 
-  function getLockIdByCommitId(bytes32 commitId) public view returns (bytes32) {
-    return commitIdToLockId[commitId];
+  function getIdBySrcId(bytes32 Id) public view returns (bytes32) {
+    return srcIdToId[Id];
   }
 
   function hashDomain(EIP712Domain memory domain) public pure returns (bytes32) {
