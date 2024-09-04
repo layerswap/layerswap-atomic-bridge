@@ -112,7 +112,7 @@ pub mod anchor_htlc {
         );
         let clock = Clock::get().unwrap();
         let time: u64 = clock.unix_timestamp.try_into().unwrap();
-        let commit_counter = &mut ctx.accounts.commit_counter;
+        let commit_counter = &mut ctx.accounts.commitCounter;
         commit_counter.count = 0;
         commit_counter.time = 1000 * time;
         Ok(())
@@ -120,7 +120,7 @@ pub mod anchor_htlc {
 
     /// @dev Called by the Sender to get the commitId from the given parameters.
     pub fn get_commit_id(ctx: Context<GetCommitId>) -> Result<u64> {
-        let commit_counter = &ctx.accounts.commit_counter;
+        let commit_counter = &ctx.accounts.commitCounter;
         let count = commit_counter.count + 1;
         let time = commit_counter.time;
 
@@ -191,7 +191,7 @@ pub mod anchor_htlc {
         // msg!("hop assets: {:?}", hopAssets);
         // msg!("hop addresses: {:?}", hopAddresses);
 
-        let commit_counter = &mut ctx.accounts.commit_counter;
+        let commit_counter = &mut ctx.accounts.commitCounter;
         commit_counter.count += 1;
         // let commits = &mut ctx.accounts.commits;
         // commits.commitIds.push(commitId);
@@ -350,7 +350,7 @@ pub mod anchor_htlc {
 
     /// @dev Get HTLC details.
     /// @param Id of the HTLC.
-    pub fn get_details(ctx: Context<GetDetails>, Id: [u8; 32]) -> Result<HTLC> {
+    pub fn getDetails(ctx: Context<GetDetails>, Id: [u8; 32]) -> Result<HTLC> {
         let htlc = &ctx.accounts.htlc;
 
         msg!("dst_address: {:?}", htlc.dst_address.clone());
@@ -388,12 +388,12 @@ pub mod anchor_htlc {
         })
     }
 
-    pub fn get_id_by_src_id(ctx: Context<GetIdBySrcId>, srcId: [u8; 32]) -> Result<[u8; 32]> {
+    pub fn getIdBySrcId(ctx: Context<GetIdBySrcId>, srcId: [u8; 32]) -> Result<[u8; 32]> {
         let id_struct = &ctx.accounts.id_struct;
         Ok(id_struct.id)
     }
 
-    pub fn init_id_by_src_id(ctx: Context<InitIdBySrcId>, srcId: [u8; 32]) -> Result<()> {
+    pub fn initIdBySrcId(ctx: Context<InitIdBySrcId>, srcId: [u8; 32]) -> Result<()> {
         Ok(())
     }
 }
@@ -442,7 +442,7 @@ pub struct Initialize<'info> {
         payer = owner,
         space = CommitCounter::INIT_SPACE + 8
     )]
-    pub commit_counter: Box<Account<'info, CommitCounter>>,
+    pub commitCounter: Box<Account<'info, CommitCounter>>,
     pub system_program: Program<'info, System>,
 }
 
@@ -452,7 +452,7 @@ pub struct GetCommitId<'info> {
         seeds = [b"commitCounter"],
         bump,
     )]
-    pub commit_counter: Account<'info, CommitCounter>,
+    pub commitCounter: Account<'info, CommitCounter>,
 }
 
 #[derive(Accounts)]
@@ -485,10 +485,10 @@ pub struct Commit<'info> {
     pub htlc_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        seeds = [b"commit_counter"],
+        seeds = [b"commitCounter"],
         bump,
     )]
-    pub commit_counter: Box<Account<'info, CommitCounter>>,
+    pub commitCounter: Box<Account<'info, CommitCounter>>,
     pub token_contract: Account<'info, Mint>,
     #[account(
         mut,
@@ -678,7 +678,7 @@ pub struct GetCommitCounter<'info> {
         seeds = [b"commitCounter"],
         bump,
     )]
-    pub commit_counter: Box<Account<'info, CommitCounter>>,
+    pub commitCounter: Box<Account<'info, CommitCounter>>,
 }
 
 #[derive(Accounts)]
