@@ -152,7 +152,7 @@ pub mod anchor_htlc {
         messenger: Pubkey,
         amount: u64,
         phtlc_bump: u8,
-    ) -> Result<()> {
+    ) -> Result<[u8; 32]> {
         let clock = Clock::get().unwrap();
         require!(
             timelock > clock.unix_timestamp.try_into().unwrap(),
@@ -174,10 +174,10 @@ pub mod anchor_htlc {
         );
         anchor_spl::token::transfer(transfer_context, amount)?;
 
-        phtlc.dst_chain = dst_chain.clone();
-        phtlc.dst_address = dst_address.clone();
-        phtlc.dst_asset = dst_asset.clone();
-        phtlc.src_asset = src_asset.clone();
+        phtlc.dst_chain = dst_chain;
+        phtlc.dst_address = dst_address;
+        phtlc.dst_asset = dst_asset;
+        phtlc.src_asset = src_asset;
         phtlc.sender = *ctx.accounts.sender.to_account_info().key;
         phtlc.srcReceiver = srcReceiver;
         phtlc.lockId = [0u8; 32];
@@ -189,29 +189,10 @@ pub mod anchor_htlc {
         phtlc.locked = false;
         phtlc.uncommitted = false;
 
-        emit!(TokenCommitted {
-            commitId: commitId,
-            hopChains: hopChains,
-            hopAssets: hopAssets,
-            hopAddress: hopAddress,
-            dst_chain: dst_chain,
-            dst_address: dst_address,
-            dst_asset: dst_asset,
-            sender: *ctx.accounts.sender.to_account_info().key,
-            srcReceiver: srcReceiver,
-            src_asset: src_asset,
-            amount: amount,
-            timelock: timelock,
-            messenger: messenger,
-            token_contract: *ctx.accounts.token_contract.to_account_info().key,
-        });
-        msg!("commitId: {:?}", hex::encode(commitId));
-
         let commit_counter = &mut ctx.accounts.commitCounter;
         commit_counter.count += 1;
-        let commits = &mut ctx.accounts.commits;
-        commits.commitIds.push(commitId);
-        Ok(())
+
+        Ok(commitId)
     }
 
     /// @dev Sender / Payer sets up a new hash time lock contract depositing the
@@ -234,7 +215,7 @@ pub mod anchor_htlc {
         messenger: Pubkey,
         amount: u64,
         htlc_bump: u8,
-    ) -> Result<()> {
+    ) -> Result<[u8; 32]> {
         let clock = Clock::get().unwrap();
         require!(
             timelock > clock.unix_timestamp.try_into().unwrap(),
@@ -272,12 +253,9 @@ pub mod anchor_htlc {
         htlc.redeemed = false;
         htlc.unlocked = false;
 
-        msg!("lockId: {:?}", hex::encode(lockId));
         let lockIdStruct = &mut ctx.accounts.lockIdStruct;
         lockIdStruct.lock_id = lockId;
-        // let locks = &mut ctx.accounts.locks;
-        // locks.lockIds.push(lockId);
-        Ok(())
+        Ok(lockId)
     }
 
     /// @dev Called by the messenger to convert the PHTLC to HTLC
@@ -290,7 +268,7 @@ pub mod anchor_htlc {
         lockId: [u8; 32],
         timelock: u64,
         phtlc_bump: u8,
-    ) -> Result<()> {
+    ) -> Result<[u8; 32]> {
         let clock = Clock::get().unwrap();
         require!(
             timelock > clock.unix_timestamp.try_into().unwrap(),
@@ -346,9 +324,8 @@ pub mod anchor_htlc {
             commitId: commitId,
             token_contract: *ctx.accounts.token_contract.to_account_info().key,
         });
-        msg!("commitId: {:?}", hex::encode(commitId));
 
-        Ok(())
+        Ok(commitId)
     }
 
     /// @dev Called by the srcReceiver once they know the secret of the hashlock.
@@ -386,7 +363,6 @@ pub mod anchor_htlc {
             lockId: lockId,
             redeem_address: ctx.accounts.user_signing.key(),
         });
-        // msg!("lockId: {:?}", hex::encode(lockId));
         Ok(true)
     }
 
@@ -412,7 +388,6 @@ pub mod anchor_htlc {
         )?;
 
         emit!(TokenUncommited { commitId: commitId });
-        // msg!("commitId: {:?}", hex::encode(commitId));
         Ok(true)
     }
 
@@ -532,15 +507,6 @@ pub mod anchor_htlc {
         msg!("lockIdStruct.lock_id {:?}", lockIdStruct.lock_id);
         Ok(lockIdStruct.lock_id)
     }
-    pub fn getCommits(ctx: Context<GetCommits>, user: Pubkey) -> Result<Vec<[u8; 32]>> {
-        let commits = &ctx.accounts.commits;
-        Ok(commits.commitIds.clone())
-    }
-    // pub fn getLocks(ctx: Context<GetLocks>, user: Pubkey) -> Result<Vec<[u8; 32]>> {
-    //     let locks = &ctx.accounts.locks;
-    //     // msg!("lockIdStruct.lock_id {:?}", lockIdStruct.lock_id);
-    //     Ok(locks.lockIds.clone())
-    // }
 
     pub fn initLockIdByCommitId(
         ctx: Context<InitLockIdByCommitId>,
@@ -548,12 +514,6 @@ pub mod anchor_htlc {
     ) -> Result<()> {
         Ok(())
     }
-    pub fn initCommits(ctx: Context<InitCommits>) -> Result<()> {
-        Ok(())
-    }
-    // pub fn initLocks(ctx: Context<InitLocks>) -> Result<()> {
-    //     Ok(())
-    // }
 }
 
 #[account]
@@ -561,18 +521,6 @@ pub mod anchor_htlc {
 pub struct LockIdStruct {
     pub lock_id: [u8; 32],
 }
-
-#[account]
-#[derive(Default)]
-pub struct Commits {
-    pub commitIds: Vec<[u8; 32]>,
-}
-
-// #[account]
-// #[derive(Default)]
-// pub struct Locks {
-//     pub lockIds: Vec<[u8; 32]>,
-// }
 
 #[account]
 #[derive(Default)]
@@ -676,15 +624,6 @@ pub struct Commit<'info> {
         bump,
     )]
     pub commitCounter: Box<Account<'info, CommitCounter>>,
-    #[account(
-        mut,
-        seeds = [
-            b"commits".as_ref(),
-            sender.key().as_ref()
-        ],
-        bump,
-    )]
-    pub commits: Box<Account<'info, Commits>>,
 
     pub token_contract: Account<'info, Mint>,
     #[account(
@@ -1003,32 +942,6 @@ pub struct GetLockIdByCommitId<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(user: Pubkey)]
-pub struct GetCommits<'info> {
-    #[account(
-        seeds = [
-            b"commits".as_ref(),
-            user.key().as_ref()
-        ],
-        bump,
-    )]
-    pub commits: Box<Account<'info, Commits>>,
-}
-
-// #[derive(Accounts)]
-// #[instruction(user: Pubkey)]
-// pub struct GetLocks<'info> {
-//     #[account(
-//         seeds = [
-//             b"locks".as_ref(),
-//             user.key().as_ref()
-//         ],
-//         bump,
-//     )]
-//     pub locks: Box<Account<'info, Locks>>,
-// }
-
-#[derive(Accounts)]
 #[instruction(commitId: [u8;32])]
 pub struct InitLockIdByCommitId<'info> {
     #[account(mut)]
@@ -1048,46 +961,6 @@ pub struct InitLockIdByCommitId<'info> {
 
     pub system_program: Program<'info, System>,
 }
-
-#[derive(Accounts)]
-pub struct InitCommits<'info> {
-    #[account(mut)]
-    pub sender: Signer<'info>,
-
-    #[account(
-        init_if_needed,
-        payer = sender,
-        space = size_of::<Commits>() + 128,
-        seeds = [
-            b"commits".as_ref(),
-            sender.key().as_ref()
-        ],
-        bump,
-    )]
-    pub commits: Box<Account<'info, Commits>>,
-
-    pub system_program: Program<'info, System>,
-}
-
-// #[derive(Accounts)]
-// pub struct InitLocks<'info> {
-//     #[account(mut)]
-//     pub sender: Signer<'info>,
-
-//     #[account(
-//         init_if_needed,
-//         payer = sender,
-//         space = size_of::<Locks>() + 128,
-//         seeds = [
-//             b"locks".as_ref(),
-//             sender.key().as_ref()
-//         ],
-//         bump,
-//     )]
-//     pub locks: Box<Account<'info, Locks>>,
-
-//     pub system_program: Program<'info, System>,
-// }
 
 #[event]
 pub struct TokenCommitted {
