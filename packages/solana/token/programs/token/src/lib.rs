@@ -651,7 +651,7 @@ pub struct Commit<'info> {
     #[account(
         init,
         payer = sender,
-        space = size_of::<PHTLC>() + 8,
+        space = size_of::<PHTLC>() + 28,
         seeds = [
             commitId.as_ref()
         ],
@@ -708,7 +708,7 @@ pub struct Lock<'info> {
     #[account(
         init,
         payer = sender,
-        space = size_of::<HTLC>() + 8,
+        space = size_of::<HTLC>() + 28,
         // space = 256,
         seeds = [
             lockId.as_ref()
@@ -918,7 +918,7 @@ pub struct LockCommit<'info> {
     #[account(
     init,
     payer = messenger,
-    space = size_of::<HTLC>() + 8,
+    space = size_of::<HTLC>() + 28,
     //space = 256,
     seeds = [
         lockId.as_ref()
@@ -1037,7 +1037,7 @@ pub struct InitLockIdByCommitId<'info> {
     #[account(
         init,
         payer = sender,
-        space = size_of::<LockIdStruct>() + 8,
+        space = size_of::<LockIdStruct>() + 28,
         seeds = [
             b"commit_to_lock".as_ref(),
             commitId.as_ref()
