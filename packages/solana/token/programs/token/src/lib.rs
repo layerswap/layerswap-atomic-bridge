@@ -464,7 +464,7 @@ pub struct Commit<'info> {
     #[account(
         init,
         payer = sender,
-        space = size_of::<HTLC>() + 8,
+        space = size_of::<HTLC>() + 28,
         seeds = [
             Id.as_ref()
         ],
@@ -511,7 +511,7 @@ pub struct Lock<'info> {
     #[account(
         init,
         payer = sender,
-        space = size_of::<HTLC>() + 8,
+        space = size_of::<HTLC>() + 28,
         // space = 256,
         seeds = [
             Id.as_ref()
@@ -715,7 +715,7 @@ pub struct InitIdBySrcId<'info> {
     #[account(
         init,
         payer = sender,
-        space = size_of::<IdStruct>() + 8,
+        space = size_of::<IdStruct>() + 28,
         seeds = [
             b"srcId_to_Id".as_ref(),
             srcId.as_ref()
