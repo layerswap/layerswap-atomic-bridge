@@ -148,7 +148,7 @@ pub mod anchor_htlc {
         messenger: Pubkey,
         amount: u64,
         commit_bump: u8,
-    ) -> Result<()> {
+    ) -> Result<[u8; 32]> {
         let clock = Clock::get().unwrap();
         require!(
             timelock > clock.unix_timestamp.try_into().unwrap(),
@@ -186,7 +186,6 @@ pub mod anchor_htlc {
         htlc.redeemed = false;
         htlc.unlocked = false;
 
-        msg!("Id: {:?}", hex::encode(Id));
         // msg!("hop chains: {:?}", hopChains);
         // msg!("hop assets: {:?}", hopAssets);
         // msg!("hop addresses: {:?}", hopAddresses);
@@ -195,7 +194,7 @@ pub mod anchor_htlc {
         commit_counter.count += 1;
         // let commits = &mut ctx.accounts.commits;
         // commits.commitIds.push(commitId);
-        Ok(())
+        Ok(Id)
     }
 
     /// @dev Sender / Payer sets up a new hash time lock contract depositing the
@@ -218,7 +217,7 @@ pub mod anchor_htlc {
         messenger: Pubkey,
         amount: u64,
         lock_bump: u8,
-    ) -> Result<()> {
+    ) -> Result<[u8; 32]> {
         let clock = Clock::get().unwrap();
         require!(
             timelock > clock.unix_timestamp.try_into().unwrap(),
@@ -257,11 +256,10 @@ pub mod anchor_htlc {
         htlc.redeemed = false;
         htlc.unlocked = false;
 
-        msg!("Id: {:?}", hex::encode(Id));
         let id_struct = &mut ctx.accounts.id_struct;
         id_struct.id = Id;
 
-        Ok(())
+        Ok(Id)
     }
 
     /// @dev Called by the messenger to add hashlock to the HTLC
@@ -273,7 +271,7 @@ pub mod anchor_htlc {
         Id: [u8; 32],
         hashlock: [u8; 32],
         timelock: u64,
-    ) -> Result<()> {
+    ) -> Result<[u8; 32]> {
         let clock = Clock::get().unwrap();
         require!(
             timelock > clock.unix_timestamp.try_into().unwrap(),
@@ -285,9 +283,7 @@ pub mod anchor_htlc {
         htlc.hashlock = hashlock;
         htlc.timelock = timelock;
 
-        msg!("Id: {:?}", hex::encode(Id));
-
-        Ok(())
+        Ok(Id)
     }
 
     /// @dev Called by the src_receiver once they know the secret of the hashlock.
