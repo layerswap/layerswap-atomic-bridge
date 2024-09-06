@@ -16,27 +16,8 @@ slice __tact_verify_address(slice address) impure inline {
     return (cs, __tact_verify_address(raw));
 }
 
-(slice, slice) __tact_load_address_opt(slice cs) inline {
-    if (cs.preload_uint(2) != 0) {
-        slice raw = cs~load_msg_addr();
-        return (cs, __tact_verify_address(raw));
-    } else {
-        cs~skip_bits(2);
-        return (cs, null());
-    }
-}
-
 builder __tact_store_address(builder b, slice address) inline {
     return b.store_slice(__tact_verify_address(address));
-}
-
-builder __tact_store_address_opt(builder b, slice address) inline {
-    if (null?(address)) {
-        b = b.store_uint(0, 2);
-        return b;
-    } else {
-        return __tact_store_address(b, address);
-    }
 }
 
 int __tact_my_balance() inline {
@@ -74,24 +55,6 @@ builder __tact_store_bool(builder b, int v) inline {
         return (r, ());
     } else {
         return (idict_set_builder(d, kl, k, begin_cell().store_int(v, vl)), ());
-    }
-}
-
-(int, int, int) __tact_dict_min_int_int(cell d, int kl, int vl) inline {
-    var (key, value, flag) = idict_get_min?(d, kl);
-    if (flag) {
-        return (key, value~load_int(vl), flag);
-    } else {
-        return (null(), null(), flag);
-    }
-}
-
-(int, int, int) __tact_dict_next_int_int(cell d, int kl, int pivot, int vl) inline {
-    var (key, value, flag) = idict_get_next?(d, kl, pivot);
-    if (flag) {
-        return (key, value~load_int(vl), flag);
-    } else {
-        return (null(), null(), flag);
     }
 }
 
@@ -137,9 +100,9 @@ int __tact_slice_eq_bits(slice a, slice b) inline {
 
 forall X0, X1 -> (X0, X1) __tact_tuple_destroy_2(tuple v) asm "2 UNTUPLE";
 
-forall X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11 -> tuple __tact_tuple_create_12((X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11) v) asm "12 TUPLE";
+forall X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13 -> tuple __tact_tuple_create_14((X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13) v) asm "14 TUPLE";
 
-forall X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11 -> (X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11) __tact_tuple_destroy_12(tuple v) asm "12 UNTUPLE";
+forall X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13 -> (X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13) __tact_tuple_destroy_14(tuple v) asm "14 UNTUPLE";
 
 int $global_random(int $min, int $max) impure inline {
     __tact_prepare_random();
@@ -199,8 +162,8 @@ slice $Builder$_fun_asSlice(builder $self) impure inline {
     return begin_parse(end_cell($self));
 }
 
-((cell, cell, cell, int, int), ()) $HashedTimeLockTON$_fun_forward((cell, cell, cell, int, int) $self, slice $to, cell $body, int $bounce, tuple $init) impure inline_ref {
-    var (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)) = $self;
+((cell, int, int, slice), ()) $LayerswapV8$_fun_forward((cell, int, int, slice) $self, slice $to, cell $body, int $bounce, tuple $init) impure inline_ref {
+    var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = $self;
     var ($init) = $init;
     cell $code = null();
     cell $data = null();
@@ -216,15 +179,15 @@ slice $Builder$_fun_asSlice(builder $self) impure inline {
         if (($balanceBeforeMessage < 0)) {
             raw_reserve(0, 0);
             $global_send($SendParameters$_constructor_bounce_to_value_mode_body_code_data($bounce, $to, 0, 130, $body, $code, $data));
-            return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
+            return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
         }
     }
     $global_send($SendParameters$_constructor_bounce_to_value_mode_body_code_data($bounce, $to, 0, 66, $body, $code, $data));
-    return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
 }
 
-((cell, cell, cell, int, int), ()) $HashedTimeLockTON$_fun_notify((cell, cell, cell, int, int) $self, cell $body) impure inline {
-    var (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)) = $self;
-    ($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed)~$HashedTimeLockTON$_fun_forward(__tact_context_get_sender(), $body, false, null());
-    return (($self'locks, $self'commits, $self'commitIdToLockId, $self'contractNonce, $self'seed), ());
+((cell, int, int, slice), ()) $LayerswapV8$_fun_notify((cell, int, int, slice) $self, cell $body) impure inline {
+    var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = $self;
+    ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_forward(__tact_context_get_sender(), $body, false, null());
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
 }

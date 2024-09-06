@@ -1,7 +1,7 @@
 import "@stdlib/deploy";
 
-struct Notification {
-    commitId: Int;
+message(0x3beb51c2) Notify {
+    Id: Int;
     hashlock: Int;
     dstChain: String;
     dstAsset: String;
@@ -11,12 +11,9 @@ struct Notification {
     srcReceiver: Address;
     amount: Int;
     timelock: Int;
+    jettonMasterAddress: Address;
+    htlcJettonWalletAddress: Address;  
 }
-
-message Notify {
-    data: Notification;
-}
-
 
 contract Messenger with Deployable {
     init() {

@@ -1,7 +1,7 @@
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { TonClient, WalletContractV4, Address } from "@ton/ton";
-import { Redeem, RedeemData,HashedTimeLockTON} from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
+import { Redeem,LayerswapV8} from "../build/HashedTimeLockTON/tact_LayerswapV8"; 
 import { sleep, toNano } from "../utils/utils"
 
 export async function run() {
@@ -19,22 +19,17 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQBM6ThZis6a5Zxd5ddfxVWbCGJfUCmnZZVxQJ4Th9h1jy03"); 
-  const newContract = HashedTimeLockTON.fromAddress(contractAddress);
+  const contractAddress = Address.parse("kQD55cXZ48PdxZjZdgBSBdLVTVKLRj8p0619BEr7QRSDeAr1"); 
+  const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
-  const lockId = BigInt("66281763433596058795635477366290197584828204308153459951051320666201413942154");
-  const secret = BigInt("53471859568453023350508915562483685963002972655043732148592290075919844900864"); 
-
-  const redeemData: RedeemData = {
-    lockId: lockId,
-    secret: secret,
-    $$type: "RedeemData"
-  };
+  const Id = BigInt("102");
+  const secret = BigInt("52640402180712775100801168841838825813708635172629202311207512447469335085056"); 
 
   const redeemMessage: Redeem = {
     $$type: "Redeem",
-    data: redeemData
+    Id: Id,
+    secret: secret,
   };
 
   console.log("Redeeming HTLC...");

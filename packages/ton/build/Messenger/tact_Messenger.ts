@@ -321,9 +321,9 @@ function dictValueParserFactoryDeploy(): DictionaryValue<FactoryDeploy> {
     }
 }
 
-export type Notification = {
-    $$type: 'Notification';
-    commitId: bigint;
+export type Notify = {
+    $$type: 'Notify';
+    Id: bigint;
     hashlock: bigint;
     dstChain: string;
     dstAsset: string;
@@ -333,12 +333,15 @@ export type Notification = {
     srcReceiver: Address;
     amount: bigint;
     timelock: bigint;
+    jettonMasterAddress: Address;
+    htlcJettonWalletAddress: Address;
 }
 
-export function storeNotification(src: Notification) {
+export function storeNotify(src: Notify) {
     return (builder: Builder) => {
         let b_0 = builder;
-        b_0.storeInt(src.commitId, 257);
+        b_0.storeUint(1005277634, 32);
+        b_0.storeInt(src.Id, 257);
         b_0.storeInt(src.hashlock, 257);
         b_0.storeStringRefTail(src.dstChain);
         b_0.storeStringRefTail(src.dstAsset);
@@ -350,14 +353,17 @@ export function storeNotification(src: Notification) {
         b_1.storeInt(src.amount, 257);
         let b_2 = new Builder();
         b_2.storeInt(src.timelock, 257);
+        b_2.storeAddress(src.jettonMasterAddress);
+        b_2.storeAddress(src.htlcJettonWalletAddress);
         b_1.storeRef(b_2.endCell());
         b_0.storeRef(b_1.endCell());
     };
 }
 
-export function loadNotification(slice: Slice) {
+export function loadNotify(slice: Slice) {
     let sc_0 = slice;
-    let _commitId = sc_0.loadIntBig(257);
+    if (sc_0.loadUint(32) !== 1005277634) { throw Error('Invalid prefix'); }
+    let _Id = sc_0.loadIntBig(257);
     let _hashlock = sc_0.loadIntBig(257);
     let _dstChain = sc_0.loadStringRefTail();
     let _dstAsset = sc_0.loadStringRefTail();
@@ -369,11 +375,13 @@ export function loadNotification(slice: Slice) {
     let _amount = sc_1.loadIntBig(257);
     let sc_2 = sc_1.loadRef().beginParse();
     let _timelock = sc_2.loadIntBig(257);
-    return { $$type: 'Notification' as const, commitId: _commitId, hashlock: _hashlock, dstChain: _dstChain, dstAsset: _dstAsset, dstAddress: _dstAddress, srcAsset: _srcAsset, sender: _sender, srcReceiver: _srcReceiver, amount: _amount, timelock: _timelock };
+    let _jettonMasterAddress = sc_2.loadAddress();
+    let _htlcJettonWalletAddress = sc_2.loadAddress();
+    return { $$type: 'Notify' as const, Id: _Id, hashlock: _hashlock, dstChain: _dstChain, dstAsset: _dstAsset, dstAddress: _dstAddress, srcAsset: _srcAsset, sender: _sender, srcReceiver: _srcReceiver, amount: _amount, timelock: _timelock, jettonMasterAddress: _jettonMasterAddress, htlcJettonWalletAddress: _htlcJettonWalletAddress };
 }
 
-function loadTupleNotification(source: TupleReader) {
-    let _commitId = source.readBigNumber();
+function loadTupleNotify(source: TupleReader) {
+    let _Id = source.readBigNumber();
     let _hashlock = source.readBigNumber();
     let _dstChain = source.readString();
     let _dstAsset = source.readString();
@@ -383,12 +391,14 @@ function loadTupleNotification(source: TupleReader) {
     let _srcReceiver = source.readAddress();
     let _amount = source.readBigNumber();
     let _timelock = source.readBigNumber();
-    return { $$type: 'Notification' as const, commitId: _commitId, hashlock: _hashlock, dstChain: _dstChain, dstAsset: _dstAsset, dstAddress: _dstAddress, srcAsset: _srcAsset, sender: _sender, srcReceiver: _srcReceiver, amount: _amount, timelock: _timelock };
+    let _jettonMasterAddress = source.readAddress();
+    let _htlcJettonWalletAddress = source.readAddress();
+    return { $$type: 'Notify' as const, Id: _Id, hashlock: _hashlock, dstChain: _dstChain, dstAsset: _dstAsset, dstAddress: _dstAddress, srcAsset: _srcAsset, sender: _sender, srcReceiver: _srcReceiver, amount: _amount, timelock: _timelock, jettonMasterAddress: _jettonMasterAddress, htlcJettonWalletAddress: _htlcJettonWalletAddress };
 }
 
-function storeTupleNotification(source: Notification) {
+function storeTupleNotify(source: Notify) {
     let builder = new TupleBuilder();
-    builder.writeNumber(source.commitId);
+    builder.writeNumber(source.Id);
     builder.writeNumber(source.hashlock);
     builder.writeString(source.dstChain);
     builder.writeString(source.dstAsset);
@@ -398,48 +408,8 @@ function storeTupleNotification(source: Notification) {
     builder.writeAddress(source.srcReceiver);
     builder.writeNumber(source.amount);
     builder.writeNumber(source.timelock);
-    return builder.build();
-}
-
-function dictValueParserNotification(): DictionaryValue<Notification> {
-    return {
-        serialize: (src, builder) => {
-            builder.storeRef(beginCell().store(storeNotification(src)).endCell());
-        },
-        parse: (src) => {
-            return loadNotification(src.loadRef().beginParse());
-        }
-    }
-}
-
-export type Notify = {
-    $$type: 'Notify';
-    data: Notification;
-}
-
-export function storeNotify(src: Notify) {
-    return (builder: Builder) => {
-        let b_0 = builder;
-        b_0.storeUint(1005277634, 32);
-        b_0.store(storeNotification(src.data));
-    };
-}
-
-export function loadNotify(slice: Slice) {
-    let sc_0 = slice;
-    if (sc_0.loadUint(32) !== 1005277634) { throw Error('Invalid prefix'); }
-    let _data = loadNotification(sc_0);
-    return { $$type: 'Notify' as const, data: _data };
-}
-
-function loadTupleNotify(source: TupleReader) {
-    const _data = loadTupleNotification(source.readTuple());
-    return { $$type: 'Notify' as const, data: _data };
-}
-
-function storeTupleNotify(source: Notify) {
-    let builder = new TupleBuilder();
-    builder.writeTuple(storeTupleNotification(source.data));
+    builder.writeAddress(source.jettonMasterAddress);
+    builder.writeAddress(source.htlcJettonWalletAddress);
     return builder.build();
 }
 
@@ -465,8 +435,8 @@ function initMessenger_init_args(src: Messenger_init_args) {
 }
 
 async function Messenger_init() {
-    const __code = Cell.fromBase64('te6ccgECCwEAAj4AART/APSkE/S88sgLAQIBYgIDApLQAdDTAwFxsKMB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiFRQUwNvBPhhAvhi2zxZ2zzy4IIwyPhDAcx/AcoAye1UBAUAEaGFfdqJoaQAAwE07UTQ1AH4Y9IAMJFt4Pgo1wsKgwm68uCJ2zwGAsoBkjB/4HAh10nCH5UwINcLH94gghA761HCuo6VMNMfAYIQO+tRwrry4IHbPGwaXwp/4IIQlGqYtrqOp9MfAYIQlGqYtrry4IHTPwExyAGCEK/5D1dYyx/LP8n4QgFwbds8f+AwcAcIAAJtAOaBAQHXAIEBAdcA1AHQAdQB0AHUAdDUAdAB1AHQAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IgB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiAGBAQHXANQw0IEBAdcAMBBqEGkQaBBnATptbSJus5lbIG7y0IBvIgGRMuIQJHADBIBCUCPbPAkByshxAcoBUAcBygBwAcoCUAUg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIzxZQA/oCcAHKaCNus5F/kyRus+KXMzMBcAHKAOMNIW6znH8BygABIG7y0IABzJUxcAHKAOLJAfsACgCYfwHKAMhwAcoAcAHKACRus51/AcoABCBu8tCAUATMljQDcAHKAOIkbrOdfwHKAAQgbvLQgFAEzJY0A3ABygDicAHKAAJ/AcoAAslYzA==');
-    const __system = Cell.fromBase64('te6cckECDQEAAkgAAQHAAQEFoM0DAgEU/wD0pBP0vPLICwMCAWIEDAKS0AHQ0wMBcbCjAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IhUUFMDbwT4YQL4Yts8Wds88uCCMMj4QwHMfwHKAMntVAUHATTtRNDUAfhj0gAwkW3g+CjXCwqDCbry4InbPAYAAm0CygGSMH/gcCHXScIflTAg1wsf3iCCEDvrUcK6jpUw0x8BghA761HCuvLggds8bBpfCn/gghCUapi2uo6n0x8BghCUapi2uvLggdM/ATHIAYIQr/kPV1jLH8s/yfhCAXBt2zx/4DBwCAkA5oEBAdcAgQEB1wDUAdAB1AHQAdQB0NQB0AHUAdAB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiAH6QAEg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIAYEBAdcA1DDQgQEB1wAwEGoQaRBoEGcBOm1tIm6zmVsgbvLQgG8iAZEy4hAkcAMEgEJQI9s8CgHKyHEBygFQBwHKAHABygJQBSDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IjPFlAD+gJwAcpoI26zkX+TJG6z4pczMwFwAcoA4w0hbrOcfwHKAAEgbvLQgAHMlTFwAcoA4skB+wALAJh/AcoAyHABygBwAcoAJG6znX8BygAEIG7y0IBQBMyWNANwAcoA4iRus51/AcoABCBu8tCAUATMljQDcAHKAOJwAcoAAn8BygACyVjMABGhhX3aiaGkAAOAFs+X');
+    const __code = Cell.fromBase64('te6ccgECDAEAAoAAART/APSkE/S88sgLAQIBYgIDApLQAdDTAwFxsKMB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiFRQUwNvBPhhAvhi2zxZ2zzy4IIwyPhDAcx/AcoAye1UBAUAEaGFfdqJoaQAAwE07UTQ1AH4Y9IAMJFt4Pgo1wsKgwm68uCJ2zwGArABkjB/4HAh10nCH5UwINcLH94gghA761HCuo6IMNs8bBxfDH/gghCUapi2uo6n0x8BghCUapi2uvLggdM/ATHIAYIQr/kPV1jLH8s/yfhCAXBt2zx/4DBwBwgAAm0B7tMfAYIQO+tRwrry4IGBAQHXAIEBAdcA1AHQAdQB0AHUAdDUAdAB1AHQAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IgB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiAGBAQHXANQw0IEBAdcACQE6bW0ibrOZWyBu8tCAbyIBkTLiECRwAwSAQlAj2zwKAJD6QAEg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IgxEIwQixCKEIkByshxAcoBUAcBygBwAcoCUAUg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIzxZQA/oCcAHKaCNus5F/kyRus+KXMzMBcAHKAOMNIW6znH8BygABIG7y0IABzJUxcAHKAOLJAfsACwCYfwHKAMhwAcoAcAHKACRus51/AcoABCBu8tCAUATMljQDcAHKAOIkbrOdfwHKAAQgbvLQgFAEzJY0A3ABygDicAHKAAJ/AcoAAslYzA==');
+    const __system = Cell.fromBase64('te6cckECDgEAAooAAQHAAQEFoM0DAgEU/wD0pBP0vPLICwMCAWIEDQKS0AHQ0wMBcbCjAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IhUUFMDbwT4YQL4Yts8Wds88uCCMMj4QwHMfwHKAMntVAUHATTtRNDUAfhj0gAwkW3g+CjXCwqDCbry4InbPAYAAm0CsAGSMH/gcCHXScIflTAg1wsf3iCCEDvrUcK6jogw2zxsHF8Mf+CCEJRqmLa6jqfTHwGCEJRqmLa68uCB0z8BMcgBghCv+Q9XWMsfyz/J+EIBcG3bPH/gMHAICgHu0x8BghA761HCuvLggYEBAdcAgQEB1wDUAdAB1AHQAdQB0NQB0AHUAdAB+kABINdJgQELuvLgiCDXCwoggQT/uvLQiYMJuvLgiAH6QAEg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIAYEBAdcA1DDQgQEB1wAJAJD6QAEg10mBAQu68uCIINcLCiCBBP+68tCJgwm68uCIAfpAASDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IgxEIwQixCKEIkBOm1tIm6zmVsgbvLQgG8iAZEy4hAkcAMEgEJQI9s8CwHKyHEBygFQBwHKAHABygJQBSDXSYEBC7ry4Igg1wsKIIEE/7ry0ImDCbry4IjPFlAD+gJwAcpoI26zkX+TJG6z4pczMwFwAcoA4w0hbrOcfwHKAAEgbvLQgAHMlTFwAcoA4skB+wAMAJh/AcoAyHABygBwAcoAJG6znX8BygAEIG7y0IBQBMyWNANwAcoA4iRus51/AcoABCBu8tCAUATMljQDcAHKAOJwAcoAAn8BygACyVjMABGhhX3aiaGkAANIuczP');
     let builder = beginCell();
     builder.storeRef(__system);
     builder.storeUint(0, 1);
@@ -509,8 +479,7 @@ const Messenger_types: ABIType[] = [
     {"name":"Deploy","header":2490013878,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
     {"name":"DeployOk","header":2952335191,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
     {"name":"FactoryDeploy","header":1829761339,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"cashback","type":{"kind":"simple","type":"address","optional":false}}]},
-    {"name":"Notification","header":null,"fields":[{"name":"commitId","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"hashlock","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"dstChain","type":{"kind":"simple","type":"string","optional":false}},{"name":"dstAsset","type":{"kind":"simple","type":"string","optional":false}},{"name":"dstAddress","type":{"kind":"simple","type":"string","optional":false}},{"name":"srcAsset","type":{"kind":"simple","type":"string","optional":false}},{"name":"sender","type":{"kind":"simple","type":"address","optional":false}},{"name":"srcReceiver","type":{"kind":"simple","type":"address","optional":false}},{"name":"amount","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"timelock","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
-    {"name":"Notify","header":1005277634,"fields":[{"name":"data","type":{"kind":"simple","type":"Notification","optional":false}}]},
+    {"name":"Notify","header":1005277634,"fields":[{"name":"Id","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"hashlock","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"dstChain","type":{"kind":"simple","type":"string","optional":false}},{"name":"dstAsset","type":{"kind":"simple","type":"string","optional":false}},{"name":"dstAddress","type":{"kind":"simple","type":"string","optional":false}},{"name":"srcAsset","type":{"kind":"simple","type":"string","optional":false}},{"name":"sender","type":{"kind":"simple","type":"address","optional":false}},{"name":"srcReceiver","type":{"kind":"simple","type":"address","optional":false}},{"name":"amount","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"timelock","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"jettonMasterAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"htlcJettonWalletAddress","type":{"kind":"simple","type":"address","optional":false}}]},
 ]
 
 const Messenger_getters: ABIGetter[] = [

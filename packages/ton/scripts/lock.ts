@@ -1,7 +1,7 @@
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { TonClient, WalletContractV4, Address } from "@ton/ton";
-import { HashedTimeLockTON,Lock, LockData } from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
+import { LayerswapV8,Lock, } from "../build/HashedTimeLockTON/tact_LayerswapV8"; 
 import { toNano, sleep } from "../utils/utils";
 
 export async function run() {
@@ -19,21 +19,23 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQARYQevwGRx4Yo8AAiMinC4soRmHu3M3kqR4w8Qg--OYiaB"); 
-  const newContract = HashedTimeLockTON.fromAddress(contractAddress);
+  const contractAddress = Address.parse("kQD55cXZ48PdxZjZdgBSBdLVTVKLRj8p0619BEr7QRSDeAr1"); 
+  const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
-  const hashlock = BigInt("65525677087904354219725076609943830052605406542526131593322893980241204673175"); 
-  const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600); 
+  const hashlock = BigInt("20548678321456934993365688499927729765381779202072073513007694262427584456407"); 
+  const timelock = BigInt(Math.floor(Date.now() / 1000) + 100); 
   const srcReceiver = Address.parse("0QCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw64m1"); 
   const srcAsset = "TON"; 
   const dstChain = "STARKNET_SEPOLIA"; 
   const dstAddress = "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f"; 
   const dstAsset = "ETH"; 
-  const commitId = BigInt(43215113304368500000862857464194614513775785455721358704763198862103512164787n); 
-  const messenger: Address = Address.parse("EQB6ZTgwl_FX_fqvrAPTl4MspD_mSMdW4TZ0j7wEfSxqEty9");
+  const Id = BigInt(101n); 
+  const messenger: Address = Address.parse("EQA7ccNnC-ZiBxyqXyd2S4yImtnEaXtYMJNIOD7GrMBY8KpM");
 
-  const lockData: LockData = {
+  const lockMessage: Lock = {
+    $$type: "Lock",
+    Id: Id,
     hashlock: hashlock,
     timelock: timelock,
     srcReceiver: srcReceiver,
@@ -41,14 +43,7 @@ export async function run() {
     dstChain: dstChain,
     dstAddress: dstAddress,
     dstAsset: dstAsset,
-    commitId: commitId,
     messenger: messenger,
-    $$type: "LockData"
-  };
-
-  const lockMessage: Lock = {
-    $$type: "Lock",
-    data: lockData
   };
 
   console.log("Sending Lock message...");

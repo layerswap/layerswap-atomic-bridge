@@ -1,8 +1,8 @@
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { TonClient, WalletContractV4, Address } from "@ton/ton";
-import { Commit, CommitData, StringImpl,HashedTimeLockTON } from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
-import { toNano, sleep, createStrMap, createIntMap } from "../utils/utils";
+import { Commit,LayerswapV8 } from "../build/HashedTimeLockTON/tact_LayerswapV8"; 
+import { toNano, sleep, createStrMap } from "../utils/utils";
 
 const hopChains = createStrMap([
   [0n, { $$type: 'StringImpl', data: "STARKNET_SEPOLIA" }]
@@ -41,29 +41,25 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQARYQevwGRx4Yo8AAiMinC4soRmHu3M3kqR4w8Qg--OYiaB"); 
+  const contractAddress = Address.parse("kQD55cXZ48PdxZjZdgBSBdLVTVKLRj8p0619BEr7QRSDeAr1"); 
 
-  const newContract = HashedTimeLockTON.fromAddress(contractAddress);
+  const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
-  const commitData: CommitData = {
-    hopChains: hopChains,
-    hopAssets: hopAssets,
-    hopAddresses: hopAddresses,
-    dstChain: dstChain,
-    dstAsset: dstAsset,
-    dstAddress: dstAddress,
-    srcAsset: srcAsset,
-    srcReceiver: srcReceiver,
-    timelock: timelock,
-    messenger: messenger,
-    senderPubKey: senderPubKey,
-    $$type: "CommitData"
-  };
 
   const commitMessage: Commit = {
     $$type: "Commit",
-    data: commitData
+        hopChains: hopChains,
+        hopAssets: hopAssets,
+        hopAddresses: hopAddresses,
+        dstChain: dstChain,
+        dstAsset: dstAsset,
+        dstAddress: dstAddress,
+        srcAsset: srcAsset,
+        srcReceiver: srcReceiver,
+        timelock: timelock,
+        messenger: messenger,
+        senderPubKey: senderPubKey,
   };
 
   console.log("Sending Commit message...");

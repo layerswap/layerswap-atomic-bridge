@@ -1,0 +1,410 @@
+;;
+;; Type: StateInit
+;; TLB: _ code:^cell data:^cell = StateInit
+;;
+
+((cell, cell)) $StateInit$_not_null(tuple v) inline {
+    throw_if(128, null?(v));
+    var (cell vvv'code, cell vvv'data) = __tact_tuple_destroy_2(v);
+    return (vvv'code, vvv'data);
+}
+
+;;
+;; Type: SendParameters
+;; TLB: _ bounce:bool to:address value:int257 mode:int257 body:Maybe ^cell code:Maybe ^cell data:Maybe ^cell = SendParameters
+;;
+
+((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode(slice $to, int $bounce, int $value, int $mode) inline {
+    return ($bounce, $to, $value, $mode, null(), null(), null());
+}
+
+((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_bounce_to_value_mode_body_code_data(int $bounce, slice $to, int $value, int $mode, cell $body, cell $code, cell $data) inline {
+    return ($bounce, $to, $value, $mode, $body, $code, $data);
+}
+
+((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode_body(slice $to, int $bounce, int $value, int $mode, cell $body) inline {
+    return ($bounce, $to, $value, $mode, $body, null(), null());
+}
+
+;;
+;; Type: Deploy
+;; Header: 0x946a98b6
+;; TLB: deploy#946a98b6 queryId:uint64 = Deploy
+;;
+
+(slice, ((int))) $Deploy$_load(slice sc_0) inline {
+    throw_unless(129, sc_0~load_uint(32) == 2490013878);
+    var v'queryId = sc_0~load_uint(64);
+    return (sc_0, (v'queryId));
+}
+
+;;
+;; Type: DeployOk
+;; Header: 0xaff90f57
+;; TLB: deploy_ok#aff90f57 queryId:uint64 = DeployOk
+;;
+
+builder $DeployOk$_store(builder build_0, (int) v) inline {
+    var (v'queryId) = v;
+    build_0 = store_uint(build_0, 2952335191, 32);
+    build_0 = build_0.store_uint(v'queryId, 64);
+    return build_0;
+}
+
+cell $DeployOk$_store_cell((int) v) inline {
+    return $DeployOk$_store(begin_cell(), v).end_cell();
+}
+
+((int)) $DeployOk$_constructor_queryId(int $queryId) inline {
+    return ($queryId);
+}
+
+;;
+;; Type: Notify
+;; Header: 0x3beb51c2
+;; TLB: notify#3beb51c2 Id:int257 hashlock:int257 dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string sender:address srcReceiver:address amount:int257 timelock:int257 jettonMasterAddress:address htlcJettonWalletAddress:address = Notify
+;;
+
+builder $Notify$_store(builder build_0, (int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice) v) inline_ref {
+    var (v'Id, v'hashlock, v'dstChain, v'dstAsset, v'dstAddress, v'srcAsset, v'sender, v'srcReceiver, v'amount, v'timelock, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
+    build_0 = store_uint(build_0, 1005277634, 32);
+    build_0 = build_0.store_int(v'Id, 257);
+    build_0 = build_0.store_int(v'hashlock, 257);
+    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
+    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstAsset).end_cell());
+    var build_1 = begin_cell();
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'dstAddress).end_cell());
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'srcAsset).end_cell());
+    build_1 = __tact_store_address(build_1, v'sender);
+    build_1 = __tact_store_address(build_1, v'srcReceiver);
+    build_1 = build_1.store_int(v'amount, 257);
+    var build_2 = begin_cell();
+    build_2 = build_2.store_int(v'timelock, 257);
+    build_2 = __tact_store_address(build_2, v'jettonMasterAddress);
+    build_2 = __tact_store_address(build_2, v'htlcJettonWalletAddress);
+    build_1 = store_ref(build_1, build_2.end_cell());
+    build_0 = store_ref(build_0, build_1.end_cell());
+    return build_0;
+}
+
+cell $Notify$_store_cell((int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice) v) inline {
+    return $Notify$_store(begin_cell(), v).end_cell();
+}
+
+((int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice)) $Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress(int $Id, int $hashlock, slice $dstChain, slice $dstAsset, slice $dstAddress, slice $srcAsset, slice $sender, slice $srcReceiver, int $amount, int $timelock, slice $jettonMasterAddress, slice $htlcJettonWalletAddress) inline {
+    return ($Id, $hashlock, $dstChain, $dstAsset, $dstAddress, $srcAsset, $sender, $srcReceiver, $amount, $timelock, $jettonMasterAddress, $htlcJettonWalletAddress);
+}
+
+;;
+;; Type: HTLC
+;; TLB: _ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string sender:address senderPubKey:int257 srcReceiver:address secret:int257 hashlock:int257 amount:int257 timelock:int257 messenger:address redeemed:bool refunded:bool = HTLC
+;;
+
+builder $HTLC$_store(builder build_0, (slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int) v) inline_ref {
+    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded) = v;
+    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstAddress).end_cell());
+    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
+    var build_1 = begin_cell();
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'dstAsset).end_cell());
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'srcAsset).end_cell());
+    build_1 = __tact_store_address(build_1, v'sender);
+    build_1 = build_1.store_int(v'senderPubKey, 257);
+    build_1 = __tact_store_address(build_1, v'srcReceiver);
+    var build_2 = begin_cell();
+    build_2 = build_2.store_int(v'secret, 257);
+    build_2 = build_2.store_int(v'hashlock, 257);
+    build_2 = build_2.store_int(v'amount, 257);
+    var build_3 = begin_cell();
+    build_3 = build_3.store_int(v'timelock, 257);
+    build_3 = __tact_store_address(build_3, v'messenger);
+    build_3 = build_3.store_int(v'redeemed, 1);
+    build_3 = build_3.store_int(v'refunded, 1);
+    build_2 = store_ref(build_2, build_3.end_cell());
+    build_1 = store_ref(build_1, build_2.end_cell());
+    build_0 = store_ref(build_0, build_1.end_cell());
+    return build_0;
+}
+
+cell $HTLC$_store_cell((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int) v) inline {
+    return $HTLC$_store(begin_cell(), v).end_cell();
+}
+
+(slice, ((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int))) $HTLC$_load(slice sc_0) inline_ref {
+    var v'dstAddress = sc_0~load_ref().begin_parse();
+    var v'dstChain = sc_0~load_ref().begin_parse();
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'dstAsset = sc_1~load_ref().begin_parse();
+    var v'srcAsset = sc_1~load_ref().begin_parse();
+    var v'sender = sc_1~__tact_load_address();
+    var v'senderPubKey = sc_1~load_int(257);
+    var v'srcReceiver = sc_1~__tact_load_address();
+    slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'secret = sc_2~load_int(257);
+    var v'hashlock = sc_2~load_int(257);
+    var v'amount = sc_2~load_int(257);
+    slice sc_3 = sc_2~load_ref().begin_parse();
+    var v'timelock = sc_3~load_int(257);
+    var v'messenger = sc_3~__tact_load_address();
+    var v'redeemed = sc_3~load_int(1);
+    var v'refunded = sc_3~load_int(1);
+    return (sc_0, (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded));
+}
+
+tuple $HTLC$_as_optional((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int) v) inline {
+    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded) = v;
+    return __tact_tuple_create_14(v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded);
+}
+
+tuple $HTLC$_load_opt(cell cl) inline {
+    if (null?(cl)) {
+        return null();
+    }
+    var sc = cl.begin_parse();
+    return $HTLC$_as_optional(sc~$HTLC$_load());
+}
+
+((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int)) $HTLC$_not_null(tuple v) inline {
+    throw_if(128, null?(v));
+    var (slice vvv'dstAddress, slice vvv'dstChain, slice vvv'dstAsset, slice vvv'srcAsset, slice vvv'sender, int vvv'senderPubKey, slice vvv'srcReceiver, int vvv'secret, int vvv'hashlock, int vvv'amount, int vvv'timelock, slice vvv'messenger, int vvv'redeemed, int vvv'refunded) = __tact_tuple_destroy_14(v);
+    return (vvv'dstAddress, vvv'dstChain, vvv'dstAsset, vvv'srcAsset, vvv'sender, vvv'senderPubKey, vvv'srcReceiver, vvv'secret, vvv'hashlock, vvv'amount, vvv'timelock, vvv'messenger, vvv'redeemed, vvv'refunded);
+}
+
+tuple $HTLC$_to_tuple(((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int)) v) inline {
+    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded) = v;
+    return __tact_tuple_create_14(v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded);
+}
+
+tuple $HTLC$_to_opt_tuple(tuple v) inline {
+    if (null?(v)) { return null(); } 
+    return $HTLC$_to_tuple($HTLC$_not_null(v)); 
+}
+
+tuple $HTLC$_to_opt_external(tuple v) inline {
+    var loaded = $HTLC$_to_opt_tuple(v);
+    if (null?(loaded)) {
+        return null();
+    } else {
+        return (loaded);
+    }
+}
+
+((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int)) $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, int $senderPubKey, slice $srcReceiver, int $secret, int $hashlock, int $amount, int $timelock, slice $messenger, int $redeemed, int $refunded) inline {
+    return ($dstAddress, $dstChain, $dstAsset, $srcAsset, $sender, $senderPubKey, $srcReceiver, $secret, $hashlock, $amount, $timelock, $messenger, $redeemed, $refunded);
+}
+
+;;
+;; Type: Commit
+;; Header: 0x1b564d91
+;; TLB: commit#1b564d91 dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string srcReceiver:address timelock:int257 messenger:address senderPubKey:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = Commit
+;;
+
+(slice, ((slice, slice, slice, slice, slice, int, slice, int, cell, cell, cell))) $Commit$_load(slice sc_0) inline_ref {
+    throw_unless(129, sc_0~load_uint(32) == 458640785);
+    var v'dstChain = sc_0~load_ref().begin_parse();
+    var v'dstAsset = sc_0~load_ref().begin_parse();
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'dstAddress = sc_1~load_ref().begin_parse();
+    var v'srcAsset = sc_1~load_ref().begin_parse();
+    var v'srcReceiver = sc_1~__tact_load_address();
+    var v'timelock = sc_1~load_int(257);
+    var v'messenger = sc_1~__tact_load_address();
+    slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'senderPubKey = sc_2~load_int(257);
+    var v'hopChains = sc_2~load_dict();
+    var v'hopAssets = sc_2~load_dict();
+    var v'hopAddresses = sc_2~load_dict();
+    return (sc_0, (v'dstChain, v'dstAsset, v'dstAddress, v'srcAsset, v'srcReceiver, v'timelock, v'messenger, v'senderPubKey, v'hopChains, v'hopAssets, v'hopAddresses));
+}
+
+;;
+;; Type: AddLock
+;; Header: 0x5cdd41d9
+;; TLB: add_lock#5cdd41d9 Id:int257 hashlock:int257 timelock:int257 = AddLock
+;;
+
+(slice, ((int, int, int))) $AddLock$_load(slice sc_0) inline {
+    throw_unless(129, sc_0~load_uint(32) == 1558004185);
+    var v'Id = sc_0~load_int(257);
+    var v'hashlock = sc_0~load_int(257);
+    var v'timelock = sc_0~load_int(257);
+    return (sc_0, (v'Id, v'hashlock, v'timelock));
+}
+
+((int, int, int)) $AddLock$_constructor_Id_hashlock_timelock(int $Id, int $hashlock, int $timelock) inline {
+    return ($Id, $hashlock, $timelock);
+}
+
+;;
+;; Type: AddLockSig
+;; Header: 0xc1d818ff
+;; TLB: add_lock_sig#c1d818ff Id:int257 data:^slice signature:^slice = AddLockSig
+;;
+
+(slice, ((int, slice, slice))) $AddLockSig$_load(slice sc_0) inline {
+    throw_unless(129, sc_0~load_uint(32) == 3252164863);
+    var v'Id = sc_0~load_int(257);
+    var v'data = sc_0~load_ref().begin_parse();
+    var v'signature = sc_0~load_ref().begin_parse();
+    return (sc_0, (v'Id, v'data, v'signature));
+}
+
+;;
+;; Type: Lock
+;; Header: 0x12e78cb1
+;; TLB: lock#12e78cb1 Id:int257 hashlock:int257 timelock:int257 srcReceiver:address srcAsset:^string dstChain:^string dstAddress:^string dstAsset:^string messenger:address = Lock
+;;
+
+(slice, ((int, int, int, slice, slice, slice, slice, slice, slice))) $Lock$_load(slice sc_0) inline_ref {
+    throw_unless(129, sc_0~load_uint(32) == 317164721);
+    var v'Id = sc_0~load_int(257);
+    var v'hashlock = sc_0~load_int(257);
+    var v'timelock = sc_0~load_int(257);
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'srcReceiver = sc_1~__tact_load_address();
+    var v'srcAsset = sc_1~load_ref().begin_parse();
+    var v'dstChain = sc_1~load_ref().begin_parse();
+    var v'dstAddress = sc_1~load_ref().begin_parse();
+    var v'dstAsset = sc_1~load_ref().begin_parse();
+    var v'messenger = sc_1~__tact_load_address();
+    return (sc_0, (v'Id, v'hashlock, v'timelock, v'srcReceiver, v'srcAsset, v'dstChain, v'dstAddress, v'dstAsset, v'messenger));
+}
+
+;;
+;; Type: Redeem
+;; Header: 0x758db085
+;; TLB: redeem#758db085 Id:int257 secret:int257 = Redeem
+;;
+
+(slice, ((int, int))) $Redeem$_load(slice sc_0) inline {
+    throw_unless(129, sc_0~load_uint(32) == 1972220037);
+    var v'Id = sc_0~load_int(257);
+    var v'secret = sc_0~load_int(257);
+    return (sc_0, (v'Id, v'secret));
+}
+
+;;
+;; Type: Refund
+;; Header: 0xad821ef9
+;; TLB: refund#ad821ef9 Id:int257 = Refund
+;;
+
+(slice, ((int))) $Refund$_load(slice sc_0) inline {
+    throw_unless(129, sc_0~load_uint(32) == 2910985977);
+    var v'Id = sc_0~load_int(257);
+    return (sc_0, (v'Id));
+}
+
+;;
+;; Type: TokenCommitted
+;; Header: 0x71f9f7aa
+;; TLB: token_committed#71f9f7aa Id:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address senderPubKey:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = TokenCommitted
+;;
+
+builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell) v) inline_ref {
+    var (v'Id, v'dstChain, v'dstAddress, v'dstAsset, v'sender, v'srcReceiver, v'srcAsset, v'amount, v'timelock, v'messenger, v'senderPubKey, v'hopChains, v'hopAssets, v'hopAddresses) = v;
+    build_0 = store_uint(build_0, 1912207274, 32);
+    build_0 = build_0.store_int(v'Id, 257);
+    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
+    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstAddress).end_cell());
+    var build_1 = begin_cell();
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'dstAsset).end_cell());
+    build_1 = __tact_store_address(build_1, v'sender);
+    build_1 = __tact_store_address(build_1, v'srcReceiver);
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'srcAsset).end_cell());
+    build_1 = build_1.store_int(v'amount, 257);
+    var build_2 = begin_cell();
+    build_2 = build_2.store_int(v'timelock, 257);
+    build_2 = __tact_store_address(build_2, v'messenger);
+    build_2 = build_2.store_int(v'senderPubKey, 257);
+    build_2 = build_2.store_dict(v'hopChains);
+    build_2 = build_2.store_dict(v'hopAssets);
+    build_2 = build_2.store_dict(v'hopAddresses);
+    build_1 = store_ref(build_1, build_2.end_cell());
+    build_0 = store_ref(build_0, build_1.end_cell());
+    return build_0;
+}
+
+cell $TokenCommitted$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell) v) inline {
+    return $TokenCommitted$_store(begin_cell(), v).end_cell();
+}
+
+((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell)) $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_senderPubKey_hopChains_hopAssets_hopAddresses(int $Id, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, int $senderPubKey, cell $hopChains, cell $hopAssets, cell $hopAddresses) inline {
+    return ($Id, $dstChain, $dstAddress, $dstAsset, $sender, $srcReceiver, $srcAsset, $amount, $timelock, $messenger, $senderPubKey, $hopChains, $hopAssets, $hopAddresses);
+}
+
+;;
+;; Type: TokenLocked
+;; Header: 0x95b0219d
+;; TLB: token_locked#95b0219d Id:int257 hashlock:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address = TokenLocked
+;;
+
+builder $TokenLocked$_store(builder build_0, (int, int, slice, slice, slice, slice, slice, slice, int, int, slice) v) inline_ref {
+    var (v'Id, v'hashlock, v'dstChain, v'dstAddress, v'dstAsset, v'sender, v'srcReceiver, v'srcAsset, v'amount, v'timelock, v'messenger) = v;
+    build_0 = store_uint(build_0, 2511348125, 32);
+    build_0 = build_0.store_int(v'Id, 257);
+    build_0 = build_0.store_int(v'hashlock, 257);
+    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
+    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstAddress).end_cell());
+    var build_1 = begin_cell();
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'dstAsset).end_cell());
+    build_1 = __tact_store_address(build_1, v'sender);
+    build_1 = __tact_store_address(build_1, v'srcReceiver);
+    build_1 = build_1.store_ref(begin_cell().store_slice(v'srcAsset).end_cell());
+    build_1 = build_1.store_int(v'amount, 257);
+    var build_2 = begin_cell();
+    build_2 = build_2.store_int(v'timelock, 257);
+    build_2 = __tact_store_address(build_2, v'messenger);
+    build_1 = store_ref(build_1, build_2.end_cell());
+    build_0 = store_ref(build_0, build_1.end_cell());
+    return build_0;
+}
+
+cell $TokenLocked$_store_cell((int, int, slice, slice, slice, slice, slice, slice, int, int, slice) v) inline {
+    return $TokenLocked$_store(begin_cell(), v).end_cell();
+}
+
+((int, int, slice, slice, slice, slice, slice, slice, int, int, slice)) $TokenLocked$_constructor_Id_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger(int $Id, int $hashlock, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger) inline {
+    return ($Id, $hashlock, $dstChain, $dstAddress, $dstAsset, $sender, $srcReceiver, $srcAsset, $amount, $timelock, $messenger);
+}
+
+;;
+;; Type: LayerswapV8
+;;
+
+builder $LayerswapV8$_store(builder build_0, (cell, int, int, slice) v) inline {
+    var (v'contracts, v'contractNonce, v'seed, v'zeroAddress) = v;
+    build_0 = build_0.store_dict(v'contracts);
+    build_0 = build_0.store_int(v'contractNonce, 257);
+    build_0 = build_0.store_int(v'seed, 257);
+    build_0 = __tact_store_address(build_0, v'zeroAddress);
+    return build_0;
+}
+
+(slice, ((cell, int, int, slice))) $LayerswapV8$_load(slice sc_0) inline {
+    var v'contracts = sc_0~load_dict();
+    var v'contractNonce = sc_0~load_int(257);
+    var v'seed = sc_0~load_int(257);
+    var v'zeroAddress = sc_0~__tact_load_address();
+    return (sc_0, (v'contracts, v'contractNonce, v'seed, v'zeroAddress));
+}
+
+(cell, int, int, slice) $LayerswapV8$_contract_load() impure inline_ref {
+    slice $sc = get_data().begin_parse();
+    __tact_context_sys = $sc~load_ref();
+    int $loaded = $sc~load_int(1);
+    if ($loaded) {
+        return $sc~$LayerswapV8$_load();
+    } else {
+        ;; Allow only workchain deployments
+        throw_unless(137, my_address().preload_uint(11) == 1024);
+        return $LayerswapV8$_contract_init();
+    }
+}
+
+() $LayerswapV8$_contract_store((cell, int, int, slice) v) impure inline {
+    builder b = begin_cell();
+    b = b.store_ref(__tact_context_sys);
+    b = b.store_int(true, 1);
+    b = $LayerswapV8$_store(b, v);
+    set_data(b.end_cell());
+}

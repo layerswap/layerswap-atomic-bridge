@@ -1,6 +1,6 @@
 import { beginCell, Cell } from "@ton/ton"; 
 import { TonClient, WalletContractV4, Address } from "@ton/ton"; 
-import { LockCommitmentSig, LockCommitmentSigData, HashedTimeLockTON } from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
+import { AddLockSig, LayerswapV8 } from "../build/HashedTimeLockTON/tact_LayerswapV8"; 
 import { getHttpEndpoint } from "@orbs-network/ton-access"; 
 import { toNano, sleep } from "../utils/utils"; 
 import { mnemonicToWalletKey, sign, signVerify } from 'ton-crypto';
@@ -20,13 +20,13 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQBM6ThZis6a5Zxd5ddfxVWbCGJfUCmnZZVxQJ4Th9h1j5a9"); 
-  const newContract = HashedTimeLockTON.fromAddress(contractAddress);
+  const contractAddress = Address.parse("EQD55cXZ48PdxZjZdgBSBdLVTVKLRj8p0619BEr7QRSDeLF_"); 
+  const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
   const amount = toNano("0.1");
 
-  const commitId = BigInt("1000001");
-  const hashlock = BigInt("66281763433596058795635477366290197584828204308153459951051320666201413942154");
+  const Id = BigInt("102");
+  const hashlock = BigInt("20548678321456934993365688499927729765381779202072073513007694262427584456407");
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600);
 
   const dataCell: Cell = beginCell()
@@ -42,19 +42,14 @@ async function run() {
 
 console.log("signiture verified off chain: ",signVerify(dataCell.hash(),signatureBuffer,key.publicKey));
   
-const lockCommitmentSigData: LockCommitmentSigData = {
-      commitId: commitId,
+  const lockCommitmentSigMessage: AddLockSig = {
+      $$type: "AddLockSig",
+      Id: Id,
       data: dataSlice, 
       signature: signatureSlice,
-      $$type: "LockCommitmentSigData"
   };
 
-  const lockCommitmentSigMessage: LockCommitmentSig = {
-      $$type: "LockCommitmentSig",
-      data: lockCommitmentSigData
-  };
-
-  console.log("Sending LockCommitmentSig message...");
+  console.log("Sending AddLockSig message...");
   await contractProvider.send(walletSender, { value: amount, bounce: true }, lockCommitmentSigMessage);
 
   let currentSeqno = seqno;

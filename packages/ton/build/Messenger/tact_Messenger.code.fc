@@ -19,9 +19,9 @@ tuple $Messenger$_contract_init() impure inline_ref {
 ;; Receivers of a Contract Messenger
 ;;
 
-((tuple), ()) $Messenger$_internal_binary_Notify(tuple $self, ((int, int, slice, slice, slice, slice, slice, slice, int, int)) $msg) impure inline {
+((tuple), ()) $Messenger$_internal_binary_Notify(tuple $self, (int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice) $msg) impure inline {
     var $self = $self;
-    var (($msg'data'commitId, $msg'data'hashlock, $msg'data'dstChain, $msg'data'dstAsset, $msg'data'dstAddress, $msg'data'srcAsset, $msg'data'sender, $msg'data'srcReceiver, $msg'data'amount, $msg'data'timelock)) = $msg;
+    var ($msg'Id, $msg'hashlock, $msg'dstChain, $msg'dstAsset, $msg'dstAddress, $msg'srcAsset, $msg'sender, $msg'srcReceiver, $msg'amount, $msg'timelock, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress) = $msg;
     return ($self, ());
 }
 

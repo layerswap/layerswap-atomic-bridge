@@ -1,7 +1,7 @@
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { TonClient, WalletContractV4, Address } from "@ton/ton";
-import { Unlock, UnlockData,HashedTimeLockTON } from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
+import { Refund,LayerswapV8 } from "../build/HashedTimeLockTON/tact_LayerswapV8"; 
 import { sleep, toNano } from "../utils/utils"
 
 export async function run() {
@@ -19,23 +19,18 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQAHLS7cZ4bzUBFInEP4NG_bJsMMcjHbEYjPWYfpeABR_TpU"); 
-  const newContract = HashedTimeLockTON.fromAddress(contractAddress);
+  const contractAddress = Address.parse("kQD55cXZ48PdxZjZdgBSBdLVTVKLRj8p0619BEr7QRSDeAr1"); 
+  const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
-  const hashlock = BigInt("95834839512827776901986325239264454031944797482888037141762408015567291439797"); 
+  const Id = BigInt("101"); 
 
-  const unlockData: UnlockData = {
-    hashlock: hashlock,
-    $$type: "UnlockData"
+  const unlockMessage: Refund = {
+    $$type: "Refund",
+    Id: Id,
   };
 
-  const unlockMessage: Unlock = {
-    $$type: "Unlock",
-    data: unlockData
-  };
-
-  console.log("Sending Unlock message...");
+  console.log("Sending Refund message...");
   await contractProvider.send(walletSender, { value: toNano("0.3"), bounce: true }, unlockMessage);
 
   let currentSeqno = seqno;

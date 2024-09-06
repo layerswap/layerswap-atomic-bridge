@@ -1,7 +1,7 @@
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { TonClient, WalletContractV4, Address } from "@ton/ton";
-import { LockCommitment, LockCommitmentData ,HashedTimeLockTON} from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
+import { AddLock ,LayerswapV8} from "../build/HashedTimeLockTON/tact_LayerswapV8"; 
 import { toNano, sleep } from "../utils/utils";
 
 async function run() {
@@ -19,25 +19,20 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQDj4UDbdWSJm4jVZOkr_hOFMkeUG8BahxApftBKOG4mhPjP"); 
-  const newContract = HashedTimeLockTON.fromAddress(contractAddress);
+  const contractAddress = Address.parse("EQD55cXZ48PdxZjZdgBSBdLVTVKLRj8p0619BEr7QRSDeLF_"); 
+  const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
   const amount = toNano("0.1");
 
-  const lockCommitmentData: LockCommitmentData = {
-    commitId: 79487511186371839588255465463422044852128997200189785173967264060596494197385n,
-    hashlock: 87562466615021115273923358655790804049477827703244008055029249926713965109410n,
+  const addLockMessage: AddLock = {
+    $$type: "AddLock",
+    Id: 101n,
+    hashlock: 20548678321456934993365688499927729765381779202072073513007694262427584456407n,
     timelock: BigInt(Math.floor(Date.now() / 1000) + 3600),
-    $$type: "LockCommitmentData"
   };
 
-  const lockCommitmentMessage: LockCommitment = {
-    $$type: "LockCommitment",
-    data: lockCommitmentData
-  };
-
-  console.log("Sending LockCommitment message...");
-  await contractProvider.send(walletSender, { value: amount,bounce: true }, lockCommitmentMessage);
+  console.log("Sending AddLock message...");
+  await contractProvider.send(walletSender, { value: amount,bounce: true }, addLockMessage);
 
   let currentSeqno = seqno;
   while (currentSeqno == seqno) {

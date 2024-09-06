@@ -36,11 +36,8 @@ builder $DeployOk$_store(builder build_0, (int) v) inline;
 ;; $DeployOk$_store_cell
 cell $DeployOk$_store_cell((int) v) inline;
 
-;; $Notification$_load
-(slice, ((int, int, slice, slice, slice, slice, slice, slice, int, int))) $Notification$_load(slice sc_0) inline_ref;
-
 ;; $Notify$_load
-(slice, (((int, int, slice, slice, slice, slice, slice, slice, int, int)))) $Notify$_load(slice sc_0) inline;
+(slice, ((int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice))) $Notify$_load(slice sc_0) inline_ref;
 
 ;; $StateInit$_not_null
 ((cell, cell)) $StateInit$_not_null(tuple v) inline;
