@@ -26,7 +26,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
  *       for a given amount. A 32 byte contract id is returned
  *  2) redeem(contractId, secret) - once the srcReceiver knows the secret of
  *      the hashlock hash they can claim the tokens with this function
- *  3) unlock() - after timelock has expired and if the srcReceiver did not
+ *  3) refund() - after timelock has expired and if the srcReceiver did not
  *      redeem the tokens the sender / creator of the HTLC can get their tokens
  *      back with this function.
  */
@@ -40,7 +40,7 @@ struct EIP712Domain {
 
 interface IMessenger {
   function notify(
-    bytes32 srcId,
+    bytes32 Id,
     bytes32 hashlock,
     string memory dstChain,
     string memory dstAsset,
@@ -81,7 +81,7 @@ contract LayerswapV8ERC20 {
   error HTLCNotExists();
   error HashlockNotMatch();
   error AlreadyRedeemed();
-  error AlreadyUnlocked();
+  error AlreadyRefunded();
   error NoMessenger();
   error IncorrectData();
   error InsufficientBalance();
@@ -104,41 +104,26 @@ contract LayerswapV8ERC20 {
     address tokenContract;
     address messenger;
     bool redeemed;
-    bool unlocked;
+    bool refunded;
   }
 
-  struct lockCommitmentMsg {
+  struct addLockMsg {
     bytes32 hashlock;
     uint256 timelock;
   }
 
   using SafeERC20 for IERC20;
   mapping(bytes32 => HTLC) contracts;
-  mapping(bytes32 => bytes32) srcIdToId;
   bytes32[] lockIds;
   bytes32[] commitIds;
   uint256 blockHashAsUint = uint256(blockhash(block.number - 1));
   uint256 contractNonce = 0;
 
   event TokenCommitted(
-    bytes32 Id,
+    bytes32 indexed Id,
     string[] hopChains,
     string[] hopAssets,
     string[] hopAddresses,
-    string dstChain,
-    string dstAddress,
-    string dstAsset,
-    address sender,
-    address srcReceiver,
-    string srcAsset,
-    uint amount,
-    uint timelock,
-    address messenger,
-    address tokenContract
-  );
-
-  event TokenLocked(
-    bytes32 indexed hashlock,
     string dstChain,
     string dstAddress,
     string dstAsset,
@@ -148,13 +133,27 @@ contract LayerswapV8ERC20 {
     uint amount,
     uint timelock,
     address messenger,
-    bytes32 srcId,
     address tokenContract
   );
 
-  event TokenLockCommitted(bytes32 Id, address messenger, bytes32 hashlock, uint256 timelock);
+  event TokenLocked(
+    bytes32 indexed Id,
+    bytes32 hashlock,
+    string dstChain,
+    string dstAddress,
+    string dstAsset,
+    address indexed sender,
+    address indexed srcReceiver,
+    string srcAsset,
+    uint amount,
+    uint timelock,
+    address messenger,
+    address tokenContract
+  );
+
+  event TokenLockAdded(bytes32 Id, address messenger, bytes32 hashlock, uint256 timelock);
   event TokenRedeemed(bytes32 indexed Id, address redeemAddress);
-  event TokenUnlocked(bytes32 indexed Id);
+  event TokenRefunded(bytes32 indexed Id);
   event LowLevelErrorOccurred(bytes lowLevelData);
 
   modifier _exists(bytes32 Id) {
@@ -197,6 +196,8 @@ contract LayerswapV8ERC20 {
 
     contractNonce += 1;
     Id = bytes32(blockHashAsUint ^ contractNonce);
+
+    //Remove this check; the ID is guaranteed to be unique.
     if (hasHTLC(Id)) {
       revert HTLCAlreadyExists();
     }
@@ -236,13 +237,10 @@ contract LayerswapV8ERC20 {
     );
   }
 
-  function lockCommitment(bytes32 Id, bytes32 hashlock, uint256 timelock) external _exists(Id) returns (bytes32) {
+  function addLock(bytes32 Id, bytes32 hashlock, uint256 timelock) external _exists(Id) returns (bytes32) {
     HTLC storage htlc = contracts[Id];
-    if (htlc.unlocked == true) {
-      revert AlreadyUnlocked();
-    }
-    if (hasHTLC(hashlock)) {
-      revert LockAlreadyExists();
+    if (htlc.refunded == true) {
+      revert AlreadyRefunded();
     }
     if (timelock <= block.timestamp) {
       revert NotFutureTimelock();
@@ -254,24 +252,23 @@ contract LayerswapV8ERC20 {
       } else {
         revert HashlockAlreadySet();
       }
-      lockIds.push(hashlock);
-      emit TokenLockCommitted(Id, msg.sender, hashlock, timelock);
-      return hashlock;
+      lockIds.push(Id);
+      emit TokenLockAdded(Id, msg.sender, hashlock, timelock);
+      return Id;
     } else {
       revert NoAllowance();
     }
   }
 
-  function lockCommitmentSig(
+  function addLockSig(
     bytes32 Id,
-    lockCommitmentMsg memory message,
+    addLockMsg memory message,
     uint8 v,
     bytes32 r,
     bytes32 s
   ) external _exists(Id) returns (bytes32 lockId) {
     if (verifyMessage(msg.sender, message, v, r, s)) {
-      lockId = this.lockCommitment(Id, message.hashlock, message.timelock);
-      return lockId;
+      return this.addLock(Id, message.hashlock, message.timelock);
     } else {
       revert InvalidSigniture();
     }
@@ -289,6 +286,7 @@ contract LayerswapV8ERC20 {
    */
 
   function lock(
+    bytes32 Id,
     bytes32 hashlock,
     uint256 timelock,
     address srcReceiver,
@@ -296,7 +294,6 @@ contract LayerswapV8ERC20 {
     string memory dstChain,
     string memory dstAddress,
     string memory dstAsset,
-    bytes32 srcId,
     address messenger,
     uint256 amount,
     address tokenContract
@@ -306,9 +303,6 @@ contract LayerswapV8ERC20 {
     }
     if (amount == 0) {
       revert FundsNotSent();
-    }
-    if (hasHTLC(hashlock)) {
-      revert LockAlreadyExists();
     }
     IERC20 token = IERC20(tokenContract);
 
@@ -321,7 +315,7 @@ contract LayerswapV8ERC20 {
     }
 
     token.safeTransferFrom(msg.sender, address(this), amount);
-    contracts[hashlock] = HTLC(
+    contracts[Id] = HTLC(
       dstAddress,
       dstChain,
       dstAsset,
@@ -338,9 +332,9 @@ contract LayerswapV8ERC20 {
       false
     );
 
-    lockIds.push(hashlock);
-    srcIdToId[srcId] = hashlock;
+    lockIds.push(Id);
     emit TokenLocked(
+      Id,
       hashlock,
       dstChain,
       dstAddress,
@@ -351,7 +345,6 @@ contract LayerswapV8ERC20 {
       amount,
       timelock,
       messenger,
-      srcId,
       tokenContract
     );
 
@@ -363,7 +356,7 @@ contract LayerswapV8ERC20 {
       if (codeSize > 0) {
         try
           IMessenger(messenger).notify(
-            srcId,
+            Id,
             hashlock,
             dstChain,
             dstAsset,
@@ -387,7 +380,7 @@ contract LayerswapV8ERC20 {
         revert NoMessenger();
       }
     }
-    return hashlock;
+    return Id;
   }
 
   /**
@@ -403,7 +396,7 @@ contract LayerswapV8ERC20 {
 
     if (htlc.hashlock != sha256(abi.encodePacked(secret))) revert HashlockNotMatch();
     if (htlc.redeemed) revert AlreadyRedeemed();
-    if (htlc.unlocked) revert AlreadyUnlocked();
+    if (htlc.refunded) revert AlreadyRefunded();
 
     htlc.secret = secret;
     htlc.redeemed = true;
@@ -414,29 +407,29 @@ contract LayerswapV8ERC20 {
 
   /**
    * @dev Called by the sender if there was no redeem AND the time lock has
-   * expired. This will unlock the contract amount.
-   * @param Id Id of HTLC to unlock from.
+   * expired. This will refund the contract amount.
+   * @param Id Id of HTLC to refund from.
    * @return bool true on success
    */
-  function unlock(bytes32 Id) external _exists(Id) returns (bool) {
+  function refund(bytes32 Id) external _exists(Id) returns (bool) {
     HTLC storage htlc = contracts[Id];
 
-    if (htlc.unlocked) revert AlreadyUnlocked();
+    if (htlc.refunded) revert AlreadyRefunded();
     if (htlc.redeemed) revert AlreadyRedeemed();
     if (htlc.timelock > block.timestamp) revert NotPassedTimelock();
 
-    htlc.unlocked = true;
+    htlc.refunded = true;
     IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
-    emit TokenUnlocked(Id);
+    emit TokenRefunded(Id);
     return true;
   }
 
   /**
    * @dev Get contract details.
-   * @param lockId HTLC contract id
+   * @param Id HTLC contract id
    */
-  function getLockDetails(bytes32 lockId) external view returns (HTLC memory) {
-    return contracts[lockId];
+  function getDetails(bytes32 Id) external view returns (HTLC memory) {
+    return contracts[Id];
   }
 
   /**
@@ -493,11 +486,7 @@ contract LayerswapV8ERC20 {
     return result;
   }
 
-  function getIdBySrcId(bytes32 Id) public view returns (bytes32) {
-    return srcIdToId[Id];
-  }
-
-  function hashDomain(EIP712Domain memory domain) public pure returns (bytes32) {
+  function hashDomain(EIP712Domain memory domain) private pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -512,11 +501,11 @@ contract LayerswapV8ERC20 {
   }
 
   // Hashes an EIP712 message struct
-  function hashMessage(lockCommitmentMsg memory message) public pure returns (bytes32) {
+  function hashMessage(addLockMsg memory message) private pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
-          keccak256('lockCommitmentMsg(bytes32 hashlock,uint256 timelock)'),
+          keccak256('addLockMsg(bytes32 hashlock,uint256 timelock)'),
           message.hashlock,
           message.timelock
         )
@@ -526,11 +515,11 @@ contract LayerswapV8ERC20 {
   // Verifies an EIP712 message signature
   function verifyMessage(
     address sender,
-    lockCommitmentMsg memory message,
+    addLockMsg memory message,
     uint8 v,
     bytes32 r,
     bytes32 s
-  ) public view returns (bool) {
+  ) private view returns (bool) {
     bytes32 digest = keccak256(abi.encodePacked('\x19\x01', DOMAIN_SEPARATOR, hashMessage(message)));
 
     address recoveredAddress = ecrecover(digest, v, r, s);

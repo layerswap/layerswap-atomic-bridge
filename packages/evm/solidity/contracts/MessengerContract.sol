@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 interface IMessenger {
   function notify(
-    bytes32 srcId,
+    bytes32 Id,
     bytes32 hashlock,
     string memory dstChain,
     string memory dstAsset,
@@ -20,7 +20,6 @@ interface IMessenger {
 contract SimpleMessenger is IMessenger {
   event NotificationReceived(
     bytes32 indexed Id,
-    bytes32 srcId,
     bytes32 hashlock,
     string dstChain,
     string dstAsset,
@@ -34,28 +33,27 @@ contract SimpleMessenger is IMessenger {
   );
 
   function notify(
-    bytes32 srcId,
+    bytes32 Id,
     bytes32 hashlock,
     string memory dstChain,
     string memory dstAsset,
     string memory dstAddress,
     string memory srcAsset,
     address payable sender,
-    address payable srcReciever,
+    address payable srcReceiver,
     uint256 amount,
     uint256 timelock,
     address tokenContract
   ) public override {
     emit NotificationReceived(
-      hashlock,
-      srcId,
+      Id,
       hashlock,
       dstChain,
       dstAsset,
       dstAddress,
       srcAsset,
       sender,
-      srcReciever,
+      srcReceiver,
       amount,
       timelock,
       tokenContract

@@ -25,7 +25,7 @@ struct EIP712Domain {
 // Interface for Messenger, to be notified when LP locks funds, with this address specified as the messenger.
 interface IMessenger {
   function notify(
-    bytes32 srcId,
+    bytes32 Id,
     bytes32 hashlock,
     string memory dstChain,
     string memory dstAsset,
@@ -66,7 +66,7 @@ contract LayerswapV8 {
   error HTLCNotExists();
   error HashlockNotMatch();
   error AlreadyRedeemed();
-  error AlreadyUnlocked();
+  error AlreadyRefunded();
   error NoMessenger();
   error CommitmentNotExists();
   error AlreadyLocked();
@@ -88,31 +88,19 @@ contract LayerswapV8 {
     uint256 secret;
     address messenger;
     bool redeemed;
-    bool unlocked;
+    bool refunded;
   }
 
-  struct lockCommitmentMsg {
+  struct addLockMsg {
     bytes32 hashlock;
     uint256 timelock;
   }
 
   event TokenCommitted(
-    bytes32 Id,
+    bytes32 indexed Id,
     string[] hopChains,
     string[] hopAssets,
     string[] hopAddresses,
-    string dstChain,
-    string dstAddress,
-    string dstAsset,
-    address sender,
-    address srcReceiver,
-    string srcAsset,
-    uint256 amount,
-    uint256 timelock,
-    address messenger
-  );
-  event TokenLocked(
-    bytes32 indexed hashlock,
     string dstChain,
     string dstAddress,
     string dstAsset,
@@ -121,14 +109,26 @@ contract LayerswapV8 {
     string srcAsset,
     uint256 amount,
     uint256 timelock,
-    address messenger,
-    bytes32 srcId
+    address messenger
+  );
+  event TokenLocked(
+    bytes32 indexed Id,
+    bytes32 hashlock,
+    string dstChain,
+    string dstAddress,
+    string dstAsset,
+    address indexed sender,
+    address indexed srcReceiver,
+    string srcAsset,
+    uint256 amount,
+    uint256 timelock,
+    address messenger
   );
 
-  event TokenLockCommitted(bytes32 Id, address messenger, bytes32 hashlock, uint256 timelock);
-  event LowLevelErrorOccurred(bytes lowLevelData);
-  event TokenUnlocked(bytes32 indexed Id);
+  event TokenLockAdded(bytes32 indexed Id, address messenger, bytes32 hashlock, uint256 timelock);
+  event TokenRefunded(bytes32 indexed Id);
   event TokenRedeemed(bytes32 indexed Id, address redeemAddress);
+  event LowLevelErrorOccurred(bytes lowLevelData);
 
   modifier _exists(bytes32 Id) {
     if (!hasHTLC(Id)) revert HTLCNotExists();
@@ -136,7 +136,6 @@ contract LayerswapV8 {
   }
 
   mapping(bytes32 => HTLC) contracts;
-  mapping(bytes32 => bytes32) srcIdToId;
   bytes32[] lockIds;
   bytes32[] commitIds;
   uint256 blockHashAsUint = uint256(blockhash(block.number - 1));
@@ -163,7 +162,7 @@ contract LayerswapV8 {
     contractNonce += 1;
     Id = bytes32(blockHashAsUint ^ contractNonce);
 
-    //this check should be removed as Id is generated uniquely
+    //Remove this check; the ID is guaranteed to be unique.
     if (hasHTLC(Id)) {
       revert HTLCAlreadyExists();
     }
@@ -201,27 +200,24 @@ contract LayerswapV8 {
     );
   }
 
-  function unlock(bytes32 Id) external _exists(Id) returns (bool) {
+  function refund(bytes32 Id) external _exists(Id) returns (bool) {
     HTLC storage htlc = contracts[Id];
 
-    if (htlc.unlocked) revert AlreadyUnlocked();
+    if (htlc.refunded) revert AlreadyRefunded();
     if (htlc.redeemed) revert AlreadyRedeemed();
     if (htlc.timelock > block.timestamp) revert NotPassedTimelock();
 
-    htlc.unlocked = true;
+    htlc.refunded = true;
     (bool success, ) = htlc.sender.call{ value: htlc.amount }('');
     require(success, 'Transfer failed');
-    emit TokenUnlocked(Id);
+    emit TokenRefunded(Id);
     return true;
   }
 
-  function lockCommitment(bytes32 Id, bytes32 hashlock, uint256 timelock) external _exists(Id) returns (bytes32) {
+  function addLock(bytes32 Id, bytes32 hashlock, uint256 timelock) external _exists(Id) returns (bytes32) {
     HTLC storage htlc = contracts[Id];
-    if (htlc.unlocked == true) {
-      revert AlreadyUnlocked();
-    }
-    if (hasHTLC(hashlock)) {
-      revert LockAlreadyExists();
+    if (htlc.refunded == true) {
+      revert AlreadyRefunded();
     }
     if (timelock <= block.timestamp) {
       revert NotFutureTimelock();
@@ -236,28 +232,29 @@ contract LayerswapV8 {
       }
 
       lockIds.push(Id);
-      emit TokenLockCommitted(Id, msg.sender, hashlock, timelock);
+      emit TokenLockAdded(Id, msg.sender, hashlock, timelock);
       return Id;
     } else {
       revert NoAllowance();
     }
   }
 
-  function lockCommitmentSig(
+  function addLockSig(
     bytes32 Id,
-    lockCommitmentMsg memory message,
+    addLockMsg memory message,
     uint8 v,
     bytes32 r,
     bytes32 s
   ) external _exists(Id) returns (bytes32) {
     if (verifyMessage(msg.sender, message, v, r, s)) {
-      return this.lockCommitment(Id, message.hashlock, message.timelock);
+      return this.addLock(Id, message.hashlock, message.timelock);
     } else {
       revert InvalidSigniture();
     }
   }
 
   function lock(
+    bytes32 Id,
     bytes32 hashlock,
     uint256 timelock,
     address payable srcReceiver,
@@ -265,7 +262,6 @@ contract LayerswapV8 {
     string memory dstChain,
     string memory dstAddress,
     string memory dstAsset,
-    bytes32 srcId,
     address messenger
   ) external payable returns (bytes32) {
     if (msg.value == 0) {
@@ -274,11 +270,8 @@ contract LayerswapV8 {
     if (timelock <= block.timestamp) {
       revert NotFutureTimelock();
     }
-    if (hasHTLC(hashlock)) {
-      revert LockAlreadyExists();
-    }
 
-    contracts[hashlock] = HTLC(
+    contracts[Id] = HTLC(
       dstAddress,
       dstChain,
       dstAsset,
@@ -293,9 +286,9 @@ contract LayerswapV8 {
       false,
       false
     );
-    lockIds.push(hashlock);
-    srcIdToId[srcId] = hashlock;
+    lockIds.push(Id);
     emit TokenLocked(
+      Id,
       hashlock,
       dstChain,
       dstAddress,
@@ -305,8 +298,7 @@ contract LayerswapV8 {
       srcAsset,
       msg.value,
       timelock,
-      messenger,
-      srcId
+      messenger
     );
 
     if (messenger != address(0)) {
@@ -317,7 +309,7 @@ contract LayerswapV8 {
       if (codeSize > 0) {
         try
           IMessenger(messenger).notify(
-            srcId,
+            Id,
             hashlock,
             dstChain,
             dstAsset,
@@ -341,14 +333,14 @@ contract LayerswapV8 {
         revert NoMessenger();
       }
     }
-    return hashlock;
+    return Id;
   }
 
   function redeem(bytes32 Id, uint256 secret) external _exists(Id) returns (bool) {
     HTLC storage htlc = contracts[Id];
 
     if (htlc.hashlock != sha256(abi.encodePacked(secret))) revert HashlockNotMatch();
-    if (htlc.unlocked) revert AlreadyUnlocked();
+    if (htlc.refunded) revert AlreadyRefunded();
     if (htlc.redeemed) revert AlreadyRedeemed();
 
     htlc.secret = secret;
@@ -409,11 +401,7 @@ contract LayerswapV8 {
     return result;
   }
 
-  function getIdBySrcId(bytes32 Id) public view returns (bytes32) {
-    return srcIdToId[Id];
-  }
-
-  function hashDomain(EIP712Domain memory domain) public pure returns (bytes32) {
+  function hashDomain(EIP712Domain memory domain) private pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -428,25 +416,21 @@ contract LayerswapV8 {
   }
 
   // Hashes an EIP712 message struct
-  function hashMessage(lockCommitmentMsg memory message) public pure returns (bytes32) {
+  function hashMessage(addLockMsg memory message) private pure returns (bytes32) {
     return
       keccak256(
-        abi.encode(
-          keccak256('lockCommitmentMsg(bytes32 hashlock,uint256 timelock)'),
-          message.hashlock,
-          message.timelock
-        )
+        abi.encode(keccak256('addLockMsg(bytes32 hashlock,uint256 timelock)'), message.hashlock, message.timelock)
       );
   }
 
   // Verifies an EIP712 message signature
   function verifyMessage(
     address sender,
-    lockCommitmentMsg memory message,
+    addLockMsg memory message,
     uint8 v,
     bytes32 r,
     bytes32 s
-  ) public view returns (bool) {
+  ) private view returns (bool) {
     bytes32 digest = keccak256(abi.encodePacked('\x19\x01', DOMAIN_SEPARATOR, hashMessage(message)));
 
     address recoveredAddress = ecrecover(digest, v, r, s);

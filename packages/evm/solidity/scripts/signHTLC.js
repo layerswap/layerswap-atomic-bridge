@@ -5,8 +5,8 @@ async function signHTLC() {
     const domain = {
         name: "LayerswapV8",
         version: "1",
-        chainId: 421614,
-        verifyingContract: "0x3E3Abe0752A588e78b6F8926631bBb453d2bddCa",
+        chainId: 167009,
+        verifyingContract: "0x4D4281aad72d1d6C6ba30b722b01F49E3474c80a",
         salt: "0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0"
     };
 
@@ -28,15 +28,15 @@ async function signHTLC() {
     console.log('Computed Domain Separator:', domainSeparator);
 
     const types = {
-        lockCommitmentMsg: [
+        addLockMsg: [
             { name: "hashlock", type: "bytes32" },
             { name: "timelock", type: "uint256" },
         ],
     };
 
     const message = {
-        hashlock: "0x928a260e1022cffc1b90018ab7f80ed5b2aef0b25d8c7c6825348811c30c7b8a",
-        timelock: 1724673591,
+        hashlock: "0x2d6e23c82f3856baa3b42cc949d4dd8b8930be6d492ac0f20edadae53c6e66d7",
+        timelock: 1725635268,
     };
 
     const privateKey =  '0xe9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9';
