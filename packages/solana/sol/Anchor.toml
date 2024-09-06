@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-native = "FNMXmXVjiETt3brSdpP5oGGFXaPXJpaW6PJXLUiTjKWT"
+native = "2XfmTmnhz8kDnryZSJKKV53tLN7DKZbrN9Q1sZbJo5bc"
 
 [registry]
 url = "https://api.apr.dev"

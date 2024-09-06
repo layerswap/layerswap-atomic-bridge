@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 use sha2::{Digest, Sha256};
 use std::mem::size_of;
-declare_id!("FNMXmXVjiETt3brSdpP5oGGFXaPXJpaW6PJXLUiTjKWT");
+declare_id!("2XfmTmnhz8kDnryZSJKKV53tLN7DKZbrN9Q1sZbJo5bc");
 
 const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 
@@ -18,11 +18,11 @@ const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 ///  2) lock(src_receiver, hashlock, timelock, amount) - a
 ///      sender calls this to create a new HTLC
 ///      for a given amount. A [u8; 32] Id is returned.
-///  3) lockCommit(Id, hashlock, timelock) - the messenger calls this function
+///  3) addLock(Id, hashlock, timelock) - the messenger calls this function
 ///      to add the hashlock to HTLC.
 ///  4) redeem(Id, secret) - once the src_receiver knows the secret of
 ///      the hashlock hash they can claim the sol with this function
-///  5) unlock(Id) - after timelock has expired and if the src_receiver did not
+///  5) refund(Id) - after timelock has expired and if the src_receiver did not
 ///      redeem the sol the sender / creator of the HTLC can get their sol
 ///      back with this function.
 #[program]
@@ -46,7 +46,7 @@ pub mod native_htlc {
     }
 
     /// @dev Called by the Sender to get the commitId from the given parameters.
-    pub fn get_commit_id(ctx: Context<Get_commit_id>) -> Result<u64> {
+    pub fn get_commit_id(ctx: Context<GetCommitID>) -> Result<u64> {
         let commit_counter = &ctx.accounts.commitCounter;
         let count = commit_counter.count + 1;
         let time = commit_counter.time;
@@ -75,7 +75,7 @@ pub mod native_htlc {
         messenger: Pubkey,
         amount: u64,
         commit_bump: u8,
-    ) -> Result<()> {
+    ) -> Result<[u8; 32]> {
         let clock = Clock::get().unwrap();
         require!(
             timelock > clock.unix_timestamp.try_into().unwrap(),
@@ -95,7 +95,7 @@ pub mod native_htlc {
         htlc.timelock = timelock;
         htlc.messenger = messenger;
         htlc.redeemed = false;
-        htlc.unlocked = false;
+        htlc.refunded = false;
         htlc.secret = [0u8; 32];
 
         let bump_vector = commit_bump.to_le_bytes();
@@ -111,7 +111,6 @@ pub mod native_htlc {
             outer.as_slice(),
         );
         system_program::transfer(transfer_context, amount)?;
-        msg!("Id: {:?}", Id);
         // msg!("hop chains: {:?}", hopChains);
         // msg!("hop assets: {:?}", hopAssets);
         // msg!("hop addresses: {:?}", hopAddresses);
@@ -119,7 +118,7 @@ pub mod native_htlc {
         let commit_counter = &mut ctx.accounts.commitCounter;
         commit_counter.count += 1;
 
-        Ok(())
+        Ok(Id)
     }
 
     /// @dev Sender / Payer sets up a new hash time lock contract depositing the
@@ -132,7 +131,7 @@ pub mod native_htlc {
     pub fn lock(
         ctx: Context<Lock>,
         Id: [u8; 32],
-        srcId: [u8; 32],
+        hashlock: [u8; 32],
         timelock: u64,
         amount: u64,
         dst_chain: String,
@@ -142,7 +141,7 @@ pub mod native_htlc {
         src_receiver: Pubkey,
         messenger: Pubkey,
         lock_bump: u8,
-    ) -> Result<()> {
+    ) -> Result<[u8; 32]> {
         let clock = Clock::get().unwrap();
         require!(
             timelock > clock.unix_timestamp.try_into().unwrap(),
@@ -158,13 +157,13 @@ pub mod native_htlc {
         htlc.src_asset = src_asset;
         htlc.sender = *ctx.accounts.sender.to_account_info().key;
         htlc.src_receiver = src_receiver;
-        htlc.hashlock = Id;
+        htlc.hashlock = hashlock;
         htlc.secret = [0u8; 32];
         htlc.amount = amount;
         htlc.timelock = timelock;
         htlc.messenger = messenger;
         htlc.redeemed = false;
-        htlc.unlocked = false;
+        htlc.refunded = false;
 
         let bump_vector = lock_bump.to_le_bytes();
         let inner = vec![Id.as_ref(), bump_vector.as_ref()];
@@ -178,28 +177,21 @@ pub mod native_htlc {
             outer.as_slice(),
         );
         system_program::transfer(transfer_context, amount)?;
-
-        msg!("Id: {:?}", Id);
-        // msg!("Id: {:?}", hex::encode(Id));
         // if messenger != Pubkey::default(){}
-        let idStruct = &mut ctx.accounts.idStruct;
-        if idStruct.id == [0u8; 32] {
-            idStruct.id = Id;
-        }
 
-        Ok(())
+        Ok(Id)
     }
 
     /// @dev Called by the messenger to add hashlock to the HTLC
     ///
-    /// @param Id of the HTLC to lockCommit.
+    /// @param Id of the HTLC to addLock.
     /// @param hashlock of the HTLC to be locked.
-    pub fn lockCommit(
-        ctx: Context<LockCommit>,
+    pub fn add_lock(
+        ctx: Context<AddLock>,
         Id: [u8; 32],
         hashlock: [u8; 32],
         timelock: u64,
-    ) -> Result<()> {
+    ) -> Result<[u8; 32]> {
         let clock = Clock::get().unwrap();
         require!(
             timelock > clock.unix_timestamp.try_into().unwrap(),
@@ -210,10 +202,8 @@ pub mod native_htlc {
 
         htlc.hashlock = hashlock;
         htlc.timelock = timelock;
-        // msg!("Id: {:?}", hex::encode(Id));
-        msg!("Id: {:?}", Id);
 
-        Ok(())
+        Ok(Id)
     }
 
     /// @dev Called by the src_receiver once they know the secret of the hashlock.
@@ -243,11 +233,11 @@ pub mod native_htlc {
     /// @dev Called by the sender if there was no redeem AND the time lock has
     /// expired. This will refund the contract amount.
     ///
-    /// @param Id of the HTLC to unlock from.
-    pub fn unlock(ctx: Context<Unlock>, Id: [u8; 32]) -> Result<bool> {
+    /// @param Id of the HTLC to refund from.
+    pub fn refund(ctx: Context<Refund>, Id: [u8; 32]) -> Result<bool> {
         let htlc = &mut ctx.accounts.htlc;
 
-        htlc.unlocked = true;
+        htlc.refunded = true;
 
         let amount = htlc.amount;
 
@@ -274,13 +264,8 @@ pub mod native_htlc {
             timelock: htlc.timelock,
             messenger: htlc.messenger,
             redeemed: htlc.redeemed,
-            unlocked: htlc.unlocked,
+            refunded: htlc.refunded,
         })
-    }
-
-    pub fn getIdBySrcId(ctx: Context<GetIdBySrcId>, srcId: [u8; 32]) -> Result<[u8; 32]> {
-        let idStruct = &ctx.accounts.idStruct;
-        Ok(idStruct.id)
     }
 }
 
@@ -313,7 +298,7 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
-pub struct Get_commit_id<'info> {
+pub struct GetCommitID<'info> {
     #[account(
         seeds = [b"commitCounter"],
         bump,
@@ -336,7 +321,7 @@ pub struct HTLC {
     pub timelock: u64,
     pub messenger: Pubkey,
     pub redeemed: bool,
-    pub unlocked: bool,
+    pub refunded: bool,
 }
 
 #[derive(Accounts)]
@@ -348,7 +333,7 @@ pub struct Commit<'info> {
     #[account(
         init,
         payer = sender,
-        space = size_of::<HTLC>() + 8,
+        space = size_of::<HTLC>() + 28,
         seeds = [
             Id.as_ref()
         ],
@@ -367,7 +352,7 @@ pub struct Commit<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(Id: [u8; 32], srcId: [u8;32], lock_bump: u8)]
+#[instruction(Id: [u8; 32], lock_bump: u8)]
 pub struct Lock<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
@@ -375,26 +360,13 @@ pub struct Lock<'info> {
     #[account(
         init,
         payer = sender,
-        space = size_of::<HTLC>() + 8,
+        space = size_of::<HTLC>() + 28,
         seeds = [
             Id.as_ref()
         ],
         bump,
     )]
     pub htlc: Box<Account<'info, HTLC>>,
-
-    #[account(
-        init,
-        payer = sender,
-        // space = size_of::<IdStruct>() + 8,
-        space = 128,
-        seeds = [
-            b"srcId_to_Id".as_ref(),
-            srcId.as_ref()
-        ],
-        bump,
-    )]
-    pub idStruct: Box<Account<'info, IdStruct>>,
 
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
@@ -414,7 +386,7 @@ pub struct Redeem<'info> {
         bump,
         has_one = src_receiver @HTLCError::NotReciever,
         constraint = !htlc.redeemed @ HTLCError::AlreadyRedeemed,
-        constraint = !htlc.unlocked @ HTLCError::AlreadyUnlocked,
+        constraint = !htlc.refunded @ HTLCError::AlreadyRefunded,
     )]
     pub htlc: Box<Account<'info, HTLC>>,
 
@@ -428,7 +400,7 @@ pub struct Redeem<'info> {
 
 #[derive(Accounts)]
 #[instruction(Id: [u8; 32])]
-pub struct Unlock<'info> {
+pub struct Refund<'info> {
     #[account(mut)]
     user_signing: Signer<'info>,
 
@@ -438,7 +410,7 @@ pub struct Unlock<'info> {
     ],
     bump,
     has_one = sender @HTLCError::NotSender,
-    constraint = !htlc.unlocked @ HTLCError::AlreadyUnlocked,
+    constraint = !htlc.refunded @ HTLCError::AlreadyRefunded,
     constraint = !htlc.redeemed @ HTLCError::AlreadyRedeemed,
     constraint = Clock::get().unwrap().unix_timestamp >= htlc.timelock.try_into().unwrap() @ HTLCError::NotPastTimeLock,
     )]
@@ -454,7 +426,7 @@ pub struct Unlock<'info> {
 
 #[derive(Accounts)]
 #[instruction(Id: [u8; 32])]
-pub struct LockCommit<'info> {
+pub struct AddLock<'info> {
     #[account(mut)]
     messenger: Signer<'info>,
 
@@ -464,7 +436,7 @@ pub struct LockCommit<'info> {
     ],
     bump,
     constraint = !htlc.redeemed @ HTLCError::AlreadyRedeemed,
-    constraint = !htlc.unlocked @ HTLCError::AlreadyUnlocked,
+    constraint = !htlc.refunded @ HTLCError::AlreadyRefunded,
     constraint = htlc.sender == messenger.key() || htlc.messenger == messenger.key() @ HTLCError::NotMessenger,
     constraint = htlc.hashlock == [0u8;32] @ HTLCError::HashlockAlreadySet,
     )]
@@ -486,35 +458,22 @@ pub struct GetDetails<'info> {
     pub htlc: Box<Account<'info, HTLC>>,
 }
 
-#[derive(Accounts)]
-#[instruction(srcId: [u8; 32])]
-pub struct GetIdBySrcId<'info> {
-    #[account(
-        seeds = [
-            b"srcId_to_Id".as_ref(),
-            srcId.as_ref()
-        ],
-        bump,
-    )]
-    pub idStruct: Box<Account<'info, IdStruct>>,
-}
-
-#[event]
-pub struct TokenCommited {
-    pub commitId: [u8; 32],
-    pub hopChains: Vec<String>,
-    pub hopAssets: Vec<String>,
-    pub hopAddresses: Vec<String>,
-    pub dst_chain: String,
-    pub dst_address: String,
-    pub dst_asset: String,
-    pub sender: Pubkey,
-    pub src_receiver: Pubkey,
-    pub src_asset: String,
-    pub timelock: u64,
-    pub messenger: Pubkey,
-    pub amount: u64,
-}
+// #[event]
+// pub struct TokenCommited {
+//     pub commitId: [u8; 32],
+//     pub hopChains: Vec<String>,
+//     pub hopAssets: Vec<String>,
+//     pub hopAddresses: Vec<String>,
+//     pub dst_chain: String,
+//     pub dst_address: String,
+//     pub dst_asset: String,
+//     pub sender: Pubkey,
+//     pub src_receiver: Pubkey,
+//     pub src_asset: String,
+//     pub timelock: u64,
+//     pub messenger: Pubkey,
+//     pub amount: u64,
+// }
 
 #[error_code]
 pub enum HTLCError {
@@ -530,8 +489,8 @@ pub enum HTLCError {
     HashlockAlreadySet,
     #[msg("Funds Are Alredy Redeemed.")]
     AlreadyRedeemed,
-    #[msg("Funds Are Alredy Unlocked.")]
-    AlreadyUnlocked,
+    #[msg("Funds Are Alredy Refunded.")]
+    AlreadyRefunded,
     #[msg("Funds Can Not Be Zero.")]
     FundsNotSent,
     #[msg("Not The Messenger.")]
