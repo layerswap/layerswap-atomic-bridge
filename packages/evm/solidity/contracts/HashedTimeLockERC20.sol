@@ -114,8 +114,7 @@ contract LayerswapV8ERC20 {
 
   using SafeERC20 for IERC20;
   mapping(bytes32 => HTLC) contracts;
-  bytes32[] lockIds;
-  bytes32[] commitIds;
+  bytes32[] contractIds;
   uint256 blockHashAsUint = uint256(blockhash(block.number - 1));
   uint256 contractNonce = 0;
 
@@ -201,7 +200,7 @@ contract LayerswapV8ERC20 {
     if (hasHTLC(Id)) {
       revert HTLCAlreadyExists();
     }
-    commitIds.push(Id);
+    contractIds.push(Id);
     contracts[Id] = HTLC(
       dstAddress,
       dstChain,
@@ -252,7 +251,6 @@ contract LayerswapV8ERC20 {
       } else {
         revert HashlockAlreadySet();
       }
-      lockIds.push(Id);
       emit TokenLockAdded(Id, msg.sender, hashlock, timelock);
       return Id;
     } else {
@@ -266,7 +264,7 @@ contract LayerswapV8ERC20 {
     uint8 v,
     bytes32 r,
     bytes32 s
-  ) external _exists(Id) returns (bytes32 lockId) {
+  ) external _exists(Id) returns (bytes32) {
     if (verifyMessage(msg.sender, message, v, r, s)) {
       return this.addLock(Id, message.hashlock, message.timelock);
     } else {
@@ -281,7 +279,7 @@ contract LayerswapV8ERC20 {
    * @param hashlock A sha-256 hash hashlock.
    * @param timelock UNIX epoch seconds time that the lock expires at.
    *                  unlocks can be made after this time.
-   * @return lockId Id of the new HTLC. This is needed for subsequent
+   * @return Id Id of the new HTLC. This is needed for subsequent
    *                    calls.
    */
 
@@ -332,7 +330,7 @@ contract LayerswapV8ERC20 {
       false
     );
 
-    lockIds.push(Id);
+    contractIds.push(Id);
     emit TokenLocked(
       Id,
       hashlock,
@@ -440,11 +438,11 @@ contract LayerswapV8ERC20 {
     exists = (contracts[Id].sender != address(0));
   }
 
-  function getLocks(address senderAddr) public view returns (bytes32[] memory) {
+  function getContracts(address senderAddr) public view returns (bytes32[] memory) {
     uint count = 0;
 
-    for (uint i = 0; i < lockIds.length; i++) {
-      HTLC memory htlc = contracts[lockIds[i]];
+    for (uint i = 0; i < contractIds.length; i++) {
+      HTLC memory htlc = contracts[contractIds[i]];
       if (htlc.sender == senderAddr) {
         count++;
       }
@@ -453,32 +451,9 @@ contract LayerswapV8ERC20 {
     bytes32[] memory result = new bytes32[](count);
     uint j = 0;
 
-    for (uint i = 0; i < lockIds.length; i++) {
-      if (contracts[lockIds[i]].sender == senderAddr) {
-        result[j] = lockIds[i];
-        j++;
-      }
-    }
-
-    return result;
-  }
-
-  function getCommits(address senderAddr) public view returns (bytes32[] memory) {
-    uint count = 0;
-
-    for (uint i = 0; i < commitIds.length; i++) {
-      HTLC memory htlc = contracts[commitIds[i]];
-      if (htlc.sender == senderAddr) {
-        count++;
-      }
-    }
-
-    bytes32[] memory result = new bytes32[](count);
-    uint j = 0;
-
-    for (uint i = 0; i < commitIds.length; i++) {
-      if (contracts[commitIds[i]].sender == senderAddr) {
-        result[j] = commitIds[i];
+    for (uint i = 0; i < contractIds.length; i++) {
+      if (contracts[contractIds[i]].sender == senderAddr) {
+        result[j] = contractIds[i];
         j++;
       }
     }

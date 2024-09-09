@@ -68,7 +68,6 @@ contract LayerswapV8 {
   error AlreadyRedeemed();
   error AlreadyRefunded();
   error NoMessenger();
-  error CommitmentNotExists();
   error AlreadyLocked();
   error NoAllowance();
   error InvalidSigniture();
@@ -136,8 +135,7 @@ contract LayerswapV8 {
   }
 
   mapping(bytes32 => HTLC) contracts;
-  bytes32[] lockIds;
-  bytes32[] commitIds;
+  bytes32[] contractIds;
   uint256 blockHashAsUint = uint256(blockhash(block.number - 1));
   uint256 contractNonce = 0;
 
@@ -166,7 +164,7 @@ contract LayerswapV8 {
     if (hasHTLC(Id)) {
       revert HTLCAlreadyExists();
     }
-    commitIds.push(Id);
+    contractIds.push(Id);
     contracts[Id] = HTLC(
       dstAddress,
       dstChain,
@@ -231,7 +229,6 @@ contract LayerswapV8 {
         revert HashlockAlreadySet();
       }
 
-      lockIds.push(Id);
       emit TokenLockAdded(Id, msg.sender, hashlock, timelock);
       return Id;
     } else {
@@ -286,7 +283,7 @@ contract LayerswapV8 {
       false,
       false
     );
-    lockIds.push(Id);
+    contractIds.push(Id);
     emit TokenLocked(
       Id,
       hashlock,
@@ -355,11 +352,11 @@ contract LayerswapV8 {
     return contracts[Id];
   }
 
-  function getLocks(address senderAddr) public view returns (bytes32[] memory) {
+  function getContracts(address senderAddr) public view returns (bytes32[] memory) {
     uint256 count = 0;
 
-    for (uint256 i = 0; i < lockIds.length; i++) {
-      HTLC memory htlc = contracts[lockIds[i]];
+    for (uint256 i = 0; i < contractIds.length; i++) {
+      HTLC memory htlc = contracts[contractIds[i]];
       if (htlc.sender == senderAddr) {
         count++;
       }
@@ -368,32 +365,9 @@ contract LayerswapV8 {
     bytes32[] memory result = new bytes32[](count);
     uint256 j = 0;
 
-    for (uint256 i = 0; i < lockIds.length; i++) {
-      if (contracts[lockIds[i]].sender == senderAddr) {
-        result[j] = lockIds[i];
-        j++;
-      }
-    }
-
-    return result;
-  }
-
-  function getCommits(address senderAddr) public view returns (bytes32[] memory) {
-    uint256 count = 0;
-
-    for (uint256 i = 0; i < commitIds.length; i++) {
-      HTLC memory htlc = contracts[commitIds[i]];
-      if (htlc.sender == senderAddr) {
-        count++;
-      }
-    }
-
-    bytes32[] memory result = new bytes32[](count);
-    uint256 j = 0;
-
-    for (uint256 i = 0; i < commitIds.length; i++) {
-      if (contracts[commitIds[i]].sender == senderAddr) {
-        result[j] = commitIds[i];
+    for (uint256 i = 0; i < contractIds.length; i++) {
+      if (contracts[contractIds[i]].sender == senderAddr) {
+        result[j] = contractIds[i];
         j++;
       }
     }
