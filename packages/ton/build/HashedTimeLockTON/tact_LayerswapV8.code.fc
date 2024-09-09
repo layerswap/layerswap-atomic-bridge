@@ -62,7 +62,8 @@
     throw_unless(30789, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($msg'Id) == true));
     var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'messenger, $htlc'redeemed, $htlc'refunded) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
     if (( (( __tact_slice_eq_bits($htlc'sender, $ctx'sender) )) ? (true) : (( __tact_slice_eq_bits($htlc'messenger, $ctx'sender) )) )) {
-        throw_unless(6007, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($msg'Id) == true));
+        throw_unless(58417, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($msg'Id) == true));
+        throw_unless(46887, ($htlc'redeemed == false));
         throw_unless(49162, ($htlc'refunded == false));
         throw_unless(21683, ($msg'timelock > now()));
         throw_unless(8650, ($htlc'hashlock == 0));
@@ -102,7 +103,7 @@
 (((cell, int, int, slice)), ()) $LayerswapV8$_internal_binary_AddLockSig((cell, int, int, slice) $self, (int, slice, slice) $msg) impure inline {
     var ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress) = $self;
     var ($msg'Id, $msg'data, $msg'signature) = $msg;
-    throw_unless(30742, ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($msg'Id));
+    throw_unless(58417, ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($msg'Id));
     var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'messenger, $htlc'redeemed, $htlc'refunded) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
     throw_unless(48401, check_signature(slice_hash($msg'data), $msg'signature, $htlc'senderPubKey));
     int $hashlock = $msg'data~load_int(257);
@@ -119,6 +120,7 @@
     var ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
     throw_unless(21683, (now() < $msg'timelock));
     throw_unless(4670, ($ctx'value != 0));
+    throw_unless(11493, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($msg'Id) == false));
     $self'contracts~__tact_dict_set_int_cell(257, $msg'Id, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded($msg'dstAddress, $msg'dstChain, $msg'dstAsset, $msg'srcAsset, __tact_context_get_sender(), 0, $msg'srcReceiver, 0, $msg'hashlock, $ctx'value, $msg'timelock, $msg'messenger, false, false)));
     if (( (( ~ __tact_slice_eq_bits($self'zeroAddress, $msg'messenger) )) ? (($msg'Id != 0)) : (false) )) {
         $global_send($SendParameters$_constructor_to_bounce_value_mode_body($msg'messenger, true, 20000000, 0, $Notify$_store_cell($Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress($msg'Id, $msg'hashlock, $msg'dstChain, $msg'dstAsset, $msg'dstAddress, $msg'srcAsset, __tact_context_get_sender(), $msg'srcReceiver, $ctx'value, $msg'timelock, $self'zeroAddress, $self'zeroAddress))));

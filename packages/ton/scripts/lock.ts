@@ -19,11 +19,11 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQD55cXZ48PdxZjZdgBSBdLVTVKLRj8p0619BEr7QRSDeAr1"); 
+  const contractAddress = Address.parse("kQCRA38mPeNFfuzRzSWBEW5jwO0U8_OLie90CBXQz08Tgd-6"); 
   const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
-  const hashlock = BigInt("20548678321456934993365688499927729765381779202072073513007694262427584456407"); 
+  const hashlock = BigInt("61640066862491821753473339868972183373908181301364716693662292977837180722317"); 
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 100); 
   const srcReceiver = Address.parse("0QCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw64m1"); 
   const srcAsset = "TON"; 

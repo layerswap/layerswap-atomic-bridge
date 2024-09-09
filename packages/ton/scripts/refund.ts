@@ -19,7 +19,7 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQD55cXZ48PdxZjZdgBSBdLVTVKLRj8p0619BEr7QRSDeAr1"); 
+  const contractAddress = Address.parse("kQCRA38mPeNFfuzRzSWBEW5jwO0U8_OLie90CBXQz08Tgd-6"); 
   const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 

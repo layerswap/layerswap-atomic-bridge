@@ -17,6 +17,10 @@ PROGRAM{
   DECLPROC $Deploy$_load
   DECLPROC $DeployOk$_store
   DECLPROC $DeployOk$_store_cell
+  DECLPROC $TokenTransfer$_store
+  DECLPROC $TokenTransfer$_store_cell
+  DECLPROC $TokenNotification$_load
+  DECLPROC $TokenExcesses$_load
   DECLPROC $Notify$_store
   DECLPROC $Notify$_store_cell
   DECLPROC $HTLC$_store
@@ -24,58 +28,65 @@ PROGRAM{
   DECLPROC $HTLC$_load
   DECLPROC $HTLC$_as_optional
   DECLPROC $HTLC$_load_opt
-  DECLPROC $Commit$_load
+  DECLPROC $CommitData$_load
+  DECLPROC $CommitData$_load_not_mut
+  DECLPROC $LockData$_load
+  DECLPROC $LockData$_load_not_mut
   DECLPROC $AddLock$_load
-  DECLPROC $AddLockSig$_load
-  DECLPROC $Lock$_load
   DECLPROC $Redeem$_load
   DECLPROC $Refund$_load
+  DECLPROC $AddLockSig$_load
   DECLPROC $TokenCommitted$_store
   DECLPROC $TokenCommitted$_store_cell
   DECLPROC $TokenLocked$_store
   DECLPROC $TokenLocked$_store_cell
-  DECLPROC $LayerswapV8$_store
-  DECLPROC $LayerswapV8$_load
+  DECLPROC $LayerswapV8Jetton$_store
+  DECLPROC $LayerswapV8Jetton$_load
   DECLPROC $StateInit$_not_null
   DECLPROC $HTLC$_not_null
   DECLPROC $HTLC$_to_tuple
   DECLPROC $HTLC$_to_opt_tuple
   DECLPROC $HTLC$_to_opt_external
   DECLPROC $global_random
-  DECLPROC $LayerswapV8$_contract_init
-  DECLPROC $LayerswapV8$_contract_load
-  DECLPROC $LayerswapV8$_contract_store
+  DECLPROC $LayerswapV8Jetton$_contract_init
+  DECLPROC $LayerswapV8Jetton$_contract_load
+  DECLPROC $LayerswapV8Jetton$_contract_store
   DECLPROC $global_send
   DECLPROC $global_emit
   DECLPROC $Builder$_fun_asSlice
-  DECLPROC $LayerswapV8$_fun_contractExists
-  DECLPROC $LayerswapV8$_fun_getDetails
-  DECLPROC $LayerswapV8$_fun_getContractsLength
-  DECLPROC $LayerswapV8$_fun_getContracts
-  DECLPROC $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded
-  DECLPROC $SendParameters$_constructor_to_bounce_value_mode
-  DECLPROC $LayerswapV8$_fun_addLock
-  DECLPROC $SendParameters$_constructor_bounce_to_value_mode_body_code_data
-  DECLPROC $LayerswapV8$_fun_forward
-  DECLPROC $LayerswapV8$_fun_notify
-  DECLPROC $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_senderPubKey_hopChains_hopAssets_hopAddresses
-  DECLPROC $AddLock$_constructor_Id_hashlock_timelock
+  DECLPROC $Slice$_fun_asCell
+  DECLPROC $LayerswapV8Jetton$_fun_contractExists
+  DECLPROC $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress
+  DECLPROC $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress_senderPubKey_hopChains_hopAssets_hopAddresses
+  DECLPROC $LayerswapV8Jetton$_fun__commit
   DECLPROC $SendParameters$_constructor_to_bounce_value_mode_body
   DECLPROC $Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress
-  DECLPROC $TokenLocked$_constructor_Id_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger
+  DECLPROC $TokenLocked$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_hashlock_jettonMasterAddress_htlcJettonWalletAddress
+  DECLPROC $LayerswapV8Jetton$_fun__lock
+  DECLPROC $LayerswapV8Jetton$_fun_getDetails
+  DECLPROC $LayerswapV8Jetton$_fun_getContractsLength
+  DECLPROC $LayerswapV8Jetton$_fun_getContracts
+  DECLPROC $SendParameters$_constructor_to_bounce_value_mode
+  DECLPROC $LayerswapV8Jetton$_fun_addLock
+  DECLPROC $SendParameters$_constructor_bounce_to_value_mode_body_code_data
+  DECLPROC $LayerswapV8Jetton$_fun_forward
+  DECLPROC $LayerswapV8Jetton$_fun_notify
+  DECLPROC $AddLock$_constructor_Id_hashlock_timelock
+  DECLPROC $SendParameters$_constructor_to_value_bounce_mode_body
+  DECLPROC $TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload
   DECLPROC $DeployOk$_constructor_queryId
-  DECLPROC $LayerswapV8$_internal_binary_Commit
-  DECLPROC $LayerswapV8$_internal_binary_AddLock
-  DECLPROC $LayerswapV8$_internal_binary_AddLockSig
-  DECLPROC $LayerswapV8$_internal_binary_Lock
-  DECLPROC $LayerswapV8$_internal_binary_Redeem
-  DECLPROC $LayerswapV8$_internal_binary_Refund
-  DECLPROC $LayerswapV8$_internal_binary_Deploy
+  DECLPROC $LayerswapV8Jetton$_internal_binary_TokenNotification
+  DECLPROC $LayerswapV8Jetton$_internal_binary_AddLock
+  DECLPROC $LayerswapV8Jetton$_internal_binary_AddLockSig
+  DECLPROC $LayerswapV8Jetton$_internal_binary_Redeem
+  DECLPROC $LayerswapV8Jetton$_internal_binary_Refund
+  DECLPROC $LayerswapV8Jetton$_internal_binary_TokenExcesses
+  DECLPROC $LayerswapV8Jetton$_internal_binary_Deploy
   121337 DECLMETHOD %getDetails
   98409 DECLMETHOD %getContractsLength
   95431 DECLMETHOD %getContracts
   115390 DECLMETHOD lazy_deployment_completed
-  DECLPROC $LayerswapV8$_contract_router_internal
+  DECLPROC $LayerswapV8Jetton$_contract_router_internal
   DECLPROC recv_internal
   DECLGLOBVAR __tact_context
   DECLGLOBVAR __tact_context_sender
@@ -231,6 +242,63 @@ PROGRAM{
     $DeployOk$_store INLINECALLDICT
     ENDC
   }>
+  $TokenTransfer$_store PROCREF:<{
+    260734629 PUSHINT
+    s0 s8 XCHG2
+    32 STU
+    s1 s6 XCHG
+    64 STU
+    s0 s4 XCHG2
+    STGRAMS
+    ROT
+    __tact_store_address INLINECALLDICT
+    SWAP
+    __tact_store_address INLINECALLDICT
+    OVER
+    ISNULL
+    NOT
+    IF:<{
+      TRUE
+      SWAP
+      1 STI
+      STREF
+    }>ELSE<{
+      FALSE
+      s2 POP
+      1 STI
+    }>
+    SWAP
+    STGRAMS
+    SWAP
+    STSLICER
+  }>
+  $TokenTransfer$_store_cell PROCINLINE:<{
+    NEWC
+    7 -ROLL
+    $TokenTransfer$_store INLINECALLDICT
+    ENDC
+  }>
+  $TokenNotification$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    1935855772 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    64 LDU
+    LDGRAMS
+    __tact_load_address INLINECALLDICT
+    s3 s0 s3 XC2PU
+    s2 s3 XCHG
+  }>
+  $TokenExcesses$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    3576854235 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    64 LDU
+    SWAP
+  }>
   $Notify$_store PROCREF:<{
     1005277634 PUSHINT
     s0 s13 XCHG2
@@ -296,42 +364,43 @@ PROGRAM{
   }>
   $HTLC$_store PROCREF:<{
     NEWC
+    SWAP
+    s0 16 s() XCHG
+    STSLICER
+    ENDC
+    SWAP
+    s0 16 s() XCHG
+    STREF
+    NEWC
     s0 s14 XCHG2
     STSLICER
     ENDC
-    s0 s14 XCHG2
+    s0 s13 XCHG2
     STREF
     NEWC
+    NEWC
+    s0 s13 XCHG2
+    STSLICER
+    ENDC
     s0 s12 XCHG2
-    STSLICER
-    ENDC
-    s0 s11 XCHG2
     STREF
-    NEWC
     NEWC
     s0 s11 XCHG2
     STSLICER
     ENDC
     s0 s10 XCHG2
     STREF
-    NEWC
-    s0 s9 XCHG2
-    STSLICER
-    ENDC
     s0 s8 XCHG2
-    STREF
-    s0 s6 XCHG2
     __tact_store_address INLINECALLDICT
-    s1 s4 XCHG
+    s1 s6 XCHG
     257 PUSHINT
     STIX
-    ROT
+    s0 s4 XCHG2
     __tact_store_address INLINECALLDICT
-    SWAP
+    s0 s2 XCHG
     NEWC
     257 PUSHINT
     STIX
-    s1 s2 XCHG
     257 PUSHINT
     STIX
     s1 s2 XCHG
@@ -341,12 +410,20 @@ PROGRAM{
     NEWC
     257 PUSHINT
     STIX
-    s0 s4 XCHG2
+    s0 s3 XCHG2
     __tact_store_address INLINECALLDICT
-    s1 s5 XCHG
-    1 STI
     s1 s3 XCHG
     1 STI
+    s1 s4 XCHG
+    1 STI
+    s0 s5 XCHG2
+    __tact_store_address INLINECALLDICT
+    NEWC
+    s0 s4 XCHG2
+    __tact_store_address INLINECALLDICT
+    ENDC
+    s0 s3 XCHG2
+    STREF
     ENDC
     s0 s3 XCHG2
     STREF
@@ -359,7 +436,8 @@ PROGRAM{
   }>
   $HTLC$_store_cell PROCINLINE:<{
     NEWC
-    14 -ROLL
+    s0 16 s() XCHG
+    15 -ROLL
     $HTLC$_store INLINECALLDICT
     ENDC
   }>
@@ -407,12 +485,19 @@ PROGRAM{
     SWAP
     1 LDI
     1 LDI
+    __tact_load_address INLINECALLDICT
+    SWAP
+    LDREF
     DROP
-    s12 s14 XCHG
-    s12 s13 XCHG
+    CTOS
+    __tact_load_address INLINECALLDICT
+    NIP
+    s14 16 s() XCHG
+    s14 s15 XCHG
   }>
   $HTLC$_as_optional PROCINLINE:<{
-    14 TUPLE
+    PAIR
+    15 TUPLE
   }>
   $HTLC$_load_opt PROCINLINE:<{
     DUP
@@ -423,16 +508,12 @@ PROGRAM{
     }>ELSE<{
       CTOS
       $HTLC$_load INLINECALLDICT
-      1 14 BLKDROP2
+      16 s() POP
+      15 ROLL
       $HTLC$_as_optional INLINECALLDICT
     }>
   }>
-  $Commit$_load PROCREF:<{
-    32 LDU
-    SWAP
-    458640785 PUSHINT
-    EQUAL
-    129 THROWIFNOT
+  $CommitData$_load PROCREF:<{
     LDREF
     SWAP
     CTOS
@@ -461,14 +542,73 @@ PROGRAM{
     LDREF
     DROP
     CTOS
+    __tact_load_address INLINECALLDICT
+    SWAP
+    __tact_load_address INLINECALLDICT
+    SWAP
     257 PUSHINT
     LDIX
     LDDICT
     LDDICT
     LDDICT
     DROP
-    s9 s11 XCHG
-    s9 s10 XCHG
+    s11 s13 XCHG
+    s11 s12 XCHG
+  }>
+  $CommitData$_load_not_mut PROCREF:<{
+    $CommitData$_load INLINECALLDICT
+    s0 s13 XCHG
+    ENDS
+    12 ROLL
+  }>
+  $LockData$_load PROCREF:<{
+    257 PUSHINT
+    LDIX
+    257 PUSHINT
+    LDIX
+    __tact_load_address INLINECALLDICT
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    257 PUSHINT
+    LDIX
+    __tact_load_address INLINECALLDICT
+    SWAP
+    __tact_load_address INLINECALLDICT
+    SWAP
+    LDREF
+    DROP
+    CTOS
+    __tact_load_address INLINECALLDICT
+    NIP
+    s6 s11 XCHG
+    s6 s10 XCHG
+    s6 s9 XCHG
+    s6 s8 XCHG
+    s6 s7 XCHG
+  }>
+  $LockData$_load_not_mut PROCREF:<{
+    $LockData$_load INLINECALLDICT
+    s0 s11 XCHG
+    ENDS
+    10 ROLL
   }>
   $AddLock$_load PROCINLINE:<{
     32 LDU
@@ -483,62 +623,6 @@ PROGRAM{
     257 PUSHINT
     LDIX
     3 -ROLL
-  }>
-  $AddLockSig$_load PROCINLINE:<{
-    32 LDU
-    SWAP
-    3252164863 PUSHINT
-    EQUAL
-    129 THROWIFNOT
-    257 PUSHINT
-    LDIX
-    LDREF
-    SWAP
-    CTOS
-    SWAP
-    LDREF
-    SWAP
-    CTOS
-    s3 s3 s0 XCHG3
-  }>
-  $Lock$_load PROCREF:<{
-    32 LDU
-    SWAP
-    317164721 PUSHINT
-    EQUAL
-    129 THROWIFNOT
-    257 PUSHINT
-    LDIX
-    257 PUSHINT
-    LDIX
-    257 PUSHINT
-    LDIX
-    LDREF
-    SWAP
-    CTOS
-    __tact_load_address INLINECALLDICT
-    SWAP
-    LDREF
-    SWAP
-    CTOS
-    SWAP
-    LDREF
-    SWAP
-    CTOS
-    SWAP
-    LDREF
-    SWAP
-    CTOS
-    SWAP
-    LDREF
-    SWAP
-    CTOS
-    SWAP
-    __tact_load_address INLINECALLDICT
-    NIP
-    s6 s9 XCHG
-    s6 s8 XCHG
-    s6 s7 XCHG
   }>
   $Redeem$_load PROCINLINE:<{
     32 LDU
@@ -562,13 +646,37 @@ PROGRAM{
     LDIX
     SWAP
   }>
+  $AddLockSig$_load PROCINLINE:<{
+    32 LDU
+    SWAP
+    3252164863 PUSHINT
+    EQUAL
+    129 THROWIFNOT
+    257 PUSHINT
+    LDIX
+    LDREF
+    SWAP
+    CTOS
+    SWAP
+    LDREF
+    SWAP
+    CTOS
+    s3 s3 s0 XCHG3
+  }>
   $TokenCommitted$_store PROCREF:<{
-    1912207274 PUSHINT
-    s0 s15 XCHG2
+    3208455377 PUSHINT
+    SWAP
+    s0 17 s() XCHG
     32 STU
-    s1 s13 XCHG
+    s1 s15 XCHG
     257 PUSHINT
     STIX
+    NEWC
+    s0 s14 XCHG2
+    STSLICER
+    ENDC
+    s0 s13 XCHG2
+    STREF
     NEWC
     s0 s12 XCHG2
     STSLICER
@@ -576,47 +684,50 @@ PROGRAM{
     s0 s11 XCHG2
     STREF
     NEWC
+    NEWC
+    s0 s11 XCHG2
+    STSLICER
+    ENDC
     s0 s10 XCHG2
-    STSLICER
-    ENDC
-    s0 s9 XCHG2
     STREF
-    NEWC
-    NEWC
-    s0 s9 XCHG2
-    STSLICER
-    ENDC
     s0 s8 XCHG2
-    STREF
+    __tact_store_address INLINECALLDICT
     s0 s6 XCHG2
     __tact_store_address INLINECALLDICT
+    NEWC
+    s0 s5 XCHG2
+    STSLICER
+    ENDC
     s0 s4 XCHG2
+    STREF
+    s1 s2 XCHG
+    257 PUSHINT
+    STIX
+    SWAP
+    NEWC
+    257 PUSHINT
+    STIX
+    ROT
+    __tact_store_address INLINECALLDICT
+    ROT
     __tact_store_address INLINECALLDICT
     NEWC
     s0 s3 XCHG2
-    STSLICER
-    ENDC
-    ROT
-    STREF
-    257 PUSHINT
-    STIX
-    SWAP
-    NEWC
-    257 PUSHINT
-    STIX
-    ROT
     __tact_store_address INLINECALLDICT
-    s1 s3 XCHG
+    s1 s4 XCHG
     257 PUSHINT
     STIX
-    s1 s3 XCHG
+    s1 s4 XCHG
     STDICT
-    s1 s3 XCHG
+    s1 s4 XCHG
     STDICT
-    s1 s3 XCHG
+    s1 s4 XCHG
     STDICT
     ENDC
     SWAP
+    STREF
+    ENDC
+    ROT
     STREF
     ENDC
     SWAP
@@ -624,60 +735,68 @@ PROGRAM{
   }>
   $TokenCommitted$_store_cell PROCINLINE:<{
     NEWC
-    14 -ROLL
+    s0 16 s() XCHG
+    15 -ROLL
     $TokenCommitted$_store INLINECALLDICT
     ENDC
   }>
   $TokenLocked$_store PROCREF:<{
-    2511348125 PUSHINT
-    s0 s12 XCHG2
+    256369080 PUSHINT
+    s0 s14 XCHG2
     32 STU
-    s1 s10 XCHG
-    257 PUSHINT
-    STIX
-    s1 s8 XCHG
+    s1 s12 XCHG
     257 PUSHINT
     STIX
     NEWC
+    s0 s11 XCHG2
+    STSLICER
+    ENDC
+    s0 s10 XCHG2
+    STREF
+    NEWC
+    s0 s9 XCHG2
+    STSLICER
+    ENDC
+    s0 s8 XCHG2
+    STREF
+    NEWC
+    NEWC
+    s0 s8 XCHG2
+    STSLICER
+    ENDC
     s0 s7 XCHG2
-    STSLICER
-    ENDC
-    s0 s6 XCHG2
     STREF
-    NEWC
     s0 s5 XCHG2
-    STSLICER
-    ENDC
-    s0 s4 XCHG2
-    STREF
-    NEWC
-    NEWC
-    s0 s4 XCHG2
-    STSLICER
-    ENDC
+    __tact_store_address INLINECALLDICT
     s0 s3 XCHG2
-    STREF
+    __tact_store_address INLINECALLDICT
+    NEWC
+    ROT
+    STSLICER
+    ENDC
     SWAP
-    __tact_store_address INLINECALLDICT
-    ROT
-    __tact_store_address INLINECALLDICT
-    NEWC
-    s0 s3 XCHG2
-    STSLICER
-    ENDC
-    ROT
     STREF
-    s1 s2 XCHG
     257 PUSHINT
     STIX
-    s0 s2 XCHG
+    SWAP
     NEWC
     257 PUSHINT
     STIX
     s0 s3 XCHG2
     __tact_store_address INLINECALLDICT
+    s1 s3 XCHG
+    257 PUSHINT
+    STIX
+    NEWC
+    s0 s4 XCHG2
+    __tact_store_address INLINECALLDICT
+    s0 s4 XCHG2
+    __tact_store_address INLINECALLDICT
     ENDC
-    SWAP
+    ROT
+    STREF
+    ENDC
+    ROT
     STREF
     ENDC
     SWAP
@@ -685,11 +804,11 @@ PROGRAM{
   }>
   $TokenLocked$_store_cell PROCINLINE:<{
     NEWC
-    11 -ROLL
+    13 -ROLL
     $TokenLocked$_store INLINECALLDICT
     ENDC
   }>
-  $LayerswapV8$_store PROCINLINE:<{
+  $LayerswapV8Jetton$_store PROCINLINE:<{
     s3 s4 XCHG2
     STDICT
     257 PUSHINT
@@ -699,7 +818,7 @@ PROGRAM{
     SWAP
     __tact_store_address INLINECALLDICT
   }>
-  $LayerswapV8$_load PROCINLINE:<{
+  $LayerswapV8Jetton$_load PROCINLINE:<{
     LDDICT
     257 PUSHINT
     LDIX
@@ -719,10 +838,12 @@ PROGRAM{
     DUP
     ISNULL
     128 THROWIF
-    14 UNTUPLE
+    15 UNTUPLE
+    2 UNTUPLE
   }>
   $HTLC$_to_tuple PROCINLINE:<{
-    14 TUPLE
+    PAIR
+    15 TUPLE
   }>
   $HTLC$_to_opt_tuple PROCINLINE:<{
     DUP
@@ -752,7 +873,7 @@ PROGRAM{
     RAND
     ADD
   }>
-  $LayerswapV8$_contract_init PROCREF:<{
+  $LayerswapV8Jetton$_contract_init PROCREF:<{
     PUSHNULL
     0 PUSHINT
     B{b5ee9c72410101010024000043800000000000000000000000000000000000000000000000000000000000000000104aec829d} B>boc <s PUSHSLICE
@@ -761,7 +882,7 @@ PROGRAM{
     $global_random INLINECALLDICT
     SWAP
   }>
-  $LayerswapV8$_contract_load PROCREF:<{
+  $LayerswapV8Jetton$_contract_load PROCREF:<{
     c4 PUSH
     CTOS
     LDREF
@@ -770,7 +891,7 @@ PROGRAM{
     1 LDI
     SWAP
     IFJMP:<{
-      $LayerswapV8$_load INLINECALLDICT
+      $LayerswapV8Jetton$_load INLINECALLDICT
       1 4 BLKDROP2
     }>
     DROP
@@ -779,9 +900,9 @@ PROGRAM{
     10 PUSHPOW2
     EQUAL
     137 THROWIFNOT
-    $LayerswapV8$_contract_init INLINECALLDICT
+    $LayerswapV8Jetton$_contract_init INLINECALLDICT
   }>
-  $LayerswapV8$_contract_store PROCINLINE:<{
+  $LayerswapV8Jetton$_contract_store PROCINLINE:<{
     NEWC
     __tact_context_sys GETGLOB
     SWAP
@@ -790,7 +911,7 @@ PROGRAM{
     SWAP
     1 STI
     4 -ROLL
-    $LayerswapV8$_store INLINECALLDICT
+    $LayerswapV8Jetton$_store INLINECALLDICT
     ENDC
     c4 POP
   }>
@@ -910,27 +1031,218 @@ PROGRAM{
     ENDC
     CTOS
   }>
-  $LayerswapV8$_fun_contractExists PROCREF:<{
+  $Slice$_fun_asCell PROCINLINE:<{
+    NEWC
+    SWAP
+    STSLICER
+    ENDC
+  }>
+  $LayerswapV8Jetton$_fun_contractExists PROCREF:<{
     257 PUSHINT
     s5 PUSH
     s0 s2 XCHG
     __tact_dict_get_int_cell INLINECALLDICT
     $HTLC$_load_opt INLINECALLDICT
     ISNULL
-    IF:<{
+    IFJMP:<{
       FALSE
-    }>ELSE<{
-      TRUE
     }>
+    TRUE
   }>
-  $LayerswapV8$_fun_getDetails PROCREF:<{
+  $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress PROCINLINE:<{
+  }>
+  $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress_senderPubKey_hopChains_hopAssets_hopAddresses PROCINLINE:<{
+  }>
+  $LayerswapV8Jetton$_fun__commit PROCREF:<{
+    s0 s2 XCHG
+    $CommitData$_load_not_mut INLINECALLDICT
+    4670 PUSHINT
+    s15 PUSH
+    0 NEQINT
+    THROWANYIFNOT
+    21683 PUSHINT
+    s8 PUSH
+    NOW
+    GREATER
+    THROWANYIFNOT
+    s0 17 s() XCHG
+    INC
+    16 s() PUSH
+    OVER
+    XOR
+    s2 19 s() XCHG
+    s0 17 s() XCHG
+    24064 PUSHINT
+    s0 17 s() XCHG
+    18 s() PUSH
+    $LayerswapV8Jetton$_fun_contractExists INLINECALLDICT
+    0 EQINT
+    s1 18 s() XCHG
+    THROWANYIFNOT
+    257 PUSHINT
+    0 PUSHINT
+    DUP
+    FALSE
+    FALSE
+    16 s() PUSH
+    s0 s4 XCHG
+    19 s() PUSH
+    s0 s4 XCHG
+    19 s() PUSH
+    s0 s4 XCHG
+    18 s() PUSH
+    s0 s4 XCHG
+    23 s() PUSH
+    s4 s14 XCPU
+    s0 s4 XCHG
+    20 s() PUSH
+    s1 s3 s4 XCHG3
+    27 s() PUSH
+    s0 s2 XCHG
+    21 s() PUSH
+    s0 s2 XCHG
+    21 s() PUSH
+    s0 s2 XCHG
+    21 s() PUSH
+    21 s() PUSH
+    $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress INLINECALLDICT
+    $HTLC$_store_cell INLINECALLDICT
+    s2 s4 XCHG
+    19 s() PUSH
+    SWAP
+    __tact_dict_set_int_cell INLINECALLDICT
+    s15 17 s() XCHG
+    s13 s14 XCHG
+    s11 s13 XCHG
+    s9 s10 XCHG
+    s8 17 s() XCHG
+    s7 17 s() XCHG
+    s6 17 s() XCHG
+    s5 17 s() XCHG
+    s4 17 s() XCHG
+    s3 17 s() XCHG
+    s2 17 s() XCHG
+    s1 19 s() XCHG
+    s0 18 s() XCHG
+    $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress_senderPubKey_hopChains_hopAssets_hopAddresses INLINECALLDICT
+    $TokenCommitted$_store_cell INLINECALLDICT
+    $global_emit INLINECALLDICT
+    s2 s3 XCHG
+  }>
+  $SendParameters$_constructor_to_bounce_value_mode_body PROCINLINE:<{
+    s3 s4 XCHG
+    PUSHNULL
+    PUSHNULL
+  }>
+  $Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress PROCINLINE:<{
+  }>
+  $TokenLocked$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_hashlock_jettonMasterAddress_htlcJettonWalletAddress PROCINLINE:<{
+  }>
+  $LayerswapV8Jetton$_fun__lock PROCREF:<{
+    s0 s2 XCHG
+    $LockData$_load_not_mut INLINECALLDICT
+    21683 PUSHINT
+    NOW
+    s11 PUSH
+    LESS
+    THROWANYIFNOT
+    4670 PUSHINT
+    s13 PUSH
+    0 NEQINT
+    THROWANYIFNOT
+    s2 16 s() XCHG
+    s15 s14 XCHG2
+    11493 PUSHINT
+    s14 s11 XCPU
+    $LayerswapV8Jetton$_fun_contractExists INLINECALLDICT
+    0 EQINT
+    s1 s15 XCHG
+    THROWANYIFNOT
+    257 PUSHINT
+    0 PUSHINT
+    DUP
+    FALSE
+    FALSE
+    s10 PUSH
+    s4 s12 XCPU
+    s4 s11 XCPU
+    s4 s15 XCPU
+    s0 s4 XCHG
+    20 s() PUSH
+    s0 s4 XCHG
+    s0 s3 XCHG
+    18 s() PUSH
+    s14 s3 s2 PUXC2
+    24 s() PUSH
+    s0 s2 XCHG
+    22 s() PUSH
+    s0 s2 XCHG
+    30 s() PUSH
+    -ROT
+    30 s() PUSH
+    30 s() PUSH
+    $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress INLINECALLDICT
+    $HTLC$_store_cell INLINECALLDICT
+    s12 PUSH
+    s3 s5 XCHG
+    SWAP
+    __tact_dict_set_int_cell INLINECALLDICT
+    s13 PUSH
+    17 s() PUSH
+    __tact_slice_eq_bits INLINECALLDICT
+    NOT
+    IF:<{
+      s10 PUSH
+      0 NEQINT
+    }>ELSE<{
+      FALSE
+    }>
+    IF:<{
+      TRUE
+      20000000 PUSHINT
+      s12 s5 s8 PUSH3
+      0 PUSHINT
+      s10 s11 s13 XCPU2
+      19 s() PUSH
+      17 s() PUSH
+      22 s() PUSH
+      20 s() PUSH
+      27 s() PUSH
+      27 s() PUSH
+      $Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress INLINECALLDICT
+      $Notify$_store_cell INLINECALLDICT
+      19 s() PUSH
+      s0 s4 XCHG
+      s8 s8 XCHG2
+      $SendParameters$_constructor_to_bounce_value_mode_body INLINECALLDICT
+      $global_send INLINECALLDICT
+    }>ELSE<{
+      s4 POP
+    }>
+    s4 PUSH
+    s10 s12 XCHG
+    s6 s11 XCHG
+    s0 s10 XCHG
+    5 5 REVERSE
+    s6 s7 XCHG
+    s0 s5 XCHG
+    s0 s4 XCHG
+    s3 16 s() XCHG
+    s2 16 s() XCHG
+    s15 s14 XCHG2
+    $TokenLocked$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_hashlock_jettonMasterAddress_htlcJettonWalletAddress INLINECALLDICT
+    $TokenLocked$_store_cell INLINECALLDICT
+    $global_emit INLINECALLDICT
+    s1 s3 XCHG
+  }>
+  $LayerswapV8Jetton$_fun_getDetails PROCREF:<{
     257 PUSHINT
     s5 PUSH
     s0 s2 XCHG
     __tact_dict_get_int_cell INLINECALLDICT
     $HTLC$_load_opt INLINECALLDICT
   }>
-  $LayerswapV8$_fun_getContractsLength PROCREF:<{
+  $LayerswapV8Jetton$_fun_getContractsLength PROCREF:<{
     0 PUSHINT
     s4 PUSH
     257 PUSHINT
@@ -946,7 +1258,7 @@ PROGRAM{
     }>
     2DROP
   }>
-  $LayerswapV8$_fun_getContracts PROCREF:<{
+  $LayerswapV8Jetton$_fun_getContracts PROCREF:<{
     PUSHNULL
     0 PUSHINT
     s6 PUSH
@@ -956,8 +1268,8 @@ PROGRAM{
     }>DO<{
       $HTLC$_load_opt INLINECALLDICT
       $HTLC$_not_null INLINECALLDICT
-      s9 s13 XCHG
-      13 BLKDROP
+      s11 s15 XCHG
+      15 BLKDROP
       s4 s(-1) PUXC
       __tact_slice_eq_bits INLINECALLDICT
       IF:<{
@@ -977,91 +1289,95 @@ PROGRAM{
     s3 s4 XCHG
     4 BLKDROP
   }>
-  $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded PROCINLINE:<{
-  }>
   $SendParameters$_constructor_to_bounce_value_mode PROCINLINE:<{
     s2 s3 XCHG
     PUSHNULL
     PUSHNULL
     PUSHNULL
   }>
-  $LayerswapV8$_fun_addLock PROCREF:<{
+  $LayerswapV8Jetton$_fun_addLock PROCREF:<{
     s2 s3 XCHG
     3 BLKDROP
-    s7 s6 s5 XCHG3
-    30789 PUSHINT
-    s5 s4 XCPU
-    $LayerswapV8$_fun_contractExists INLINECALLDICT
+    s7 s0 s3 XC2PU
+    s7 s6 XCHG2
+    58417 PUSHINT
+    s6 s5 XCPU
+    $LayerswapV8Jetton$_fun_contractExists INLINECALLDICT
     -1 EQINT
-    s1 s6 XCHG
+    s1 s7 XCHG
     THROWANYIFNOT
-    s2 PUSH
     257 PUSHINT
-    s5 PUSH
+    s3 s0 s5 PUXC2
     __tact_dict_get_int_cell INLINECALLDICT
     $HTLC$_load_opt INLINECALLDICT
     $HTLC$_not_null INLINECALLDICT
-    s3 POP
     s5 POP
-    s7 PUSH
-    18 s() PUSH
+    s7 POP
+    s9 PUSH
+    21 s() PUSH
     __tact_slice_eq_bits INLINECALLDICT
     IF:<{
-      17 s() POP
+      20 s() POP
       TRUE
     }>ELSE<{
-      DUP
-      s0 18 s() XCHG
+      s2 s(-1) PUXC
+      s0 21 s() XCHG
       __tact_slice_eq_bits INLINECALLDICT
     }>
     IF:<{
-      s13 s12 s11 XCHG3
-      58417 PUSHINT
+      s2 s14 XCHG
       s0 16 s() XCHG
-      s15 PUSH
-      $LayerswapV8$_fun_contractExists INLINECALLDICT
+      s1 s13 XCHG
+      58417 PUSHINT
+      s0 18 s() XCHG
+      19 s() PUSH
+      $LayerswapV8Jetton$_fun_contractExists INLINECALLDICT
       -1 EQINT
-      s1 17 s() XCHG
+      s1 19 s() XCHG
       THROWANYIFNOT
-      46887 PUSHINT
-      s0 s4 XCHG
+      8650 PUSHINT
+      s0 s5 XCHG
       0 EQINT
-      s1 s4 XCHG
-      THROWANYIFNOT
-      49162 PUSHINT
-      s0 s11 XCHG
-      0 EQINT
-      s1 s11 XCHG
+      s1 s5 XCHG
       THROWANYIFNOT
       21683 PUSHINT
-      16 s() PUSH
+      20 s() PUSH
       NOW
       GREATER
       THROWANYIFNOT
-      8650 PUSHINT
-      s0 s12 XCHG
+      46887 PUSHINT
+      s0 16 s() XCHG
       0 EQINT
-      s1 s12 XCHG
+      s1 16 s() XCHG
       THROWANYIFNOT
+      49162 PUSHINT
+      s0 18 s() XCHG
+      0 EQINT
+      s1 18 s() XCHG
+      THROWANYIFNOT
+      s9 s11 XCHG
+      s8 s10 XCHG
       s7 s9 XCHG
       s6 s8 XCHG
       s5 s7 XCHG
       s4 s6 XCHG
       s3 s5 XCHG
-      s4 s3 s0 XCHG3
       257 PUSHINT
       0 PUSHINT
-      s0 s4 XCHG
-      s3 17 s() XCHG
-      s2 17 s() XCHG
-      s1 16 s() XCHG
-      s0 s15 XCHG
+      s0 s6 XCHG
+      s5 s14 XCHG
+      s2 s4 XCHG
+      s3 19 s() XCHG
+      s0 s2 XCHG
       FALSE
+      s0 s2 XCHG
       FALSE
-      $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded INLINECALLDICT
+      -ROT
+      s0 16 s() XCHG
+      $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress INLINECALLDICT
       $HTLC$_store_cell INLINECALLDICT
-      s1 s3 XCHG
-      s5 s5 s0 XCHG3
+      s3 s5 XCHG
+      s1 s4 s0 XCHG3
       __tact_dict_set_int_cell INLINECALLDICT
       __tact_context_get_sender INLINECALLDICT
       FALSE
@@ -1070,20 +1386,20 @@ PROGRAM{
       $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
       $global_send INLINECALLDICT
     }>ELSE<{
-      11 BLKDROP
-      s3 POP
+      13 BLKDROP
+      s2 POP
       s4 POP
       s4 POP
       s4 POP
       31687 PUSHINT
       THROWANY
-      s0 s2 XCHG
+      -ROT
     }>
     s1 s3 s3 XCHG3
   }>
   $SendParameters$_constructor_bounce_to_value_mode_body_code_data PROCINLINE:<{
   }>
-  $LayerswapV8$_fun_forward PROCREF:<{
+  $LayerswapV8Jetton$_fun_forward PROCREF:<{
     PUSHNULL
     PUSHNULL
     s2 PUSH
@@ -1105,115 +1421,64 @@ PROGRAM{
     $SendParameters$_constructor_bounce_to_value_mode_body_code_data INLINECALLDICT
     $global_send INLINECALLDICT
   }>
-  $LayerswapV8$_fun_notify PROCINLINE:<{
+  $LayerswapV8Jetton$_fun_notify PROCINLINE:<{
     __tact_context_get_sender INLINECALLDICT
     SWAP
     FALSE
     PUSHNULL
-    $LayerswapV8$_fun_forward INLINECALLDICT
-  }>
-  $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_senderPubKey_hopChains_hopAssets_hopAddresses PROCINLINE:<{
+    $LayerswapV8Jetton$_fun_forward INLINECALLDICT
   }>
   $AddLock$_constructor_Id_hashlock_timelock PROCINLINE:<{
   }>
-  $SendParameters$_constructor_to_bounce_value_mode_body PROCINLINE:<{
-    s3 s4 XCHG
+  $SendParameters$_constructor_to_value_bounce_mode_body PROCINLINE:<{
+    s2 s4 XCHG
+    s2 s3 XCHG
     PUSHNULL
     PUSHNULL
   }>
-  $Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress PROCINLINE:<{
-  }>
-  $TokenLocked$_constructor_Id_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger PROCINLINE:<{
+  $TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload PROCINLINE:<{
   }>
   $DeployOk$_constructor_queryId PROCINLINE:<{
   }>
-  $LayerswapV8$_internal_binary_Commit PROCINLINE:<{
-    __tact_context_get INLINECALLDICT
+  $LayerswapV8Jetton$_internal_binary_TokenNotification PROCINLINE:<{
+    s3 POP
+    s0 s2 XCHG
+    $Slice$_fun_asCell INLINECALLDICT
+    CTOS
+    1 LDU
+    NIP
+    LDREF
     DROP
-    s2 POP
-    4670 PUSHINT
-    s2 PUSH
-    0 NEQINT
-    THROWANYIFNOT
-    21683 PUSHINT
-    s8 PUSH
-    NOW
-    GREATER
-    THROWANYIFNOT
-    s0 s15 XCHG
-    INC
-    s14 s0 PUSH2
-    XOR
-    s2 17 s() XCHG
-    s0 s15 XCHG
-    24064 PUSHINT
-    s0 s15 XCHG
-    16 s() PUSH
-    $LayerswapV8$_fun_contractExists INLINECALLDICT
-    0 EQINT
-    s1 16 s() XCHG
-    THROWANYIFNOT
-    257 PUSHINT
-    0 PUSHINT
-    DUP
-    FALSE
-    FALSE
-    16 s() PUSH
-    s0 s5 XCHG
-    19 s() PUSH
-    s0 s5 XCHG
-    19 s() PUSH
-    s0 s5 XCHG
-    18 s() PUSH
-    s0 s5 XCHG
-    s4 25 s() XCHG
-    s15 PUSH
-    s0 s4 XCHG
-    19 s() PUSH
-    s0 s4 XCHG
-    s3 s1 s3 XCHG3
-    28 s() PUSH
-    s0 s2 XCHG
-    20 s() PUSH
-    s0 s2 XCHG
-    20 s() PUSH
-    s0 s2 XCHG
-    s0 30 s() XCHG
-    $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded INLINECALLDICT
-    $HTLC$_store_cell INLINECALLDICT
-    s2 s3 XCHG
-    s1 17 s() XCHG
-    16 s() PUSH
+    CTOS
+    32 LDU
+    OVER
+    1734998782 PUSHINT
+    EQUAL
+    IF:<{
+      4 4 BLKSWAP
+      s4 s7 s6 PUSH3
+      $LayerswapV8Jetton$_fun__commit INLINECALLDICT
+      4 4 BLKSWAP
+    }>
     SWAP
-    __tact_dict_set_int_cell INLINECALLDICT
-    __tact_context_get_sender INLINECALLDICT
-    s13 s15 XCHG
-    s12 s15 XCHG
-    s10 s15 XCHG
-    s0 s9 XCHG
-    s0 s8 XCHG
-    s7 s15 XCHG
-    s6 17 s() XCHG
-    s0 s5 XCHG
-    s4 s15 XCHG
-    s3 17 s() XCHG
-    s0 s2 XCHG
-    s0 17 s() XCHG
-    s1 s15 XCHG
-    $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_senderPubKey_hopChains_hopAssets_hopAddresses INLINECALLDICT
-    $TokenCommitted$_store_cell INLINECALLDICT
-    $global_emit INLINECALLDICT
-    s3 s3 s0 XCHG3
+    317164721 PUSHINT
+    EQUAL
+    IF:<{
+      -ROT
+      $LayerswapV8Jetton$_fun__lock INLINECALLDICT
+    }>ELSE<{
+      3 BLKDROP
+    }>
   }>
-  $LayerswapV8$_internal_binary_AddLock PROCINLINE:<{
+  $LayerswapV8Jetton$_internal_binary_AddLock PROCINLINE:<{
     __tact_context_get INLINECALLDICT
-    $LayerswapV8$_fun_addLock INLINECALLDICT
+    $LayerswapV8Jetton$_fun_addLock INLINECALLDICT
   }>
-  $LayerswapV8$_internal_binary_AddLockSig PROCINLINE:<{
+  $LayerswapV8Jetton$_internal_binary_AddLockSig PROCINLINE:<{
     s6 s5 s4 XCHG3
     58417 PUSHINT
     s4 s7 XCPU
-    $LayerswapV8$_fun_contractExists INLINECALLDICT
+    $LayerswapV8Jetton$_fun_contractExists INLINECALLDICT
     s1 s5 XCHG
     THROWANYIFNOT
     s2 PUSH
@@ -1222,8 +1487,8 @@ PROGRAM{
     __tact_dict_get_int_cell INLINECALLDICT
     $HTLC$_load_opt INLINECALLDICT
     $HTLC$_not_null INLINECALLDICT
-    s8 s13 XCHG
-    13 BLKDROP
+    s10 s15 XCHG
+    15 BLKDROP
     48401 PUSHINT
     s7 PUSH
     HASHSU
@@ -1240,233 +1505,182 @@ PROGRAM{
     s2 s6 XCHG
     $AddLock$_constructor_Id_hashlock_timelock INLINECALLDICT
     __tact_context_get INLINECALLDICT
-    $LayerswapV8$_fun_addLock INLINECALLDICT
+    $LayerswapV8Jetton$_fun_addLock INLINECALLDICT
   }>
-  $LayerswapV8$_internal_binary_Lock PROCINLINE:<{
+  $LayerswapV8Jetton$_internal_binary_Redeem PROCINLINE:<{
     __tact_context_get INLINECALLDICT
-    s1 s3 XCHG
-    3 BLKDROP
-    21683 PUSHINT
-    NOW
-    s9 PUSH
-    LESS
-    THROWANYIFNOT
-    4670 PUSHINT
-    OVER
-    0 NEQINT
-    THROWANYIFNOT
-    s13 s12 s11 XCHG3
-    11493 PUSHINT
-    s11 s10 XCPU
-    $LayerswapV8$_fun_contractExists INLINECALLDICT
-    0 EQINT
-    s1 s12 XCHG
-    THROWANYIFNOT
-    257 PUSHINT
-    __tact_context_get_sender INLINECALLDICT
-    0 PUSHINT
-    DUP
-    FALSE
-    FALSE
-    s9 PUSH
-    s5 s11 XCPU
-    s0 s5 XCHG
-    21 s() PUSH
-    s5 s14 XCPU
-    s0 s5 XCHG
-    s3 s4 XCHG
-    s2 s3 XCHG
-    16 s() PUSH
-    s0 s3 XCHG
-    19 s() PUSH
-    s0 s2 XCHG
-    23 s() PUSH
-    s0 s2 XCHG
-    20 s() PUSH
-    s0 s2 XCHG
-    26 s() PUSH
-    s0 s2 XCHG
-    $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded INLINECALLDICT
-    $HTLC$_store_cell INLINECALLDICT
-    s11 PUSH
-    s3 s5 XCHG
-    SWAP
-    __tact_dict_set_int_cell INLINECALLDICT
-    s10 s12 PUSH2
-    __tact_slice_eq_bits INLINECALLDICT
-    NOT
-    IF:<{
-      s9 PUSH
-      0 NEQINT
-    }>ELSE<{
-      FALSE
-    }>
-    IF:<{
-      TRUE
-      20000000 PUSHINT
-      0 PUSHINT
-      __tact_context_get_sender INLINECALLDICT
-      s13 s12 s(-2) PU2XC
-      s10 s(-1) PUXC
-      20 s() PUSH
-      s11 s13 s1 PU2XC
-      16 s() PUSH
-      22 s() PUSH
-      19 s() PUSH
-      23 s() PUSH
-      24 s() PUSH
-      $Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress INLINECALLDICT
-      $Notify$_store_cell INLINECALLDICT
-      16 s() PUSH
-      4 -ROLL
-      $SendParameters$_constructor_to_bounce_value_mode_body INLINECALLDICT
-      $global_send INLINECALLDICT
-    }>
-    __tact_context_get_sender INLINECALLDICT
-    s5 s8 XCHG
-    s4 s7 XCHG
-    s6 s14 XCHG
-    s0 s5 XCHG
-    s3 s14 XCHG
-    s12 s0 s13 XCHG3
-    $TokenLocked$_constructor_Id_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger INLINECALLDICT
-    $TokenLocked$_store_cell INLINECALLDICT
-    $global_emit INLINECALLDICT
-    s1 s3 s0 XCHG3
-  }>
-  $LayerswapV8$_internal_binary_Redeem PROCINLINE:<{
-    3 3 BLKSWAP
-    42857 PUSHINT
-    s6 s5 XCPU
-    $LayerswapV8$_fun_contractExists INLINECALLDICT
+    DROP
+    s2 POP
+    s7 s6 s5 XCHG3
+    58417 PUSHINT
+    s5 s4 XCPU
+    $LayerswapV8Jetton$_fun_contractExists INLINECALLDICT
     -1 EQINT
-    s1 s7 XCHG
+    s1 s6 XCHG
     THROWANYIFNOT
     s2 PUSH
     257 PUSHINT
-    s6 PUSH
+    s5 PUSH
     __tact_dict_get_int_cell INLINECALLDICT
     $HTLC$_load_opt INLINECALLDICT
     $HTLC$_not_null INLINECALLDICT
-    s6 POP
-    s7 POP
-    2DROP
-    5 5 BLKDROP2
-    49162 PUSHINT
-    s0 s3 XCHG
-    0 EQINT
-    s1 s3 XCHG
-    THROWANYIFNOT
-    46887 PUSHINT
-    s0 s4 XCHG
-    0 EQINT
-    s1 s4 XCHG
-    THROWANYIFNOT
-    s0 s6 XCHG
+    NIP
+    s3 POP
+    s3 POP
+    s5 POP
+    6 6 BLKDROP2
+    s0 s13 XCHG
     NEWC
     256 STU
     $Builder$_fun_asSlice INLINECALLDICT
     SHA256U
-    s0 s2 XCHG
-    50918 PUSHINT
     s0 s3 XCHG
+    50918 PUSHINT
+    s0 s4 XCHG
     EQUAL
+    s1 s3 XCHG
+    THROWANYIFNOT
+    49162 PUSHINT
+    s0 s2 XCHG
+    0 EQINT
     s1 s2 XCHG
     THROWANYIFNOT
-    FALSE
-    ROT
-    s0 s5 XCHG
+    46887 PUSHINT
+    s0 s2 XCHG
+    0 EQINT
+    s1 s2 XCHG
+    THROWANYIFNOT
+    NEWC
+    s0 s8 XCHG2
+    __tact_store_address INLINECALLDICT
+    NOW
+    SWAP
+    48 STI
+    ENDC
+    HASHCU
     0 PUSHINT
-    $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
-    $global_send INLINECALLDICT
+    SWAP
+    AND
+    TRUE
+    0 PUSHINT
     __tact_context_get_sender INLINECALLDICT
-    FALSE
-    0 PUSHINT
-    64 PUSHINT
-    $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+    PUSHNULL
+    1 PUSHINT
+    B{b5ee9c7241010101000a00001052656465656d65640fd3d370} B>boc <s PUSHSLICE
+    s5 s13 XCHG
+    s4 s7 XCHG
+    $TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload INLINECALLDICT
+    $TokenTransfer$_store_cell INLINECALLDICT
+    s4 s9 XCHG
+    s3 s8 XCHG
+    s2 s7 XCHG
+    $SendParameters$_constructor_to_value_bounce_mode_body INLINECALLDICT
     $global_send INLINECALLDICT
-    s3 s3 XCHG2
+    s0 s4 XCHG2
     257 PUSHINT
     DICTIDEL
     DROP
     s0 s3 XCHG
   }>
-  $LayerswapV8$_internal_binary_Refund PROCINLINE:<{
-    s4 PUSH
-    257 PUSHINT
+  $LayerswapV8Jetton$_internal_binary_Refund PROCINLINE:<{
+    __tact_context_get INLINECALLDICT
+    DROP
+    s2 POP
+    s6 s5 s4 XCHG3
+    58417 PUSHINT
+    s4 s7 XCPU
+    $LayerswapV8Jetton$_fun_contractExists INLINECALLDICT
+    -1 EQINT
+    s1 s5 XCHG
+    THROWANYIFNOT
     s2 PUSH
+    257 PUSHINT
+    s8 PUSH
     __tact_dict_get_int_cell INLINECALLDICT
     $HTLC$_load_opt INLINECALLDICT
     $HTLC$_not_null INLINECALLDICT
-    s2 POP
-    4 4 BLKDROP2
+    NIP
+    s3 POP
     s5 POP
     s5 POP
     s5 POP
     s5 POP
-    s9 s8 s7 XCHG3
-    42857 PUSHINT
-    s7 s6 XCPU
-    $LayerswapV8$_fun_contractExists INLINECALLDICT
-    -1 EQINT
-    s1 s8 XCHG
-    THROWANYIFNOT
-    49162 PUSHINT
-    s0 s10 XCHG
-    0 EQINT
-    s1 s10 XCHG
-    THROWANYIFNOT
-    46887 PUSHINT
-    s0 s8 XCHG
-    0 EQINT
-    s1 s8 XCHG
-    THROWANYIFNOT
+    s6 POP
+    s6 POP
+    s6 POP
+    s6 POP
     38239 PUSHINT
-    s0 s2 XCHG
+    SWAP
     NOW
     LESS
-    s1 s2 XCHG
     THROWANYIFNOT
-    s1 s4 XCHG
-    FALSE
-    s0 s5 XCHG2
+    49162 PUSHINT
+    s0 s3 XCHG
+    0 EQINT
+    s1 s3 XCHG
+    THROWANYIFNOT
+    46887 PUSHINT
+    s0 s3 XCHG
+    0 EQINT
+    s1 s3 XCHG
+    THROWANYIFNOT
+    NEWC
+    s0 s8 XCHG2
+    __tact_store_address INLINECALLDICT
+    NOW
+    SWAP
+    48 STI
+    ENDC
+    HASHCU
     0 PUSHINT
-    $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
-    $global_send INLINECALLDICT
+    SWAP
+    AND
+    TRUE
+    0 PUSHINT
     __tact_context_get_sender INLINECALLDICT
-    FALSE
-    0 PUSHINT
-    64 PUSHINT
-    $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+    PUSHNULL
+    1 PUSHINT
+    B{b5ee9c7241010101000a000010526566756e6465647b540b2d} B>boc <s PUSHSLICE
+    s5 s7 XCHG
+    s4 s13 XCHG
+    $TokenTransfer$_constructor_queryId_amount_destination_response_destination_custom_payload_forward_ton_amount_forward_payload INLINECALLDICT
+    $TokenTransfer$_store_cell INLINECALLDICT
+    s2 s4 XCHG
+    s3 s8 XCHG
+    s1 s7 s0 XCHG3
+    $SendParameters$_constructor_to_value_bounce_mode_body INLINECALLDICT
     $global_send INLINECALLDICT
-    ROT
+    s1 s4 XCHG
     257 PUSHINT
     DICTIDEL
     DROP
-    s3 s3 XCHG2
+    s2 s3 XCHG2
   }>
-  $LayerswapV8$_internal_binary_Deploy PROCINLINE:<{
+  $LayerswapV8Jetton$_internal_binary_TokenExcesses PROCINLINE:<{
+    DROP
+  }>
+  $LayerswapV8Jetton$_internal_binary_Deploy PROCINLINE:<{
     $DeployOk$_constructor_queryId INLINECALLDICT
     $DeployOk$_store_cell INLINECALLDICT
-    $LayerswapV8$_fun_notify INLINECALLDICT
+    $LayerswapV8Jetton$_fun_notify INLINECALLDICT
   }>
   %getDetails PROC:<{
-    $LayerswapV8$_contract_load INLINECALLDICT
+    $LayerswapV8Jetton$_contract_load INLINECALLDICT
     4 ROLL
-    $LayerswapV8$_fun_getDetails INLINECALLDICT
+    $LayerswapV8Jetton$_fun_getDetails INLINECALLDICT
     4 1 BLKDROP2
     $HTLC$_to_opt_external INLINECALLDICT
   }>
   %getContractsLength PROC:<{
-    $LayerswapV8$_contract_load INLINECALLDICT
-    $LayerswapV8$_fun_getContractsLength INLINECALLDICT
+    $LayerswapV8Jetton$_contract_load INLINECALLDICT
+    $LayerswapV8Jetton$_fun_getContractsLength INLINECALLDICT
     4 1 BLKDROP2
   }>
   %getContracts PROC:<{
     __tact_verify_address INLINECALLDICT
-    $LayerswapV8$_contract_load INLINECALLDICT
+    $LayerswapV8Jetton$_contract_load INLINECALLDICT
     4 ROLL
-    $LayerswapV8$_fun_getContracts INLINECALLDICT
+    $LayerswapV8Jetton$_fun_getContracts INLINECALLDICT
     4 1 BLKDROP2
   }>
   lazy_deployment_completed PROC:<{
@@ -1475,7 +1689,7 @@ PROGRAM{
     1 LDI
     SWAP
   }>
-  $LayerswapV8$_contract_router_internal PROCREF:<{
+  $LayerswapV8Jetton$_contract_router_internal PROCREF:<{
     SWAP
     IFJMP:<{
       DROP
@@ -1491,13 +1705,13 @@ PROGRAM{
       32 PLDU
     }>
     DUP
-    458640785 PUSHINT
+    1935855772 PUSHINT
     EQUAL
     IFJMP:<{
       DROP
-      $Commit$_load INLINECALLDICT
-      1 11 BLKDROP2
-      $LayerswapV8$_internal_binary_Commit INLINECALLDICT
+      $TokenNotification$_load INLINECALLDICT
+      1 4 BLKDROP2
+      $LayerswapV8Jetton$_internal_binary_TokenNotification INLINECALLDICT
       TRUE
     }>
     DUP
@@ -1507,7 +1721,7 @@ PROGRAM{
       DROP
       $AddLock$_load INLINECALLDICT
       1 3 BLKDROP2
-      $LayerswapV8$_internal_binary_AddLock INLINECALLDICT
+      $LayerswapV8Jetton$_internal_binary_AddLock INLINECALLDICT
       TRUE
     }>
     DUP
@@ -1517,17 +1731,7 @@ PROGRAM{
       DROP
       $AddLockSig$_load INLINECALLDICT
       1 3 BLKDROP2
-      $LayerswapV8$_internal_binary_AddLockSig INLINECALLDICT
-      TRUE
-    }>
-    DUP
-    317164721 PUSHINT
-    EQUAL
-    IFJMP:<{
-      DROP
-      $Lock$_load INLINECALLDICT
-      1 9 BLKDROP2
-      $LayerswapV8$_internal_binary_Lock INLINECALLDICT
+      $LayerswapV8Jetton$_internal_binary_AddLockSig INLINECALLDICT
       TRUE
     }>
     DUP
@@ -1537,7 +1741,7 @@ PROGRAM{
       DROP
       $Redeem$_load INLINECALLDICT
       1 2 BLKDROP2
-      $LayerswapV8$_internal_binary_Redeem INLINECALLDICT
+      $LayerswapV8Jetton$_internal_binary_Redeem INLINECALLDICT
       TRUE
     }>
     DUP
@@ -1547,7 +1751,17 @@ PROGRAM{
       DROP
       $Refund$_load INLINECALLDICT
       NIP
-      $LayerswapV8$_internal_binary_Refund INLINECALLDICT
+      $LayerswapV8Jetton$_internal_binary_Refund INLINECALLDICT
+      TRUE
+    }>
+    DUP
+    3576854235 PUSHINT
+    EQUAL
+    IFJMP:<{
+      DROP
+      $TokenExcesses$_load INLINECALLDICT
+      NIP
+      $LayerswapV8Jetton$_internal_binary_TokenExcesses INLINECALLDICT
       TRUE
     }>
     2490013878 PUSHINT
@@ -1555,7 +1769,7 @@ PROGRAM{
     IFJMP:<{
       $Deploy$_load INLINECALLDICT
       NIP
-      $LayerswapV8$_internal_binary_Deploy INLINECALLDICT
+      $LayerswapV8Jetton$_internal_binary_Deploy INLINECALLDICT
       TRUE
     }>
     DROP
@@ -1579,10 +1793,10 @@ PROGRAM{
     __tact_context SETGLOB
     s0 s2 XCHG
     __tact_context_sender SETGLOB
-    $LayerswapV8$_contract_load INLINECALLDICT
+    $LayerswapV8Jetton$_contract_load INLINECALLDICT
     2 4 BLKSWAP
-    $LayerswapV8$_contract_router_internal INLINECALLDICT
+    $LayerswapV8Jetton$_contract_router_internal INLINECALLDICT
     130 THROWIFNOT
-    $LayerswapV8$_contract_store INLINECALLDICT
+    $LayerswapV8Jetton$_contract_store INLINECALLDICT
   }>
 }END>c

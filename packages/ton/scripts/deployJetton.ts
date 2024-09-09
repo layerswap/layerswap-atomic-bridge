@@ -1,12 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { contractAddress } from 'ton';
-import { HashedTimeLockTON as JettonPreHTLC } from '../build/JettonPreHTLC/tact_HashedTimeLockTON';
+import { LayerswapV8Jetton as JettonPreHTLC } from '../build/JettonPreHTLC/tact_LayerswapV8Jetton';
 import { prepareTactDeployment } from '@tact-lang/deployer';
 
 async function run() {
     let testnet = true; 
-    let packageName = 'tact_HashedTimeLockTON.pkg';
+    let packageName = 'tact_LayerswapV8Jetton.pkg';
     let outputPath = path.resolve(__dirname, '../build/JettonPreHTLC'); 
     let init = await JettonPreHTLC.init();
 

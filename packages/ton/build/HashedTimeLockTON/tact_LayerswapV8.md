@@ -1,6 +1,6 @@
 # TACT Compilation Report
 Contract: LayerswapV8
-BOC Size: 3324 bytes
+BOC Size: 3358 bytes
 
 # Types
 Total Types: 17
@@ -110,11 +110,10 @@ Argument: senderAddr
 136: Invalid address
 137: Masterchain support is not enabled for this contract
 4670: Funds Not Sent
-6007: Lock Already Exists
 8650: Hashlock Already Set
+11493: Contract Already Exists
 21683: Not Future Timelock
 24064: HTLC Already Exists
-30742: Commitment Does Not Exist
 30789: Commit Does Not Exist
 31687: No Allowance
 38239: Not Passed Timelock
@@ -123,6 +122,7 @@ Argument: senderAddr
 48401: Invalid signature
 49162: Already Refunded
 50918: Hashlock Not Match
+58417: Contract Does Not Exist
 
 # Trait Inheritance Diagram
 

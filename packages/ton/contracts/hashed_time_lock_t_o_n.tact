@@ -183,7 +183,7 @@ contract LayerswapV8 with Deployable {
     }
 
     receive(msg: AddLockSig){
-        require(self.contractExists(msg.Id),"Commitment Does Not Exist");
+        require(self.contractExists(msg.Id),"Contract Does Not Exist");
         let htlc: HTLC = (self.contracts.get(msg.Id)!!);
         require(checkSignature(msg.data.hash(),msg.signature,htlc.senderPubKey),"Invalid signature");
         let hashlock: Int = msg.data.loadInt(257);
@@ -201,6 +201,7 @@ contract LayerswapV8 with Deployable {
         let ctx: Context = context();
         require(now() < msg.timelock ,"Not Future Timelock");
         require(ctx.value != 0,"Funds Not Sent");
+        require(self.contractExists(msg.Id) == false,"Contract Already Exists");
 
         self.contracts.set(msg.Id,  HTLC {
                                             dstAddress: msg.dstAddress,
@@ -343,7 +344,8 @@ contract LayerswapV8 with Deployable {
         let htlc: HTLC = (self.contracts.get(msg.Id)!!);
 
         if(ctx.sender == htlc.sender || ctx.sender == htlc.messenger){
-                    require(self.contractExists(msg.Id) == true ,"Lock Already Exists");
+                    require(self.contractExists(msg.Id) == true ,"Contract Does Not Exist");
+                    require(htlc.redeemed == false,"Already Redeemed");
                     require(htlc.refunded == false,"Already Refunded");
                     require(msg.timelock > now(),"Not Future Timelock");
                     require(htlc.hashlock == 0,"Hashlock Already Set");
