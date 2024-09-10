@@ -16,7 +16,6 @@ interface PDAParameters {
   phtlcTokenAccount: anchor.web3.PublicKey;
   phtlc: anchor.web3.PublicKey;
   phtlcBump: number;
-  commitCounter: anchor.web3.PublicKey;
   lockIdStruct: anchor.web3.PublicKey;
   commits: anchor.web3.PublicKey;
   locks: anchor.web3.PublicKey;
@@ -94,10 +93,6 @@ describe("HTLC", () => {
     console.log(`[${phtlc}] derived phtlc`);
     console.log(`[${phtlcTokenAccount}] derived phtlc token account`);
 
-    let [commitCounter, _] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("commitCounter")],
-      program.programId
-    );
     let [lockIdStruct, _b] = await anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("commit_to_lock"), commitId],
       program.programId
@@ -117,7 +112,6 @@ describe("HTLC", () => {
       phtlcTokenAccount,
       phtlc,
       phtlcBump,
-      commitCounter,
       lockIdStruct,
       commits,
       locks
@@ -145,14 +139,6 @@ describe("HTLC", () => {
     receiverTokenAccount = await getTokenAccount(tokenMint, receiver);
   });
   it("Create Prehtlc", async () => {
-    // const txIn = await program.methods
-    //   .initialize()
-    //   .accountsPartial({
-    //     owner: wallet.publicKey,
-    //     commitCounter: pda.commitCounter,
-    //   })
-    //   .signers([wallet.payer])
-    //   .rpc();//.catch(e => console.error(e));
 
     // Initialize mint account and fund the account
     const LOCKIDArray: number[] = Array.from(LOCKID);
@@ -174,7 +160,6 @@ describe("HTLC", () => {
         sender: sender.publicKey,
         phtlc: pda.phtlc,
         phtlcTokenAccount: pda.phtlcTokenAccount,
-        commitCounter: pda.commitCounter,
         commits: pda.commits,
         tokenContract: tokenMint,
         senderTokenAccount: senderTokenAccount

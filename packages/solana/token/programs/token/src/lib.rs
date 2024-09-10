@@ -16,8 +16,6 @@ use sha2::{Digest, Sha256};
 use std::mem::size_of;
 declare_id!("AaRbHQHZ8pRwK1giVB2gC3Ka5uXhdRwh8a8g7DXXPoAU");
 
-const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
-
 /// @title Pre Hashed Timelock Contracts (PHTLCs) on Solana SPL tokens.
 ///
 /// This contract provides a way to lock and keep PHTLCs for SPL tokens.
@@ -102,33 +100,32 @@ fn transfer_htlc_out<'info>(
 
 #[program]
 pub mod anchor_htlc {
-
     use super::*;
     use anchor_spl::token::Transfer;
-    // use spl_token::solana_program::pubkey;
-
-    /// @dev Called by the owner(only once) to initialize the commit Counter.
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        require_keys_eq!(
-            ctx.accounts.owner.key(),
-            OWNER.parse::<Pubkey>().unwrap(),
-            HTLCError::NotOwner
-        );
-        let clock = Clock::get().unwrap();
-        let time = clock.unix_timestamp.try_into().unwrap();
-        let commit_counter = &mut ctx.accounts.commitCounter;
-        commit_counter.count = 0;
-        commit_counter.time = time;
-        Ok(())
-    }
 
     /// @dev Called by the Sender to get the commitId from the given parameters.
-    pub fn get_commit_id(ctx: Context<Get_commit_id>) -> Result<u64> {
-        let commit_counter = &ctx.accounts.commitCounter;
-        let count = commit_counter.count + 1;
-        let time = commit_counter.time;
+    pub fn get_commit_id(
+        ctx: Context<GetCommitId>,
+        amount: u64,
+        timelock: u64,
+    ) -> Result<[u8; 32]> {
+        let sender = &ctx.accounts.sender.to_account_info().key;
+        let receiver = &ctx.accounts.receiver.to_account_info().key;
+        let clock = Clock::get().unwrap();
+        let time: u64 = clock.unix_timestamp.try_into().unwrap();
 
-        Ok(time ^ count)
+        let mut hasher = Sha256::new();
+        hasher.update(ctx.program_id);
+        hasher.update(sender);
+        hasher.update(receiver);
+        hasher.update(&amount.to_be_bytes());
+        hasher.update(&time.to_be_bytes());
+        hasher.update(&timelock.to_be_bytes());
+
+        let commitId = hasher.finalize();
+        // let commitId = hex::encode(commitId);
+        // msg!("commit id: {}", commitId);
+        Ok(commitId.into())
     }
 
     /// @dev Sender / Payer sets up a new pre-hash time lock contract depositing the
@@ -188,9 +185,6 @@ pub mod anchor_htlc {
         phtlc.token_wallet = *ctx.accounts.phtlc_token_account.to_account_info().key;
         phtlc.locked = false;
         phtlc.uncommitted = false;
-
-        let commit_counter = &mut ctx.accounts.commitCounter;
-        commit_counter.count += 1;
 
         Ok(commitId)
     }
@@ -559,35 +553,12 @@ pub struct HTLC {
     pub unlocked: bool,
 }
 
-#[account]
-#[derive(InitSpace)]
-pub struct CommitCounter {
-    pub count: u64,
-    pub time: u64,
-}
-
 #[derive(Accounts)]
-pub struct Initialize<'info> {
-    #[account(mut)]
-    pub owner: Signer<'info>,
-    #[account(
-        init,
-        seeds = [b"commitCounter"],
-        bump,
-        payer = owner,
-        space = CommitCounter::INIT_SPACE + 8
-    )]
-    pub commitCounter: Box<Account<'info, CommitCounter>>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct Get_commit_id<'info> {
-    #[account(
-        seeds = [b"commitCounter"],
-        bump,
-    )]
-    pub commitCounter: Account<'info, CommitCounter>,
+pub struct GetCommitId<'info> {
+    ///CHECK: The sender
+    pub sender: UncheckedAccount<'info>,
+    ///CHECK: The reciever
+    pub receiver: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
@@ -618,12 +589,6 @@ pub struct Commit<'info> {
         token::authority=phtlc,
     )]
     pub phtlc_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(
-        mut,
-        seeds = [b"commitCounter"],
-        bump,
-    )]
-    pub commitCounter: Box<Account<'info, CommitCounter>>,
 
     pub token_contract: Account<'info, Mint>,
     #[account(
@@ -894,17 +859,6 @@ pub struct LockCommit<'info> {
 }
 
 #[derive(Accounts)]
-pub struct GetCommitCounter<'info> {
-    #[account(mut)]
-    pub owner: Signer<'info>,
-    #[account(
-        seeds = [b"commitCounter"],
-        bump,
-    )]
-    pub commitCounter: Box<Account<'info, CommitCounter>>,
-}
-
-#[derive(Accounts)]
 #[instruction(commitId: [u8;32], phtlc_bump: u8)]
 pub struct GetCommitDetails<'info> {
     #[account(
@@ -1034,8 +988,6 @@ pub enum HTLCError {
     FundsNotSent,
     #[msg("Unauthorized Access.")]
     UnauthorizedAccess,
-    #[msg("Not The Owner.")]
-    NotOwner,
     #[msg("Not The Sender.")]
     NotSender,
     #[msg("Not The Reciever.")]
