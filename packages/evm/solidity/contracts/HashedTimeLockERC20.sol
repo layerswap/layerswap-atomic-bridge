@@ -108,6 +108,7 @@ contract LayerswapV8ERC20 {
   }
 
   struct addLockMsg {
+    bytes32 Id;
     bytes32 hashlock;
     uint256 timelock;
   }
@@ -251,22 +252,19 @@ contract LayerswapV8ERC20 {
       } else {
         revert HashlockAlreadySet();
       }
-      emit TokenLockAdded(Id, msg.sender, hashlock, timelock);
+      // DISCLAIMER: `tx.origin` is used in this event, but it can be misleading as it tracks the
+      // original transaction sender, which could be different from the expected sender in complex
+      // flows (e.g., a -> ... -> b -> c where the actual sender is b in event will be emitted a)
+      emit TokenLockAdded(Id, tx.origin, hashlock, timelock);
       return Id;
     } else {
       revert NoAllowance();
     }
   }
 
-  function addLockSig(
-    bytes32 Id,
-    addLockMsg memory message,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) external _exists(Id) returns (bytes32) {
-    if (verifyMessage(msg.sender, message, v, r, s)) {
-      return this.addLock(Id, message.hashlock, message.timelock);
+  function addLockSig(addLockMsg memory message, uint8 v, bytes32 r, bytes32 s) external returns (bytes32) {
+    if (verifyMessage(message, v, r, s)) {
+      return this.addLock(message.Id, message.hashlock, message.timelock);
     } else {
       revert InvalidSigniture();
     }
@@ -301,6 +299,9 @@ contract LayerswapV8ERC20 {
     }
     if (amount == 0) {
       revert FundsNotSent();
+    }
+    if (hasHTLC(Id)) {
+      revert HTLCAlreadyExists();
     }
     IERC20 token = IERC20(tokenContract);
 
@@ -480,7 +481,8 @@ contract LayerswapV8ERC20 {
     return
       keccak256(
         abi.encode(
-          keccak256('addLockMsg(bytes32 hashlock,uint256 timelock)'),
+          keccak256('addLockMsg(bytes32 Id,bytes32 hashlock,uint256 timelock)'),
+          message.Id,
           message.hashlock,
           message.timelock
         )
@@ -488,17 +490,11 @@ contract LayerswapV8ERC20 {
   }
 
   // Verifies an EIP712 message signature
-  function verifyMessage(
-    address sender,
-    addLockMsg memory message,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) private view returns (bool) {
+  function verifyMessage(addLockMsg memory message, uint8 v, bytes32 r, bytes32 s) private view returns (bool) {
     bytes32 digest = keccak256(abi.encodePacked('\x19\x01', DOMAIN_SEPARATOR, hashMessage(message)));
 
     address recoveredAddress = ecrecover(digest, v, r, s);
 
-    return (recoveredAddress == sender);
+    return (recoveredAddress == contracts[message.Id].sender);
   }
 }
