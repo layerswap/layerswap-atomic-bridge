@@ -205,14 +205,32 @@ describe("HTLC", () => {
 
     const lockCommitTx = await program.methods.lockCommit(COMMITIDArray, LOCKIDArray, TIMELOCK, pda.phtlcBump).
       accountsPartial({
+        //The messenger is the user and the payer is the LP
         messenger: sender.publicKey,
+        payer: sender.publicKey,
         phtlc: pda.phtlc,
         htlc: pda.htlc,
         phtlcTokenAccount: pda.phtlcTokenAccount,
         htlcTokenAccount: pda.htlcTokenAccount,
         tokenContract: tokenMint,
-      }).signers([wallet.payer])
-      .rpc();
+      }).instruction();
+
+    const tx = new anchor.web3.Transaction().add(lockCommitTx);
+    tx.feePayer = wallet.publicKey;
+    tx.recentBlockhash = (
+      await anchor.getProvider().connection.getLatestBlockhash()
+    ).blockhash;
+    //User partialsigns the transaction
+    await tx.partialSign(sender.payer);
+    // const txser = bs58.encode(tx.serializeMessage());
+
+    // const rawTx = bs58.decode(txser);
+    // const newtx = anchor.web3.Transaction.from(rawTx);
+
+    // LP signs the transaction
+    await tx.sign(sender.payer);
+    // LP publishes the transaction
+    await anchor.web3.sendAndConfirmTransaction(anchor.getProvider().connection, tx, [sender.payer, sender.payer]);
 
     const [, htlcBalancePost] = await readAccount(pda.htlcTokenAccount, provider);
     console.log(`${pda.htlcTokenAccount} --- htlcWALLET`);

@@ -805,8 +805,9 @@ pub struct UnLock<'info> {
 #[derive(Accounts)]
 #[instruction(commitId: [u8;32], lockId: [u8;32], phtlc_bump: u8)]
 pub struct LockCommit<'info> {
-    #[account(mut)]
     messenger: Signer<'info>,
+    #[account(mut)]
+    payer: Signer<'info>,
 
     #[account(mut,
     seeds = [
