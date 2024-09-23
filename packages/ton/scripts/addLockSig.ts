@@ -20,7 +20,7 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQCRA38mPeNFfuzRzSWBEW5jwO0U8_OLie90CBXQz08Tgd-6"); 
+  const contractAddress = Address.parse("kQCJvduKpx2C005qCSnisfruOBk-pd1u5Yf6I_eJc7RKafer"); 
   const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
   const amount = toNano("0.1");
@@ -30,8 +30,9 @@ async function run() {
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600);
 
   const dataCell: Cell = beginCell()
-      .storeInt(hashlock, 257)
-      .storeInt(timelock, 257)
+  .storeInt(Id,257)
+  .storeInt(hashlock, 257)
+  .storeInt(timelock, 257)
       .endCell();
 
   const dataSlice = dataCell.beginParse(); 
@@ -44,7 +45,6 @@ console.log("signiture verified off chain: ",signVerify(dataCell.hash(),signatur
   
   const lockCommitmentSigMessage: AddLockSig = {
       $$type: "AddLockSig",
-      Id: Id,
       data: dataSlice, 
       signature: signatureSlice,
   };

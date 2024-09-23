@@ -1,6 +1,6 @@
 # TACT Compilation Report
 Contract: LayerswapV8Jetton
-BOC Size: 4217 bytes
+BOC Size: 4200 bytes
 
 # Types
 Total Types: 20
@@ -70,8 +70,8 @@ TLB: `refund#ad821ef9 Id:int257 = Refund`
 Signature: `Refund{Id:int257}`
 
 ## AddLockSig
-TLB: `add_lock_sig#c1d818ff Id:int257 data:^slice signature:^slice = AddLockSig`
-Signature: `AddLockSig{Id:int257,data:^slice,signature:^slice}`
+TLB: `add_lock_sig#c1d818ff data:^slice signature:^slice = AddLockSig`
+Signature: `AddLockSig{data:^slice,signature:^slice}`
 
 ## TokenCommitted
 TLB: `token_committed#bf3d24d1 Id:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address senderPubKey:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = TokenCommitted`

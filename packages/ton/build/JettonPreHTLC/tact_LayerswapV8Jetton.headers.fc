@@ -112,7 +112,7 @@ tuple $HTLC$_load_opt(cell cl) inline;
 (slice, ((int))) $Refund$_load(slice sc_0) inline;
 
 ;; $AddLockSig$_load
-(slice, ((int, slice, slice))) $AddLockSig$_load(slice sc_0) inline;
+(slice, ((slice, slice))) $AddLockSig$_load(slice sc_0) inline;
 
 ;; $TokenCommitted$_store
 builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, slice, slice, int, cell, cell, cell) v) inline_ref;
@@ -208,7 +208,7 @@ cell $Slice$_fun_asCell(slice $self) impure inline;
 ((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode(slice $to, int $bounce, int $value, int $mode) inline;
 
 ;; $LayerswapV8Jetton$_fun_addLock
-((cell, int, int, slice), ()) $LayerswapV8Jetton$_fun_addLock((cell, int, int, slice) $self, (int, int, int) $msg, (int, slice, int, slice) $ctx) impure inline_ref;
+((cell, int, int, slice), ()) $LayerswapV8Jetton$_fun_addLock((cell, int, int, slice) $self, int $Id, int $hashlock, int $timelock, (int, slice, int, slice) $ctx) impure inline_ref;
 
 ;; $SendParameters$_constructor_bounce_to_value_mode_body_code_data
 ((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_bounce_to_value_mode_body_code_data(int $bounce, slice $to, int $value, int $mode, cell $body, cell $code, cell $data) inline;
@@ -218,9 +218,6 @@ cell $Slice$_fun_asCell(slice $self) impure inline;
 
 ;; $LayerswapV8Jetton$_fun_notify
 ((cell, int, int, slice), ()) $LayerswapV8Jetton$_fun_notify((cell, int, int, slice) $self, cell $body) impure inline;
-
-;; $AddLock$_constructor_Id_hashlock_timelock
-((int, int, int)) $AddLock$_constructor_Id_hashlock_timelock(int $Id, int $hashlock, int $timelock) inline;
 
 ;; $SendParameters$_constructor_to_value_bounce_mode_body
 ((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_value_bounce_mode_body(slice $to, int $value, int $bounce, int $mode, cell $body) inline;

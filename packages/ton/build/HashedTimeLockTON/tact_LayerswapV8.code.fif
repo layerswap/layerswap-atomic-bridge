@@ -59,7 +59,6 @@ PROGRAM{
   DECLPROC $LayerswapV8$_fun_forward
   DECLPROC $LayerswapV8$_fun_notify
   DECLPROC $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_senderPubKey_hopChains_hopAssets_hopAddresses
-  DECLPROC $AddLock$_constructor_Id_hashlock_timelock
   DECLPROC $SendParameters$_constructor_to_bounce_value_mode_body
   DECLPROC $Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress
   DECLPROC $TokenLocked$_constructor_Id_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger
@@ -490,8 +489,6 @@ PROGRAM{
     3252164863 PUSHINT
     EQUAL
     129 THROWIFNOT
-    257 PUSHINT
-    LDIX
     LDREF
     SWAP
     CTOS
@@ -499,7 +496,7 @@ PROGRAM{
     LDREF
     SWAP
     CTOS
-    s3 s3 s0 XCHG3
+    s1 s2 XCHG
   }>
   $Lock$_load PROCREF:<{
     32 LDU
@@ -1114,8 +1111,6 @@ PROGRAM{
   }>
   $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_senderPubKey_hopChains_hopAssets_hopAddresses PROCINLINE:<{
   }>
-  $AddLock$_constructor_Id_hashlock_timelock PROCINLINE:<{
-  }>
   $SendParameters$_constructor_to_bounce_value_mode_body PROCINLINE:<{
     s3 s4 XCHG
     PUSHNULL
@@ -1210,35 +1205,29 @@ PROGRAM{
     $LayerswapV8$_fun_addLock INLINECALLDICT
   }>
   $LayerswapV8$_internal_binary_AddLockSig PROCINLINE:<{
-    s6 s5 s4 XCHG3
-    58417 PUSHINT
-    s4 s7 XCPU
-    $LayerswapV8$_fun_contractExists INLINECALLDICT
-    s1 s5 XCHG
-    THROWANYIFNOT
-    s2 PUSH
     257 PUSHINT
-    s8 PUSH
+    s2 s0 PUSH2
+    PLDIX
+    s7 PUSH
+    -ROT
     __tact_dict_get_int_cell INLINECALLDICT
     $HTLC$_load_opt INLINECALLDICT
     $HTLC$_not_null INLINECALLDICT
     s8 s13 XCHG
     13 BLKDROP
     48401 PUSHINT
-    s7 PUSH
+    s3 PUSH
     HASHSU
-    s7 s2 XCHG2
+    2SWAP
     CHKSIGNU
-    s1 s5 XCHG
     THROWANYIFNOT
-    s0 s4 XCHG
+    257 PUSHINT
+    LDIX
     257 PUSHINT
     LDIX
     257 PUSHINT
     LDIX
     DROP
-    s2 s6 XCHG
-    $AddLock$_constructor_Id_hashlock_timelock INLINECALLDICT
     __tact_context_get INLINECALLDICT
     $LayerswapV8$_fun_addLock INLINECALLDICT
   }>
@@ -1516,7 +1505,7 @@ PROGRAM{
     IFJMP:<{
       DROP
       $AddLockSig$_load INLINECALLDICT
-      1 3 BLKDROP2
+      1 2 BLKDROP2
       $LayerswapV8$_internal_binary_AddLockSig INLINECALLDICT
       TRUE
     }>

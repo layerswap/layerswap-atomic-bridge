@@ -330,10 +330,6 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
     return (sc_0, (v'Id, v'hashlock, v'timelock));
 }
 
-((int, int, int)) $AddLock$_constructor_Id_hashlock_timelock(int $Id, int $hashlock, int $timelock) inline {
-    return ($Id, $hashlock, $timelock);
-}
-
 ;;
 ;; Type: Redeem
 ;; Header: 0x758db085
@@ -362,15 +358,14 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
 ;;
 ;; Type: AddLockSig
 ;; Header: 0xc1d818ff
-;; TLB: add_lock_sig#c1d818ff Id:int257 data:^slice signature:^slice = AddLockSig
+;; TLB: add_lock_sig#c1d818ff data:^slice signature:^slice = AddLockSig
 ;;
 
-(slice, ((int, slice, slice))) $AddLockSig$_load(slice sc_0) inline {
+(slice, ((slice, slice))) $AddLockSig$_load(slice sc_0) inline {
     throw_unless(129, sc_0~load_uint(32) == 3252164863);
-    var v'Id = sc_0~load_int(257);
     var v'data = sc_0~load_ref().begin_parse();
     var v'signature = sc_0~load_ref().begin_parse();
-    return (sc_0, (v'Id, v'data, v'signature));
+    return (sc_0, (v'data, v'signature));
 }
 
 ;;

@@ -55,7 +55,6 @@ message(0x5cdd41d9) AddLock{
 }
 
 message(0xc1d818ff) AddLockSig{
-    Id: Int;
     data: Slice; 
     signature: Slice;
 }
@@ -179,22 +178,18 @@ contract LayerswapV8 with Deployable {
     }
 
     receive(msg: AddLock){
-        self.addLock(msg,context());
+        self.addLock(msg.Id,msg.hashlock,msg.timelock,context());
     }
 
     receive(msg: AddLockSig){
-        require(self.contractExists(msg.Id),"Contract Does Not Exist");
-        let htlc: HTLC = (self.contracts.get(msg.Id)!!);
+        let htlc: HTLC = (self.contracts.get(msg.data.preloadInt(257))!!);
         require(checkSignature(msg.data.hash(),msg.signature,htlc.senderPubKey),"Invalid signature");
+
+        let Id: Int = msg.data.loadInt(257);
         let hashlock: Int = msg.data.loadInt(257);
         let timelock: Int = msg.data.loadInt(257);
-        let addLockMessage: AddLock = AddLock{
-                                                    Id: msg.Id,
-                                                    hashlock: hashlock,
-                                                    timelock: timelock
-                                                    };
         let ctx: Context = context();
-        self.addLock(addLockMessage,ctx);
+        self.addLock(Id,hashlock,timelock,ctx);
     }
 
     receive(msg: Lock){ 
@@ -339,18 +334,17 @@ contract LayerswapV8 with Deployable {
         return result;
     }
 
-    fun addLock(msg: AddLock,ctx: Context){
-        require(self.contractExists(msg.Id) == true,"Commit Does Not Exist");
-        let htlc: HTLC = (self.contracts.get(msg.Id)!!);
-
+    fun addLock(Id: Int,hashlock: Int, timelock: Int,ctx: Context){
+        require(self.contractExists(Id) == true,"Commit Does Not Exist");
+        let htlc: HTLC = (self.contracts.get(Id)!!);
         if(ctx.sender == htlc.sender || ctx.sender == htlc.messenger){
-                    require(self.contractExists(msg.Id) == true ,"Contract Does Not Exist");
+                    require(self.contractExists(Id) == true ,"Contract Does Not Exist");
                     require(htlc.redeemed == false,"Already Redeemed");
                     require(htlc.refunded == false,"Already Refunded");
-                    require(msg.timelock > now(),"Not Future Timelock");
+                    require(timelock > now(),"Not Future Timelock");
                     require(htlc.hashlock == 0,"Hashlock Already Set");
     
-                    self.contracts.set(msg.Id,HTLC{       
+                    self.contracts.set(Id,HTLC{       
                                                     dstAddress: htlc.dstAddress,
                                                     dstChain: htlc.dstChain,
                                                     dstAsset: htlc.dstAsset,
@@ -359,9 +353,9 @@ contract LayerswapV8 with Deployable {
                                                     senderPubKey: htlc.senderPubKey,
                                                     srcReceiver: htlc.srcReceiver,
                                                     secret: 0,
-                                                    hashlock: msg.hashlock,
+                                                    hashlock: hashlock,
                                                     amount: htlc.amount,
-                                                    timelock: msg.timelock,
+                                                    timelock: timelock,
                                                     messenger: htlc.messenger,
                                                     redeemed: false,
                                                     refunded: false

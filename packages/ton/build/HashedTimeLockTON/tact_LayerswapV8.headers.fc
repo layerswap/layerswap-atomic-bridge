@@ -85,7 +85,7 @@ tuple $HTLC$_load_opt(cell cl) inline;
 (slice, ((int, int, int))) $AddLock$_load(slice sc_0) inline;
 
 ;; $AddLockSig$_load
-(slice, ((int, slice, slice))) $AddLockSig$_load(slice sc_0) inline;
+(slice, ((slice, slice))) $AddLockSig$_load(slice sc_0) inline;
 
 ;; $Lock$_load
 (slice, ((int, int, int, slice, slice, slice, slice, slice, slice))) $Lock$_load(slice sc_0) inline_ref;
@@ -169,7 +169,7 @@ slice $Builder$_fun_asSlice(builder $self) impure inline;
 ((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode(slice $to, int $bounce, int $value, int $mode) inline;
 
 ;; $LayerswapV8$_fun_addLock
-((cell, int, int, slice), ()) $LayerswapV8$_fun_addLock((cell, int, int, slice) $self, (int, int, int) $msg, (int, slice, int, slice) $ctx) impure inline_ref;
+((cell, int, int, slice), ()) $LayerswapV8$_fun_addLock((cell, int, int, slice) $self, int $Id, int $hashlock, int $timelock, (int, slice, int, slice) $ctx) impure inline_ref;
 
 ;; $SendParameters$_constructor_bounce_to_value_mode_body_code_data
 ((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_bounce_to_value_mode_body_code_data(int $bounce, slice $to, int $value, int $mode, cell $body, cell $code, cell $data) inline;
@@ -182,9 +182,6 @@ slice $Builder$_fun_asSlice(builder $self) impure inline;
 
 ;; $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_senderPubKey_hopChains_hopAssets_hopAddresses
 ((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell)) $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_senderPubKey_hopChains_hopAssets_hopAddresses(int $Id, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, int $senderPubKey, cell $hopChains, cell $hopAssets, cell $hopAddresses) inline;
-
-;; $AddLock$_constructor_Id_hashlock_timelock
-((int, int, int)) $AddLock$_constructor_Id_hashlock_timelock(int $Id, int $hashlock, int $timelock) inline;
 
 ;; $SendParameters$_constructor_to_bounce_value_mode_body
 ((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode_body(slice $to, int $bounce, int $value, int $mode, cell $body) inline;

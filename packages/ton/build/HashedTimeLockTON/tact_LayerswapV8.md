@@ -1,6 +1,6 @@
 # TACT Compilation Report
 Contract: LayerswapV8
-BOC Size: 3358 bytes
+BOC Size: 3341 bytes
 
 # Types
 Total Types: 17
@@ -46,8 +46,8 @@ TLB: `add_lock#5cdd41d9 Id:int257 hashlock:int257 timelock:int257 = AddLock`
 Signature: `AddLock{Id:int257,hashlock:int257,timelock:int257}`
 
 ## AddLockSig
-TLB: `add_lock_sig#c1d818ff Id:int257 data:^slice signature:^slice = AddLockSig`
-Signature: `AddLockSig{Id:int257,data:^slice,signature:^slice}`
+TLB: `add_lock_sig#c1d818ff data:^slice signature:^slice = AddLockSig`
+Signature: `AddLockSig{data:^slice,signature:^slice}`
 
 ## Lock
 TLB: `lock#12e78cb1 Id:int257 hashlock:int257 timelock:int257 srcReceiver:address srcAsset:^string dstChain:^string dstAddress:^string dstAsset:^string messenger:address = Lock`
