@@ -1,6 +1,6 @@
 # TACT Compilation Report
 Contract: LayerswapV8
-BOC Size: 3341 bytes
+BOC Size: 3394 bytes
 
 # Types
 Total Types: 17

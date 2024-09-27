@@ -178,10 +178,14 @@ contract LayerswapV8 with Deployable {
     }
 
     receive(msg: AddLock){
+        require(self.contractExists(msg.Id) == true ,"Contract Does Not Exist");
+        let htlc: HTLC = (self.contracts.get(msg.Id)!!);
+        require(sender() == htlc.sender || sender() == htlc.messenger,"No Allowance");
         self.addLock(msg.Id,msg.hashlock,msg.timelock,context());
     }
 
     receive(msg: AddLockSig){
+        require(self.contractExists(msg.data.preloadInt(257)) == true ,"Contract Does Not Exist");
         let htlc: HTLC = (self.contracts.get(msg.data.preloadInt(257))!!);
         require(checkSignature(msg.data.hash(),msg.signature,htlc.senderPubKey),"Invalid signature");
 
@@ -337,8 +341,6 @@ contract LayerswapV8 with Deployable {
     fun addLock(Id: Int,hashlock: Int, timelock: Int,ctx: Context){
         require(self.contractExists(Id) == true,"Commit Does Not Exist");
         let htlc: HTLC = (self.contracts.get(Id)!!);
-        if(ctx.sender == htlc.sender || ctx.sender == htlc.messenger){
-                    require(self.contractExists(Id) == true ,"Contract Does Not Exist");
                     require(htlc.redeemed == false,"Already Redeemed");
                     require(htlc.refunded == false,"Already Refunded");
                     require(timelock > now(),"Not Future Timelock");
@@ -365,8 +367,5 @@ contract LayerswapV8 with Deployable {
                             bounce: false,
                             value: 0,
                             mode: 64});
-        }else{
-            require(false,"No Allowance");
-        }
     }
 }

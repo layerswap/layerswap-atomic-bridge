@@ -11,22 +11,25 @@ async function run() {
 
   const mnemonic = "pretty electric october neck alley tiger action assault garlic divide oppose exist online cluster luxury clump kangaroo number away analyst attitude digital zebra world"; 
   const key = await mnemonicToWalletKey(mnemonic.split(" "));
-  const wallet = WalletContractV4.create({ publicKey: key.publicKey, workchain: 0 });
+
+  const mnemo2 = "myth lava viable discover fat speak crazy exotic season motor boss blast pride struggle mechanic minor rifle sell virus govern thrive noble erupt odor";
+  const key2 = await mnemonicToWalletKey(mnemo2.split(" "));
+  const wallet = WalletContractV4.create({ publicKey: key2.publicKey, workchain: 0 });
   if (!await client.isContractDeployed(wallet.address)) {
     return console.log("Wallet is not deployed");
   }
 
   const walletContract = client.open(wallet);
-  const walletSender = walletContract.sender(key.secretKey);
+  const walletSender = walletContract.sender(key2.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQCJvduKpx2C005qCSnisfruOBk-pd1u5Yf6I_eJc7RKafer"); 
+  const contractAddress = Address.parse("kQDijUGKy4DJqVZSZYYB6ulVcnitg9tDZ8Kv9M8M6Q2Qlv19"); 
   const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
   const amount = toNano("0.1");
 
-  const Id = BigInt("101");
-  const hashlock = BigInt("61640066862491821753473339868972183373908181301364716693662292977837180722317");
+  const Id = BigInt("1051");
+  const hashlock = BigInt("96184405605761239365615141159737855805714574759278034204903698408753403233303");
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600);
 
   const dataCell: Cell = beginCell()

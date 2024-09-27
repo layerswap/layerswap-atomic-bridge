@@ -983,100 +983,66 @@ PROGRAM{
     PUSHNULL
   }>
   $LayerswapV8$_fun_addLock PROCREF:<{
-    s2 s3 XCHG
-    3 BLKDROP
-    s7 s6 s5 XCHG3
+    4 BLKDROP
+    s6 s5 s4 XCHG3
     30789 PUSHINT
-    s5 s4 XCPU
+    s4 s7 XCPU
     $LayerswapV8$_fun_contractExists INLINECALLDICT
     -1 EQINT
-    s1 s6 XCHG
+    s1 s5 XCHG
     THROWANYIFNOT
     s2 PUSH
     257 PUSHINT
-    s5 PUSH
+    s8 PUSH
     __tact_dict_get_int_cell INLINECALLDICT
     $HTLC$_load_opt INLINECALLDICT
     $HTLC$_not_null INLINECALLDICT
     s3 POP
-    s5 POP
-    s7 PUSH
-    18 s() PUSH
-    __tact_slice_eq_bits INLINECALLDICT
-    IF:<{
-      17 s() POP
-      TRUE
-    }>ELSE<{
-      DUP
-      s0 18 s() XCHG
-      __tact_slice_eq_bits INLINECALLDICT
-    }>
-    IF:<{
-      s13 s12 s11 XCHG3
-      58417 PUSHINT
-      s0 16 s() XCHG
-      s15 PUSH
-      $LayerswapV8$_fun_contractExists INLINECALLDICT
-      -1 EQINT
-      s1 17 s() XCHG
-      THROWANYIFNOT
-      46887 PUSHINT
-      s0 s4 XCHG
-      0 EQINT
-      s1 s4 XCHG
-      THROWANYIFNOT
-      49162 PUSHINT
-      s0 s11 XCHG
-      0 EQINT
-      s1 s11 XCHG
-      THROWANYIFNOT
-      21683 PUSHINT
-      16 s() PUSH
-      NOW
-      GREATER
-      THROWANYIFNOT
-      8650 PUSHINT
-      s0 s12 XCHG
-      0 EQINT
-      s1 s12 XCHG
-      THROWANYIFNOT
-      s7 s9 XCHG
-      s6 s8 XCHG
-      s5 s7 XCHG
-      s4 s6 XCHG
-      s3 s5 XCHG
-      s4 s3 s0 XCHG3
-      257 PUSHINT
-      0 PUSHINT
-      s0 s4 XCHG
-      s3 17 s() XCHG
-      s2 17 s() XCHG
-      s1 16 s() XCHG
-      s0 s15 XCHG
-      FALSE
-      FALSE
-      $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded INLINECALLDICT
-      $HTLC$_store_cell INLINECALLDICT
-      s1 s3 XCHG
-      s5 s5 s0 XCHG3
-      __tact_dict_set_int_cell INLINECALLDICT
-      __tact_context_get_sender INLINECALLDICT
-      FALSE
-      0 PUSHINT
-      64 PUSHINT
-      $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
-      $global_send INLINECALLDICT
-    }>ELSE<{
-      11 BLKDROP
-      s3 POP
-      s4 POP
-      s4 POP
-      s4 POP
-      31687 PUSHINT
-      THROWANY
-      s0 s2 XCHG
-    }>
-    s1 s3 s3 XCHG3
+    46887 PUSHINT
+    s6 POP
+    0 EQINT
+    s1 s5 XCHG
+    THROWANYIFNOT
+    49162 PUSHINT
+    SWAP
+    0 EQINT
+    THROWANYIFNOT
+    21683 PUSHINT
+    s15 PUSH
+    NOW
+    GREATER
+    THROWANYIFNOT
+    8650 PUSHINT
+    s0 s2 XCHG
+    0 EQINT
+    s1 s2 XCHG
+    THROWANYIFNOT
+    s8 s9 XCHG
+    s7 s8 XCHG
+    s6 s7 XCHG
+    s5 s6 XCHG
+    s4 s5 XCHG
+    s3 s4 XCHG
+    257 PUSHINT
+    0 PUSHINT
+    s0 s4 XCHG
+    s0 s5 XCHG
+    s0 16 s() XCHG
+    s15 s3 XCHG2
+    FALSE
+    FALSE
+    $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded INLINECALLDICT
+    $HTLC$_store_cell INLINECALLDICT
+    s2 s3 XCHG
+    s4 s6 s0 XCHG3
+    __tact_dict_set_int_cell INLINECALLDICT
+    __tact_context_get_sender INLINECALLDICT
+    FALSE
+    0 PUSHINT
+    64 PUSHINT
+    $SendParameters$_constructor_to_bounce_value_mode INLINECALLDICT
+    $global_send INLINECALLDICT
+    3 -ROLL
   }>
   $SendParameters$_constructor_bounce_to_value_mode_body_code_data PROCINLINE:<{
   }>
@@ -1201,14 +1167,56 @@ PROGRAM{
     s3 s3 s0 XCHG3
   }>
   $LayerswapV8$_internal_binary_AddLock PROCINLINE:<{
+    s6 s5 s4 XCHG3
+    58417 PUSHINT
+    s4 s7 XCPU
+    $LayerswapV8$_fun_contractExists INLINECALLDICT
+    -1 EQINT
+    s1 s5 XCHG
+    THROWANYIFNOT
+    s2 PUSH
+    257 PUSHINT
+    s8 PUSH
+    __tact_dict_get_int_cell INLINECALLDICT
+    $HTLC$_load_opt INLINECALLDICT
+    $HTLC$_not_null INLINECALLDICT
+    s2 s8 XCHG
+    8 BLKDROP
+    4 2 BLKDROP2
+    31687 PUSHINT
+    __tact_context_get_sender INLINECALLDICT
+    s1 s3 XCHG
+    __tact_slice_eq_bits INLINECALLDICT
+    IF:<{
+      DROP
+      TRUE
+    }>ELSE<{
+      __tact_context_get_sender INLINECALLDICT
+      __tact_slice_eq_bits INLINECALLDICT
+    }>
+    THROWANYIFNOT
     __tact_context_get INLINECALLDICT
+    s6 s10 XCHG
+    s5 s9 XCHG
+    s4 s8 XCHG
     $LayerswapV8$_fun_addLock INLINECALLDICT
   }>
   $LayerswapV8$_internal_binary_AddLockSig PROCINLINE:<{
+    58417 PUSHINT
+    s2 PUSH
     257 PUSHINT
-    s2 s0 PUSH2
     PLDIX
-    s7 PUSH
+    s4 s7 XCHG
+    s3 s6 XCHG
+    s5 s7 s0 XCHG3
+    $LayerswapV8$_fun_contractExists INLINECALLDICT
+    -1 EQINT
+    s1 s7 XCHG
+    THROWANYIFNOT
+    257 PUSHINT
+    s5 s0 PUSH2
+    PLDIX
+    s4 PUSH
     -ROT
     __tact_dict_get_int_cell INLINECALLDICT
     $HTLC$_load_opt INLINECALLDICT
@@ -1216,11 +1224,13 @@ PROGRAM{
     s8 s13 XCHG
     13 BLKDROP
     48401 PUSHINT
-    s3 PUSH
+    s6 PUSH
     HASHSU
-    2SWAP
+    s6 s2 XCHG2
     CHKSIGNU
+    s1 s4 XCHG
     THROWANYIFNOT
+    s0 s3 XCHG
     257 PUSHINT
     LDIX
     257 PUSHINT
@@ -1229,6 +1239,7 @@ PROGRAM{
     LDIX
     DROP
     __tact_context_get INLINECALLDICT
+    s7 s10 XCHG
     $LayerswapV8$_fun_addLock INLINECALLDICT
   }>
   $LayerswapV8$_internal_binary_Lock PROCINLINE:<{
