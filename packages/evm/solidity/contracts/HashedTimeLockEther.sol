@@ -22,23 +22,6 @@ struct EIP712Domain {
   bytes32 salt;
 }
 
-// Interface for Messenger, to be notified when LP locks funds, with this address specified as the messenger.
-interface IMessenger {
-  function notify(
-    bytes32 Id,
-    bytes32 hashlock,
-    string memory dstChain,
-    string memory dstAsset,
-    string memory dstAddress,
-    string memory srcAsset,
-    address payable sender,
-    address payable srcReceiver,
-    uint256 amount,
-    uint256 timelock,
-    address tokenContract
-  ) external;
-}
-
 contract LayerswapV8 {
   using ECDSA for bytes32;
   using Address for address;
@@ -67,7 +50,6 @@ contract LayerswapV8 {
   error HashlockNotMatch();
   error AlreadyRedeemed();
   error AlreadyRefunded();
-  error NoMessenger();
   error AlreadyLocked();
   error NoAllowance();
   error InvalidSigniture();
@@ -85,7 +67,6 @@ contract LayerswapV8 {
     uint256 timelock;
     uint256 amount;
     uint256 secret;
-    address messenger;
     bool redeemed;
     bool refunded;
   }
@@ -108,8 +89,7 @@ contract LayerswapV8 {
     address indexed srcReceiver,
     string srcAsset,
     uint256 amount,
-    uint256 timelock,
-    address messenger
+    uint256 timelock
   );
   event TokenLocked(
     bytes32 indexed Id,
@@ -121,11 +101,10 @@ contract LayerswapV8 {
     address indexed srcReceiver,
     string srcAsset,
     uint256 amount,
-    uint256 timelock,
-    address messenger
+    uint256 timelock
   );
 
-  event TokenLockAdded(bytes32 indexed Id, address messenger, bytes32 hashlock, uint256 timelock);
+  event TokenLockAdded(bytes32 indexed Id, bytes32 hashlock, uint256 timelock);
   event TokenRefunded(bytes32 indexed Id);
   event TokenRedeemed(bytes32 indexed Id, address redeemAddress);
   event LowLevelErrorOccurred(bytes lowLevelData);
@@ -149,8 +128,7 @@ contract LayerswapV8 {
     string memory dstAddress,
     string memory srcAsset,
     address srcReceiver,
-    uint256 timelock,
-    address messenger
+    uint256 timelock
   ) external payable returns (bytes32 Id) {
     if (msg.value == 0) {
       revert FundsNotSent();
@@ -177,7 +155,6 @@ contract LayerswapV8 {
       timelock,
       msg.value,
       uint256(0),
-      messenger,
       false,
       false
     );
@@ -194,8 +171,7 @@ contract LayerswapV8 {
       srcReceiver,
       srcAsset,
       msg.value,
-      timelock,
-      messenger
+      timelock
     );
   }
 
@@ -222,7 +198,7 @@ contract LayerswapV8 {
       revert NotFutureTimelock();
     }
 
-    if (msg.sender == htlc.sender || msg.sender == htlc.messenger || msg.sender == address(this)) {
+    if (msg.sender == htlc.sender || msg.sender == address(this)) {
       if (htlc.hashlock == 0) {
         htlc.hashlock = hashlock;
         htlc.timelock = timelock;
@@ -230,10 +206,7 @@ contract LayerswapV8 {
         revert HashlockAlreadySet();
       }
 
-      // DISCLAIMER: `tx.origin` is used in this event, but it can be misleading as it tracks the
-      // original transaction sender, which could be different from the expected sender in complex
-      // flows (e.g., a -> ... -> b -> c where the actual sender is b in event will be emitted a)
-      emit TokenLockAdded(Id, tx.origin, hashlock, timelock);
+      emit TokenLockAdded(Id, hashlock, timelock);
       return Id;
     } else {
       revert NoAllowance();
@@ -256,8 +229,7 @@ contract LayerswapV8 {
     string memory srcAsset,
     string memory dstChain,
     string memory dstAddress,
-    string memory dstAsset,
-    address messenger
+    string memory dstAsset
   ) external payable returns (bytes32) {
     if (msg.value == 0) {
       revert FundsNotSent();
@@ -279,7 +251,6 @@ contract LayerswapV8 {
       timelock,
       msg.value,
       uint256(0),
-      messenger,
       false,
       false
     );
@@ -294,42 +265,8 @@ contract LayerswapV8 {
       srcReceiver,
       srcAsset,
       msg.value,
-      timelock,
-      messenger
+      timelock
     );
-
-    if (messenger != address(0)) {
-      uint256 codeSize;
-      assembly {
-        codeSize := extcodesize(messenger)
-      }
-      if (codeSize > 0) {
-        try
-          IMessenger(messenger).notify(
-            Id,
-            hashlock,
-            dstChain,
-            dstAsset,
-            dstAddress,
-            srcAsset,
-            payable(msg.sender),
-            srcReceiver,
-            msg.value,
-            timelock,
-            address(0)
-          )
-        {
-          // Notify successful
-        } catch Error(string memory reason) {
-          revert(reason);
-        } catch (bytes memory lowLevelData) {
-          emit LowLevelErrorOccurred(lowLevelData);
-          revert('IMessenger notify failed');
-        }
-      } else {
-        revert NoMessenger();
-      }
-    }
     return Id;
   }
 

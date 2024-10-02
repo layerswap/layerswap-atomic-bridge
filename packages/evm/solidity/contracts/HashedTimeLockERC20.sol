@@ -38,22 +38,6 @@ struct EIP712Domain {
   bytes32 salt;
 }
 
-interface IMessenger {
-  function notify(
-    bytes32 Id,
-    bytes32 hashlock,
-    string memory dstChain,
-    string memory dstAsset,
-    string memory dstAddress,
-    string memory srcAsset,
-    address payable sender,
-    address payable srcReceiver,
-    uint256 amount,
-    uint256 timelock,
-    address tokenContract
-  ) external;
-}
-
 contract LayerswapV8ERC20 {
   using ECDSA for bytes32;
   using Address for address;
@@ -82,7 +66,6 @@ contract LayerswapV8ERC20 {
   error HashlockNotMatch();
   error AlreadyRedeemed();
   error AlreadyRefunded();
-  error NoMessenger();
   error IncorrectData();
   error InsufficientBalance();
   error NoAllowance();
@@ -102,7 +85,6 @@ contract LayerswapV8ERC20 {
     uint256 amount;
     uint256 secret;
     address tokenContract;
-    address messenger;
     bool redeemed;
     bool refunded;
   }
@@ -132,7 +114,6 @@ contract LayerswapV8ERC20 {
     string srcAsset,
     uint amount,
     uint timelock,
-    address messenger,
     address tokenContract
   );
 
@@ -147,11 +128,10 @@ contract LayerswapV8ERC20 {
     string srcAsset,
     uint amount,
     uint timelock,
-    address messenger,
     address tokenContract
   );
 
-  event TokenLockAdded(bytes32 Id, address messenger, bytes32 hashlock, uint256 timelock);
+  event TokenLockAdded(bytes32 Id, bytes32 hashlock, uint256 timelock);
   event TokenRedeemed(bytes32 indexed Id, address redeemAddress);
   event TokenRefunded(bytes32 indexed Id);
   event LowLevelErrorOccurred(bytes lowLevelData);
@@ -171,7 +151,6 @@ contract LayerswapV8ERC20 {
     string memory srcAsset,
     address srcReceiver,
     uint timelock,
-    address messenger,
     uint amount,
     address tokenContract
   ) external returns (bytes32 Id) {
@@ -214,7 +193,6 @@ contract LayerswapV8ERC20 {
       amount,
       uint256(0),
       tokenContract,
-      messenger,
       false,
       false
     );
@@ -232,7 +210,6 @@ contract LayerswapV8ERC20 {
       srcAsset,
       amount,
       timelock,
-      messenger,
       tokenContract
     );
   }
@@ -245,17 +222,15 @@ contract LayerswapV8ERC20 {
     if (timelock <= block.timestamp) {
       revert NotFutureTimelock();
     }
-    if (msg.sender == htlc.sender || msg.sender == htlc.messenger || msg.sender == address(this)) {
+    if (msg.sender == htlc.sender || msg.sender == address(this)) {
       if (htlc.hashlock == 0) {
         htlc.hashlock = hashlock;
         htlc.timelock = timelock;
       } else {
         revert HashlockAlreadySet();
       }
-      // DISCLAIMER: `tx.origin` is used in this event, but it can be misleading as it tracks the
-      // original transaction sender, which could be different from the expected sender in complex
-      // flows (e.g., a -> ... -> b -> c where the actual sender is b in event will be emitted a)
-      emit TokenLockAdded(Id, tx.origin, hashlock, timelock);
+
+      emit TokenLockAdded(Id, hashlock, timelock);
       return Id;
     } else {
       revert NoAllowance();
@@ -290,7 +265,6 @@ contract LayerswapV8ERC20 {
     string memory dstChain,
     string memory dstAddress,
     string memory dstAsset,
-    address messenger,
     uint256 amount,
     address tokenContract
   ) external returns (bytes32) {
@@ -326,7 +300,6 @@ contract LayerswapV8ERC20 {
       amount,
       0x0,
       tokenContract,
-      messenger,
       false,
       false
     );
@@ -343,42 +316,8 @@ contract LayerswapV8ERC20 {
       srcAsset,
       amount,
       timelock,
-      messenger,
       tokenContract
     );
-
-    if (messenger != address(0)) {
-      uint256 codeSize;
-      assembly {
-        codeSize := extcodesize(messenger)
-      }
-      if (codeSize > 0) {
-        try
-          IMessenger(messenger).notify(
-            Id,
-            hashlock,
-            dstChain,
-            dstAsset,
-            dstAddress,
-            srcAsset,
-            payable(msg.sender),
-            payable(srcReceiver),
-            amount,
-            timelock,
-            tokenContract
-          )
-        {
-          // Notify successful
-        } catch Error(string memory reason) {
-          revert(reason);
-        } catch (bytes memory lowLevelData) {
-          emit LowLevelErrorOccurred(lowLevelData);
-          revert('IMessenger notify failed');
-        }
-      } else {
-        revert NoMessenger();
-      }
-    }
     return Id;
   }
 
