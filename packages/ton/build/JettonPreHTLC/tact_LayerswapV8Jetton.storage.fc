@@ -14,10 +14,6 @@
 ;; TLB: _ bounce:bool to:address value:int257 mode:int257 body:Maybe ^cell code:Maybe ^cell data:Maybe ^cell = SendParameters
 ;;
 
-((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode_body(slice $to, int $bounce, int $value, int $mode, cell $body) inline {
-    return ($bounce, $to, $value, $mode, $body, null(), null());
-}
-
 ((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode(slice $to, int $bounce, int $value, int $mode) inline {
     return ($bounce, $to, $value, $mode, null(), null(), null());
 }
@@ -118,48 +114,12 @@ cell $TokenTransfer$_store_cell((int, int, slice, slice, cell, int, slice) v) in
 }
 
 ;;
-;; Type: Notify
-;; Header: 0x3beb51c2
-;; TLB: notify#3beb51c2 Id:int257 hashlock:int257 dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string sender:address srcReceiver:address amount:int257 timelock:int257 jettonMasterAddress:address htlcJettonWalletAddress:address = Notify
-;;
-
-builder $Notify$_store(builder build_0, (int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice) v) inline_ref {
-    var (v'Id, v'hashlock, v'dstChain, v'dstAsset, v'dstAddress, v'srcAsset, v'sender, v'srcReceiver, v'amount, v'timelock, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
-    build_0 = store_uint(build_0, 1005277634, 32);
-    build_0 = build_0.store_int(v'Id, 257);
-    build_0 = build_0.store_int(v'hashlock, 257);
-    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
-    build_0 = build_0.store_ref(begin_cell().store_slice(v'dstAsset).end_cell());
-    var build_1 = begin_cell();
-    build_1 = build_1.store_ref(begin_cell().store_slice(v'dstAddress).end_cell());
-    build_1 = build_1.store_ref(begin_cell().store_slice(v'srcAsset).end_cell());
-    build_1 = __tact_store_address(build_1, v'sender);
-    build_1 = __tact_store_address(build_1, v'srcReceiver);
-    build_1 = build_1.store_int(v'amount, 257);
-    var build_2 = begin_cell();
-    build_2 = build_2.store_int(v'timelock, 257);
-    build_2 = __tact_store_address(build_2, v'jettonMasterAddress);
-    build_2 = __tact_store_address(build_2, v'htlcJettonWalletAddress);
-    build_1 = store_ref(build_1, build_2.end_cell());
-    build_0 = store_ref(build_0, build_1.end_cell());
-    return build_0;
-}
-
-cell $Notify$_store_cell((int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice) v) inline {
-    return $Notify$_store(begin_cell(), v).end_cell();
-}
-
-((int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice)) $Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress(int $Id, int $hashlock, slice $dstChain, slice $dstAsset, slice $dstAddress, slice $srcAsset, slice $sender, slice $srcReceiver, int $amount, int $timelock, slice $jettonMasterAddress, slice $htlcJettonWalletAddress) inline {
-    return ($Id, $hashlock, $dstChain, $dstAsset, $dstAddress, $srcAsset, $sender, $srcReceiver, $amount, $timelock, $jettonMasterAddress, $htlcJettonWalletAddress);
-}
-
-;;
 ;; Type: HTLC
-;; TLB: _ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string sender:address senderPubKey:int257 srcReceiver:address secret:int257 hashlock:int257 amount:int257 timelock:int257 messenger:address redeemed:bool refunded:bool jettonMasterAddress:address htlcJettonWalletAddress:address = HTLC
+;; TLB: _ dstAddress:^string dstChain:^string dstAsset:^string srcAsset:^string sender:address senderPubKey:int257 srcReceiver:address secret:int257 hashlock:int257 amount:int257 timelock:int257 redeemed:bool refunded:bool jettonMasterAddress:address htlcJettonWalletAddress:address = HTLC
 ;;
 
-builder $HTLC$_store(builder build_0, (slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int, slice, slice) v) inline_ref {
-    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
+builder $HTLC$_store(builder build_0, (slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int, slice, slice) v) inline_ref {
+    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'redeemed, v'refunded, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
     build_0 = build_0.store_ref(begin_cell().store_slice(v'dstAddress).end_cell());
     build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
     var build_1 = begin_cell();
@@ -174,24 +134,21 @@ builder $HTLC$_store(builder build_0, (slice, slice, slice, slice, slice, int, s
     build_2 = build_2.store_int(v'amount, 257);
     var build_3 = begin_cell();
     build_3 = build_3.store_int(v'timelock, 257);
-    build_3 = __tact_store_address(build_3, v'messenger);
     build_3 = build_3.store_int(v'redeemed, 1);
     build_3 = build_3.store_int(v'refunded, 1);
     build_3 = __tact_store_address(build_3, v'jettonMasterAddress);
-    var build_4 = begin_cell();
-    build_4 = __tact_store_address(build_4, v'htlcJettonWalletAddress);
-    build_3 = store_ref(build_3, build_4.end_cell());
+    build_3 = __tact_store_address(build_3, v'htlcJettonWalletAddress);
     build_2 = store_ref(build_2, build_3.end_cell());
     build_1 = store_ref(build_1, build_2.end_cell());
     build_0 = store_ref(build_0, build_1.end_cell());
     return build_0;
 }
 
-cell $HTLC$_store_cell((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int, slice, slice) v) inline {
+cell $HTLC$_store_cell((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int, slice, slice) v) inline {
     return $HTLC$_store(begin_cell(), v).end_cell();
 }
 
-(slice, ((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int, slice, slice))) $HTLC$_load(slice sc_0) inline_ref {
+(slice, ((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int, slice, slice))) $HTLC$_load(slice sc_0) inline_ref {
     var v'dstAddress = sc_0~load_ref().begin_parse();
     var v'dstChain = sc_0~load_ref().begin_parse();
     slice sc_1 = sc_0~load_ref().begin_parse();
@@ -206,18 +163,16 @@ cell $HTLC$_store_cell((slice, slice, slice, slice, slice, int, slice, int, int,
     var v'amount = sc_2~load_int(257);
     slice sc_3 = sc_2~load_ref().begin_parse();
     var v'timelock = sc_3~load_int(257);
-    var v'messenger = sc_3~__tact_load_address();
     var v'redeemed = sc_3~load_int(1);
     var v'refunded = sc_3~load_int(1);
     var v'jettonMasterAddress = sc_3~__tact_load_address();
-    slice sc_4 = sc_3~load_ref().begin_parse();
-    var v'htlcJettonWalletAddress = sc_4~__tact_load_address();
-    return (sc_0, (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded, v'jettonMasterAddress, v'htlcJettonWalletAddress));
+    var v'htlcJettonWalletAddress = sc_3~__tact_load_address();
+    return (sc_0, (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'redeemed, v'refunded, v'jettonMasterAddress, v'htlcJettonWalletAddress));
 }
 
-tuple $HTLC$_as_optional((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int, slice, slice) v) inline {
-    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
-    return __tact_tuple_create_15(v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded, [v'jettonMasterAddress, v'htlcJettonWalletAddress]);
+tuple $HTLC$_as_optional((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int, slice, slice) v) inline {
+    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'redeemed, v'refunded, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
+    return __tact_tuple_create_15(v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'redeemed, v'refunded, v'jettonMasterAddress, v'htlcJettonWalletAddress);
 }
 
 tuple $HTLC$_load_opt(cell cl) inline {
@@ -228,16 +183,15 @@ tuple $HTLC$_load_opt(cell cl) inline {
     return $HTLC$_as_optional(sc~$HTLC$_load());
 }
 
-((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int, slice, slice)) $HTLC$_not_null(tuple v) inline {
+((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int, slice, slice)) $HTLC$_not_null(tuple v) inline {
     throw_if(128, null?(v));
-    var (slice vvv'dstAddress, slice vvv'dstChain, slice vvv'dstAsset, slice vvv'srcAsset, slice vvv'sender, int vvv'senderPubKey, slice vvv'srcReceiver, int vvv'secret, int vvv'hashlock, int vvv'amount, int vvv'timelock, slice vvv'messenger, int vvv'redeemed, int vvv'refunded, next) = __tact_tuple_destroy_15(v);
-    var (slice vvv'jettonMasterAddress, slice vvv'htlcJettonWalletAddress) = __tact_tuple_destroy_2(next);
-    return (vvv'dstAddress, vvv'dstChain, vvv'dstAsset, vvv'srcAsset, vvv'sender, vvv'senderPubKey, vvv'srcReceiver, vvv'secret, vvv'hashlock, vvv'amount, vvv'timelock, vvv'messenger, vvv'redeemed, vvv'refunded, vvv'jettonMasterAddress, vvv'htlcJettonWalletAddress);
+    var (slice vvv'dstAddress, slice vvv'dstChain, slice vvv'dstAsset, slice vvv'srcAsset, slice vvv'sender, int vvv'senderPubKey, slice vvv'srcReceiver, int vvv'secret, int vvv'hashlock, int vvv'amount, int vvv'timelock, int vvv'redeemed, int vvv'refunded, slice vvv'jettonMasterAddress, slice vvv'htlcJettonWalletAddress) = __tact_tuple_destroy_15(v);
+    return (vvv'dstAddress, vvv'dstChain, vvv'dstAsset, vvv'srcAsset, vvv'sender, vvv'senderPubKey, vvv'srcReceiver, vvv'secret, vvv'hashlock, vvv'amount, vvv'timelock, vvv'redeemed, vvv'refunded, vvv'jettonMasterAddress, vvv'htlcJettonWalletAddress);
 }
 
-tuple $HTLC$_to_tuple(((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int, slice, slice)) v) inline {
-    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
-    return __tact_tuple_create_15(v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'messenger, v'redeemed, v'refunded, [v'jettonMasterAddress, v'htlcJettonWalletAddress]);
+tuple $HTLC$_to_tuple(((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int, slice, slice)) v) inline {
+    var (v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'redeemed, v'refunded, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
+    return __tact_tuple_create_15(v'dstAddress, v'dstChain, v'dstAsset, v'srcAsset, v'sender, v'senderPubKey, v'srcReceiver, v'secret, v'hashlock, v'amount, v'timelock, v'redeemed, v'refunded, v'jettonMasterAddress, v'htlcJettonWalletAddress);
 }
 
 tuple $HTLC$_to_opt_tuple(tuple v) inline {
@@ -254,16 +208,16 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
     }
 }
 
-((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int, slice, slice)) $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, int $senderPubKey, slice $srcReceiver, int $secret, int $hashlock, int $amount, int $timelock, slice $messenger, int $redeemed, int $refunded, slice $jettonMasterAddress, slice $htlcJettonWalletAddress) inline {
-    return ($dstAddress, $dstChain, $dstAsset, $srcAsset, $sender, $senderPubKey, $srcReceiver, $secret, $hashlock, $amount, $timelock, $messenger, $redeemed, $refunded, $jettonMasterAddress, $htlcJettonWalletAddress);
+((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int, slice, slice)) $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, int $senderPubKey, slice $srcReceiver, int $secret, int $hashlock, int $amount, int $timelock, int $redeemed, int $refunded, slice $jettonMasterAddress, slice $htlcJettonWalletAddress) inline {
+    return ($dstAddress, $dstChain, $dstAsset, $srcAsset, $sender, $senderPubKey, $srcReceiver, $secret, $hashlock, $amount, $timelock, $redeemed, $refunded, $jettonMasterAddress, $htlcJettonWalletAddress);
 }
 
 ;;
 ;; Type: CommitData
-;; TLB: _ dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string srcReceiver:address timelock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address senderPubKey:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = CommitData
+;; TLB: _ dstChain:^string dstAsset:^string dstAddress:^string srcAsset:^string srcReceiver:address timelock:int257 jettonMasterAddress:address htlcJettonWalletAddress:address senderPubKey:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = CommitData
 ;;
 
-(slice, ((slice, slice, slice, slice, slice, int, slice, slice, slice, int, cell, cell, cell))) $CommitData$_load(slice sc_0) inline_ref {
+(slice, ((slice, slice, slice, slice, slice, int, slice, slice, int, cell, cell, cell))) $CommitData$_load(slice sc_0) inline_ref {
     var v'dstChain = sc_0~load_ref().begin_parse();
     var v'dstAsset = sc_0~load_ref().begin_parse();
     slice sc_1 = sc_0~load_ref().begin_parse();
@@ -271,18 +225,17 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
     var v'srcAsset = sc_1~load_ref().begin_parse();
     var v'srcReceiver = sc_1~__tact_load_address();
     var v'timelock = sc_1~load_int(257);
-    var v'messenger = sc_1~__tact_load_address();
+    var v'jettonMasterAddress = sc_1~__tact_load_address();
     slice sc_2 = sc_1~load_ref().begin_parse();
-    var v'jettonMasterAddress = sc_2~__tact_load_address();
     var v'htlcJettonWalletAddress = sc_2~__tact_load_address();
     var v'senderPubKey = sc_2~load_int(257);
     var v'hopChains = sc_2~load_dict();
     var v'hopAssets = sc_2~load_dict();
     var v'hopAddresses = sc_2~load_dict();
-    return (sc_0, (v'dstChain, v'dstAsset, v'dstAddress, v'srcAsset, v'srcReceiver, v'timelock, v'messenger, v'jettonMasterAddress, v'htlcJettonWalletAddress, v'senderPubKey, v'hopChains, v'hopAssets, v'hopAddresses));
+    return (sc_0, (v'dstChain, v'dstAsset, v'dstAddress, v'srcAsset, v'srcReceiver, v'timelock, v'jettonMasterAddress, v'htlcJettonWalletAddress, v'senderPubKey, v'hopChains, v'hopAssets, v'hopAddresses));
 }
 
-((slice, slice, slice, slice, slice, int, slice, slice, slice, int, cell, cell, cell)) $CommitData$_load_not_mut(slice sc_0) inline_ref {
+((slice, slice, slice, slice, slice, int, slice, slice, int, cell, cell, cell)) $CommitData$_load_not_mut(slice sc_0) inline_ref {
     var r = sc_0~$CommitData$_load();
     sc_0.end_parse();
     return r;
@@ -290,10 +243,10 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
 
 ;;
 ;; Type: LockData
-;; TLB: _ Id:int257 timelock:int257 srcReceiver:address srcAsset:^string dstChain:^string dstAddress:^string dstAsset:^string hashlock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address = LockData
+;; TLB: _ Id:int257 timelock:int257 srcReceiver:address srcAsset:^string dstChain:^string dstAddress:^string dstAsset:^string hashlock:int257 jettonMasterAddress:address htlcJettonWalletAddress:address = LockData
 ;;
 
-(slice, ((int, int, slice, slice, slice, slice, slice, int, slice, slice, slice))) $LockData$_load(slice sc_0) inline_ref {
+(slice, ((int, int, slice, slice, slice, slice, slice, int, slice, slice))) $LockData$_load(slice sc_0) inline_ref {
     var v'Id = sc_0~load_int(257);
     var v'timelock = sc_0~load_int(257);
     var v'srcReceiver = sc_0~__tact_load_address();
@@ -303,14 +256,12 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
     var v'dstAddress = sc_1~load_ref().begin_parse();
     var v'dstAsset = sc_1~load_ref().begin_parse();
     var v'hashlock = sc_1~load_int(257);
-    var v'messenger = sc_1~__tact_load_address();
     var v'jettonMasterAddress = sc_1~__tact_load_address();
-    slice sc_2 = sc_1~load_ref().begin_parse();
-    var v'htlcJettonWalletAddress = sc_2~__tact_load_address();
-    return (sc_0, (v'Id, v'timelock, v'srcReceiver, v'srcAsset, v'dstChain, v'dstAddress, v'dstAsset, v'hashlock, v'messenger, v'jettonMasterAddress, v'htlcJettonWalletAddress));
+    var v'htlcJettonWalletAddress = sc_1~__tact_load_address();
+    return (sc_0, (v'Id, v'timelock, v'srcReceiver, v'srcAsset, v'dstChain, v'dstAddress, v'dstAsset, v'hashlock, v'jettonMasterAddress, v'htlcJettonWalletAddress));
 }
 
-((int, int, slice, slice, slice, slice, slice, int, slice, slice, slice)) $LockData$_load_not_mut(slice sc_0) inline_ref {
+((int, int, slice, slice, slice, slice, slice, int, slice, slice)) $LockData$_load_not_mut(slice sc_0) inline_ref {
     var r = sc_0~$LockData$_load();
     sc_0.end_parse();
     return r;
@@ -371,11 +322,11 @@ tuple $HTLC$_to_opt_external(tuple v) inline {
 ;;
 ;; Type: TokenCommitted
 ;; Header: 0xbf3d24d1
-;; TLB: token_committed#bf3d24d1 Id:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address jettonMasterAddress:address htlcJettonWalletAddress:address senderPubKey:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = TokenCommitted
+;; TLB: token_committed#bf3d24d1 Id:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 jettonMasterAddress:address htlcJettonWalletAddress:address senderPubKey:int257 hopChains:dict<int, ^StringImpl{data:^string}> hopAssets:dict<int, ^StringImpl{data:^string}> hopAddresses:dict<int, ^StringImpl{data:^string}> = TokenCommitted
 ;;
 
-builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, slice, slice, int, cell, cell, cell) v) inline_ref {
-    var (v'Id, v'dstChain, v'dstAddress, v'dstAsset, v'sender, v'srcReceiver, v'srcAsset, v'amount, v'timelock, v'messenger, v'jettonMasterAddress, v'htlcJettonWalletAddress, v'senderPubKey, v'hopChains, v'hopAssets, v'hopAddresses) = v;
+builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, slice, int, cell, cell, cell) v) inline_ref {
+    var (v'Id, v'dstChain, v'dstAddress, v'dstAsset, v'sender, v'srcReceiver, v'srcAsset, v'amount, v'timelock, v'jettonMasterAddress, v'htlcJettonWalletAddress, v'senderPubKey, v'hopChains, v'hopAssets, v'hopAddresses) = v;
     build_0 = store_uint(build_0, 3208455377, 32);
     build_0 = build_0.store_int(v'Id, 257);
     build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
@@ -388,10 +339,9 @@ builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice
     build_1 = build_1.store_int(v'amount, 257);
     var build_2 = begin_cell();
     build_2 = build_2.store_int(v'timelock, 257);
-    build_2 = __tact_store_address(build_2, v'messenger);
     build_2 = __tact_store_address(build_2, v'jettonMasterAddress);
+    build_2 = __tact_store_address(build_2, v'htlcJettonWalletAddress);
     var build_3 = begin_cell();
-    build_3 = __tact_store_address(build_3, v'htlcJettonWalletAddress);
     build_3 = build_3.store_int(v'senderPubKey, 257);
     build_3 = build_3.store_dict(v'hopChains);
     build_3 = build_3.store_dict(v'hopAssets);
@@ -402,22 +352,22 @@ builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice
     return build_0;
 }
 
-cell $TokenCommitted$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, slice, slice, int, cell, cell, cell) v) inline {
+cell $TokenCommitted$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, slice, int, cell, cell, cell) v) inline {
     return $TokenCommitted$_store(begin_cell(), v).end_cell();
 }
 
-((int, slice, slice, slice, slice, slice, slice, int, int, slice, slice, slice, int, cell, cell, cell)) $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress_senderPubKey_hopChains_hopAssets_hopAddresses(int $Id, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, slice $jettonMasterAddress, slice $htlcJettonWalletAddress, int $senderPubKey, cell $hopChains, cell $hopAssets, cell $hopAddresses) inline {
-    return ($Id, $dstChain, $dstAddress, $dstAsset, $sender, $srcReceiver, $srcAsset, $amount, $timelock, $messenger, $jettonMasterAddress, $htlcJettonWalletAddress, $senderPubKey, $hopChains, $hopAssets, $hopAddresses);
+((int, slice, slice, slice, slice, slice, slice, int, int, slice, slice, int, cell, cell, cell)) $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress_senderPubKey_hopChains_hopAssets_hopAddresses(int $Id, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $jettonMasterAddress, slice $htlcJettonWalletAddress, int $senderPubKey, cell $hopChains, cell $hopAssets, cell $hopAddresses) inline {
+    return ($Id, $dstChain, $dstAddress, $dstAsset, $sender, $srcReceiver, $srcAsset, $amount, $timelock, $jettonMasterAddress, $htlcJettonWalletAddress, $senderPubKey, $hopChains, $hopAssets, $hopAddresses);
 }
 
 ;;
 ;; Type: TokenLocked
 ;; Header: 0x0f47e1b8
-;; TLB: token_locked#0f47e1b8 Id:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 messenger:address hashlock:int257 jettonMasterAddress:address htlcJettonWalletAddress:address = TokenLocked
+;; TLB: token_locked#0f47e1b8 Id:int257 dstChain:^string dstAddress:^string dstAsset:^string sender:address srcReceiver:address srcAsset:^string amount:int257 timelock:int257 hashlock:int257 jettonMasterAddress:address htlcJettonWalletAddress:address = TokenLocked
 ;;
 
-builder $TokenLocked$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, int, slice, slice) v) inline_ref {
-    var (v'Id, v'dstChain, v'dstAddress, v'dstAsset, v'sender, v'srcReceiver, v'srcAsset, v'amount, v'timelock, v'messenger, v'hashlock, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
+builder $TokenLocked$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, int, slice, slice) v) inline_ref {
+    var (v'Id, v'dstChain, v'dstAddress, v'dstAsset, v'sender, v'srcReceiver, v'srcAsset, v'amount, v'timelock, v'hashlock, v'jettonMasterAddress, v'htlcJettonWalletAddress) = v;
     build_0 = store_uint(build_0, 256369080, 32);
     build_0 = build_0.store_int(v'Id, 257);
     build_0 = build_0.store_ref(begin_cell().store_slice(v'dstChain).end_cell());
@@ -430,10 +380,9 @@ builder $TokenLocked$_store(builder build_0, (int, slice, slice, slice, slice, s
     build_1 = build_1.store_int(v'amount, 257);
     var build_2 = begin_cell();
     build_2 = build_2.store_int(v'timelock, 257);
-    build_2 = __tact_store_address(build_2, v'messenger);
     build_2 = build_2.store_int(v'hashlock, 257);
+    build_2 = __tact_store_address(build_2, v'jettonMasterAddress);
     var build_3 = begin_cell();
-    build_3 = __tact_store_address(build_3, v'jettonMasterAddress);
     build_3 = __tact_store_address(build_3, v'htlcJettonWalletAddress);
     build_2 = store_ref(build_2, build_3.end_cell());
     build_1 = store_ref(build_1, build_2.end_cell());
@@ -441,12 +390,12 @@ builder $TokenLocked$_store(builder build_0, (int, slice, slice, slice, slice, s
     return build_0;
 }
 
-cell $TokenLocked$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, slice, slice) v) inline {
+cell $TokenLocked$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, int, slice, slice) v) inline {
     return $TokenLocked$_store(begin_cell(), v).end_cell();
 }
 
-((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, slice, slice)) $TokenLocked$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_hashlock_jettonMasterAddress_htlcJettonWalletAddress(int $Id, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, int $hashlock, slice $jettonMasterAddress, slice $htlcJettonWalletAddress) inline {
-    return ($Id, $dstChain, $dstAddress, $dstAsset, $sender, $srcReceiver, $srcAsset, $amount, $timelock, $messenger, $hashlock, $jettonMasterAddress, $htlcJettonWalletAddress);
+((int, slice, slice, slice, slice, slice, slice, int, int, int, slice, slice)) $TokenLocked$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_hashlock_jettonMasterAddress_htlcJettonWalletAddress(int $Id, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, int $hashlock, slice $jettonMasterAddress, slice $htlcJettonWalletAddress) inline {
+    return ($Id, $dstChain, $dstAddress, $dstAsset, $sender, $srcReceiver, $srcAsset, $amount, $timelock, $hashlock, $jettonMasterAddress, $htlcJettonWalletAddress);
 }
 
 ;;

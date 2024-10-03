@@ -29,12 +29,12 @@ export async function run() {
 
   const queryId = BigInt(Date.now()); 
   const amount = 19n;
-  const destination = Address.parse("EQBCHCyenmMNKJ809atCnEpVnwschvHtYHuLMyNfCB-lSaQf");
+  const destination = Address.parse("kQCEheJe-tMhwQ2XeILH5avb3GcOlWCYujGUiaMPAyBI_xqE");
   const response_destination = Address.parse("0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y");
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell(); 
   const forward_ton_amount = toNano("0.1"); 
   
-  const hashlock = BigInt("61640066862491821753473339868972183373908181301364716693662292977837180722317");
+  const hashlock = BigInt("96184405605761239365615141159737855805714574759278034204903698408753403233303");
   const Id = BigInt(64n); 
   const dstChain: string = "STARKNET_SEPOLIA";
   const dstAsset: string = "ETH";
@@ -45,7 +45,7 @@ export async function run() {
   const messenger: Address = Address.parse("EQB6ZTgwl_FX_fqvrAPTl4MspD_mSMdW4TZ0j7wEfSxqEty9");
   
   const jettonMasterAddress = Address.parse("kQCdbtPwe4P8eF_rH-o0vu4Plfqrhmr9MR-pKkzH487BLJOQ");
-  const htlcJettonWalletAddress = Address.parse("0:f66e0284740c60ffd3e4ab5ca229ca7dfa57263511877fecd3d532a6e97c20fb");
+  const htlcJettonWalletAddress = Address.parse("0:0e27a30ebae5144d77e61b3fb451cc6284947075ab0f5cac8961d10c00ceaf66");
 
   let b_0 = new Builder();
   b_0.storeInt(Id, 257);
@@ -57,13 +57,9 @@ export async function run() {
   b_1.storeStringRefTail(dstAddress);
   b_1.storeStringRefTail(dstAsset);
   b_1.storeInt(hashlock, 257);
-  b_1.storeAddress(messenger);
   b_1.storeAddress(jettonMasterAddress);
-  let b_2 = new Builder();
-  b_2.storeAddress(htlcJettonWalletAddress);
-  b_1.storeRef(b_2.endCell());
+  b_1.storeAddress(htlcJettonWalletAddress);
   b_0.storeRef(b_1.endCell());
-
   const forward_payload = beginCell().storeUint(1, 1).storeRef(beginCell().storeUint(317164721, 32).storeBuilder(b_0).endCell()).endCell();
 
   const tokenTransferMessage: TokenTransfer = {

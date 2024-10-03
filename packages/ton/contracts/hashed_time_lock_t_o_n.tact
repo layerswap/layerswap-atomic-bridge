@@ -1,19 +1,4 @@
 import "@stdlib/deploy";
-// Messenger notification
-message(0x3beb51c2) Notify {
-    Id: Int;
-    hashlock: Int;
-    dstChain: String;
-    dstAsset: String;
-    dstAddress: String;
-    srcAsset: String;
-    sender: Address;
-    srcReceiver: Address;
-    amount: Int;
-    timelock: Int;
-    jettonMasterAddress: Address;
-    htlcJettonWalletAddress: Address;  
-}
 
 // Lock object
 struct HTLC {
@@ -28,7 +13,6 @@ struct HTLC {
     hashlock: Int;
     amount: Int;
     timelock: Int;
-    messenger: Address;
     redeemed: Bool;
     refunded: Bool;
 }
@@ -41,7 +25,6 @@ message(0x1b564d91) Commit{
     srcAsset: String;
     srcReceiver: Address;
     timelock: Int; 
-    messenger: Address;
     senderPubKey: Int;
     hopChains: map<Int,StringImpl>;
     hopAssets: map<Int,StringImpl>;
@@ -68,7 +51,6 @@ message(0x12e78cb1) Lock {
     dstChain: String;
     dstAddress: String;
     dstAsset: String;
-    messenger: Address;
 }
 
 message(0x758db085) Redeem {
@@ -91,7 +73,6 @@ message(0x71f9f7aa) TokenCommitted{
     srcAsset: String;
     amount: Int;
     timelock: Int; 
-    messenger: Address;
     senderPubKey: Int;
     hopChains: map<Int,StringImpl>;
     hopAssets: map<Int,StringImpl>;
@@ -109,7 +90,6 @@ message(0x95b0219d) TokenLocked{
     srcAsset: String;
     amount: Int;
     timelock: Int;
-    messenger: Address;
 }
 
 // String implementation as struct
@@ -153,7 +133,6 @@ contract LayerswapV8 with Deployable {
                                                 hashlock: 0,
                                                 amount: ctx.value,
                                                 timelock: msg.timelock, 
-                                                messenger: msg.messenger,
                                                 redeemed: false,
                                                 refunded: false
                                                 });
@@ -169,7 +148,6 @@ contract LayerswapV8 with Deployable {
                                 srcAsset: msg.srcAsset,
                                 amount: ctx.value,
                                 timelock: msg.timelock,
-                                messenger: msg.messenger,
                                 senderPubKey: msg.senderPubKey,
                                 hopChains: msg.hopChains,
                                 hopAssets: msg.hopAssets,
@@ -180,7 +158,7 @@ contract LayerswapV8 with Deployable {
     receive(msg: AddLock){
         require(self.contractExists(msg.Id) == true ,"Contract Does Not Exist");
         let htlc: HTLC = (self.contracts.get(msg.Id)!!);
-        require(sender() == htlc.sender || sender() == htlc.messenger,"No Allowance");
+        require(sender() == htlc.sender,"No Allowance");
         self.addLock(msg.Id,msg.hashlock,msg.timelock,context());
     }
 
@@ -214,33 +192,9 @@ contract LayerswapV8 with Deployable {
                                             hashlock: msg.hashlock,
                                             amount: ctx.value,
                                             timelock: msg.timelock,
-                                            messenger: msg.messenger,
                                             redeemed: false,
                                             refunded: false
                                         });
-
-
-        if(msg.messenger != self.zeroAddress && msg.Id != 0){
-            // notify messenger
-            send(SendParameters{to: msg.messenger,
-                                bounce: true,
-                                value: 20000000,
-                                mode: 0,
-                                body: Notify{
-                                            Id: msg.Id,
-                                            hashlock: msg.hashlock,
-                                            dstChain: msg.dstChain,
-                                            dstAsset: msg.dstAsset,
-                                            dstAddress: msg.dstAddress,
-                                            srcAsset: msg.srcAsset,
-                                            sender: sender(),
-                                            srcReceiver: msg.srcReceiver,
-                                            amount: ctx.value,
-                                            timelock: msg.timelock,
-                                            jettonMasterAddress: self.zeroAddress,
-                                            htlcJettonWalletAddress: self.zeroAddress
-                                        }.toCell()});  
-        }
 
         emit(TokenLocked{
                 Id: msg.Id,
@@ -252,8 +206,7 @@ contract LayerswapV8 with Deployable {
                 srcReceiver: msg.srcReceiver,
                 srcAsset: msg.srcAsset,
                 amount: ctx.value,
-                timelock: msg.timelock,
-                messenger: msg.messenger
+                timelock: msg.timelock
             }.toCell());
     }
 
@@ -358,7 +311,6 @@ contract LayerswapV8 with Deployable {
                                                     hashlock: hashlock,
                                                     amount: htlc.amount,
                                                     timelock: timelock,
-                                                    messenger: htlc.messenger,
                                                     redeemed: false,
                                                     refunded: false
                                                     }); 

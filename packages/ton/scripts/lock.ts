@@ -19,11 +19,11 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQCRA38mPeNFfuzRzSWBEW5jwO0U8_OLie90CBXQz08Tgd-6"); 
+  const contractAddress = Address.parse("kQBYNb_1ocBx1NPRjncXDU5P343byJmI0mGeyb3rF59v_0y0"); 
   const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
-  const hashlock = BigInt("61640066862491821753473339868972183373908181301364716693662292977837180722317"); 
+  const hashlock = BigInt("96184405605761239365615141159737855805714574759278034204903698408753403233303"); 
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 100); 
   const srcReceiver = Address.parse("0QCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw64m1"); 
   const srcAsset = "TON"; 
@@ -31,7 +31,6 @@ export async function run() {
   const dstAddress = "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f"; 
   const dstAsset = "ETH"; 
   const Id = BigInt(101n); 
-  const messenger: Address = Address.parse("EQA7ccNnC-ZiBxyqXyd2S4yImtnEaXtYMJNIOD7GrMBY8KpM");
 
   const lockMessage: Lock = {
     $$type: "Lock",
@@ -43,7 +42,6 @@ export async function run() {
     dstChain: dstChain,
     dstAddress: dstAddress,
     dstAsset: dstAsset,
-    messenger: messenger,
   };
 
   console.log("Sending Lock message...");

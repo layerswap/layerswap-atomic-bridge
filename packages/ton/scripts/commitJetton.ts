@@ -21,16 +21,15 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
- // jetton wallet address of htlc smart contract
   const contractAddress = Address.parse("0:53ea76a0ebb7746ae9d04d2445424c3a9de2046e70ae8adbae883a47e1c5ef73");
 
   const newContract = JettonDefaultWallet.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
   const queryId = BigInt(Date.now()); 
-  // const amount = 4000000000n; 
-  const amount = 100n;
-  const destination = Address.parse("kQBCHCyenmMNKJ809atCnEpVnwschvHtYHuLMyNfCB-lSR-V"); 
+  // const amount = 5000000000000n;  for LP
+  const amount = 10n;
+  const destination = Address.parse("kQCEheJe-tMhwQ2XeILH5avb3GcOlWCYujGUiaMPAyBI_xqE"); 
   const response_destination = Address.parse("0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y"); 
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell(); 
   const forward_ton_amount = toNano("0.1"); 
@@ -52,48 +51,27 @@ const hopChains = createStrMap([
   const srcAsset: string = "TESTJ";
   const srcReceiver: Address = Address.parse("0QCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw64m1");
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 1200); 
-  const messenger: Address = Address.parse("EQBIgdusaVOdJbcN9r0O65iCF7KH9aUzS8kK-pDGJKs4ZHc_");
   const senderPubKey = BigInt("93313405977870926073550938810831536324369550307664963791822499149910443974887");
   const jettonMasterAddress = Address.parse("kQCdbtPwe4P8eF_rH-o0vu4Plfqrhmr9MR-pKkzH487BLJOQ");
-  const htlcJettonWalletAddress = Address.parse("0:f66e0284740c60ffd3e4ab5ca229ca7dfa57263511877fecd3d532a6e97c20fb");
+  const htlcJettonWalletAddress = Address.parse("0:0e27a30ebae5144d77e61b3fb451cc6284947075ab0f5cac8961d10c00ceaf66");
 
-  // let b_0 = new Builder();
-  // b_0.storeStringRefTail(dstChain);
-  // b_0.storeStringRefTail(dstAsset);
-  // let b_1 = new Builder();
-  // b_1.storeStringRefTail(dstAddress);
-  // b_1.storeStringRefTail(srcAsset);
-  // b_1.storeAddress(srcReceiver);
-  // b_1.storeInt(timelock, 257);
-  // b_1.storeAddress(messenger);
-  // let b_2 = new Builder();
-  // b_2.storeAddress(jettonMasterAddress);
-  // b_2.storeAddress(htlcJettonWalletAddress);
-  // b_2.storeInt(senderPubKey, 257);
-  // b_2.storeDict(hopChains, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-  // b_2.storeDict(hopAssets, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-  // b_2.storeDict(hopAddresses, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-  // b_1.storeRef(b_2.endCell());
-  // b_0.storeRef(b_1.endCell());
-
-        let b_0 = new Builder();
-        b_0.storeStringRefTail(dstChain);
-        b_0.storeStringRefTail(dstAsset);
-        let b_1 = new Builder();
-        b_1.storeStringRefTail(dstAddress);
-        b_1.storeStringRefTail(srcAsset);
-        b_1.storeAddress(srcReceiver);
-        b_1.storeInt(timelock, 257);
-        b_1.storeAddress(messenger);
-        let b_2 = new Builder();
-        b_2.storeAddress(jettonMasterAddress);
-        b_2.storeAddress(htlcJettonWalletAddress);
-        b_2.storeInt(senderPubKey, 257);
-        b_2.storeDict(hopChains, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-        b_2.storeDict(hopAssets, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-        b_2.storeDict(hopAddresses, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
-        b_1.storeRef(b_2.endCell());
-        b_0.storeRef(b_1.endCell());
+  let b_0 = new Builder();
+  b_0.storeStringRefTail(dstChain);
+  b_0.storeStringRefTail(dstAsset);
+  let b_1 = new Builder();
+  b_1.storeStringRefTail(dstAddress);
+  b_1.storeStringRefTail(srcAsset);
+  b_1.storeAddress(srcReceiver);
+  b_1.storeInt(timelock, 257);
+  b_1.storeAddress(jettonMasterAddress);
+  let b_2 = new Builder();
+  b_2.storeAddress(htlcJettonWalletAddress);
+  b_2.storeInt(senderPubKey, 257);
+  b_2.storeDict(hopChains, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
+  b_2.storeDict(hopAssets, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
+  b_2.storeDict(hopAddresses, Dictionary.Keys.BigInt(257), dictValueParserStringImpl());
+  b_1.storeRef(b_2.endCell());
+  b_0.storeRef(b_1.endCell());
   
   const forward_payload = beginCell().storeUint(1, 1).storeRef(beginCell().storeUint(1734998782, 32).storeBuilder(b_0).endCell()).endCell();
 

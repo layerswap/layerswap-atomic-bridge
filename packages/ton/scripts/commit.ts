@@ -22,7 +22,6 @@ const dstAddress: string = "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE763
 const srcAsset: string = "TON";
 const srcReceiver: Address = Address.parse("0QCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw64m1");
 const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600); 
-const messenger: Address = Address.parse("EQB6ZTgwl_FX_fqvrAPTl4MspD_mSMdW4TZ0j7wEfSxqEty9");
 const amount = toNano("0.2");
 const senderPubKey = BigInt("93313405977870926073550938810831536324369550307664963791822499149910443974887");
 
@@ -41,7 +40,7 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQCRA38mPeNFfuzRzSWBEW5jwO0U8_OLie90CBXQz08TgWQw"); 
+  const contractAddress = Address.parse("EQBYNb_1ocBx1NPRjncXDU5P343byJmI0mGeyb3rF59v__c-"); 
 
   const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
@@ -58,7 +57,6 @@ async function run() {
         srcAsset: srcAsset,
         srcReceiver: srcReceiver,
         timelock: timelock,
-        messenger: messenger,
         senderPubKey: senderPubKey,
   };
 

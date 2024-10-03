@@ -100,9 +100,9 @@ int __tact_slice_eq_bits(slice a, slice b) inline {
 
 forall X0, X1 -> (X0, X1) __tact_tuple_destroy_2(tuple v) asm "2 UNTUPLE";
 
-forall X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13 -> tuple __tact_tuple_create_14((X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13) v) asm "14 TUPLE";
+forall X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12 -> tuple __tact_tuple_create_13((X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12) v) asm "13 TUPLE";
 
-forall X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13 -> (X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13) __tact_tuple_destroy_14(tuple v) asm "14 UNTUPLE";
+forall X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12 -> (X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11, X12) __tact_tuple_destroy_13(tuple v) asm "13 UNTUPLE";
 
 int $global_random(int $min, int $max) impure inline {
     __tact_prepare_random();

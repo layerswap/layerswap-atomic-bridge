@@ -21,22 +21,6 @@ message(0xd53276db) TokenExcesses {
     queryId: Int as uint64;
 }
 
-// Messenger notification
-message(0x3beb51c2) Notify {
-    Id: Int;
-    hashlock: Int;
-    dstChain: String;
-    dstAsset: String;
-    dstAddress: String;
-    srcAsset: String;
-    sender: Address;
-    srcReceiver: Address;
-    amount: Int;
-    timelock: Int;
-    jettonMasterAddress: Address;
-    htlcJettonWalletAddress: Address;  
-}
-
 // Lock object
 struct HTLC {
     dstAddress: String;
@@ -50,7 +34,6 @@ struct HTLC {
     hashlock: Int;
     amount: Int;
     timelock: Int;
-    messenger: Address;
     redeemed: Bool;
     refunded: Bool;
     jettonMasterAddress: Address;
@@ -64,7 +47,6 @@ struct CommitData{
     srcAsset: String;
     srcReceiver: Address;
     timelock: Int; 
-    messenger: Address;
     jettonMasterAddress: Address;
     htlcJettonWalletAddress: Address; 
     senderPubKey: Int;
@@ -82,7 +64,6 @@ struct LockData {
     dstAddress: String;
     dstAsset: String;
     hashlock: Int;
-    messenger: Address;
     jettonMasterAddress: Address;
     htlcJettonWalletAddress: Address;  
 }
@@ -119,7 +100,6 @@ message(0xbf3d24d1) TokenCommitted{
     srcAsset: String;
     amount: Int;
     timelock: Int; 
-    messenger: Address;
     jettonMasterAddress: Address;
     htlcJettonWalletAddress: Address; 
     senderPubKey: Int;
@@ -138,7 +118,6 @@ message(0x0f47e1b8) TokenLocked{
     srcAsset: String;
     amount: Int;
     timelock: Int;
-    messenger: Address;
     hashlock: Int;
     jettonMasterAddress: Address;
     htlcJettonWalletAddress: Address; 
@@ -206,7 +185,6 @@ contract LayerswapV8Jetton with Deployable {
                                                 hashlock: 0,
                                                 amount: value,
                                                 timelock: msg.timelock, 
-                                                messenger: msg.messenger,
                                                 redeemed: false,
                                                 refunded: false,
                                                 jettonMasterAddress: msg.jettonMasterAddress,
@@ -223,7 +201,6 @@ contract LayerswapV8Jetton with Deployable {
                                 srcAsset: msg.srcAsset,
                                 amount: value,
                                 timelock: msg.timelock, 
-                                messenger: msg.messenger,
                                 jettonMasterAddress: msg.jettonMasterAddress,
                                 htlcJettonWalletAddress: msg.htlcJettonWalletAddress,
                                 senderPubKey: msg.senderPubKey,
@@ -251,33 +228,11 @@ contract LayerswapV8Jetton with Deployable {
                                                         hashlock: msg.hashlock,
                                                         amount: value, 
                                                         timelock: msg.timelock,
-                                                        messenger: msg.messenger,
                                                         redeemed: false,
                                                         refunded: false,
                                                         jettonMasterAddress: msg.jettonMasterAddress,
                                                         htlcJettonWalletAddress: msg.htlcJettonWalletAddress
                                                         });
-
-        if(msg.messenger != self.zeroAddress && msg.Id != 0){
-            send(SendParameters{to: msg.messenger,
-                                bounce: true,
-                                value: 20000000,
-                                mode: 0,
-                                body: Notify {
-                                                Id: msg.Id,
-                                                hashlock: msg.hashlock,
-                                                dstChain: msg.dstChain,
-                                                dstAsset: msg.dstAsset,
-                                                dstAddress: msg.dstAddress,
-                                                srcAsset: msg.srcAsset,
-                                                sender: sender,
-                                                srcReceiver: msg.srcReceiver,
-                                                amount: value,
-                                                timelock: msg.timelock,
-                                                jettonMasterAddress: msg.jettonMasterAddress,
-                                                htlcJettonWalletAddress: msg.htlcJettonWalletAddress  
-                                            }.toCell()});  
-        }
 
         emit(TokenLocked{
                         Id: msg.Id,
@@ -289,7 +244,6 @@ contract LayerswapV8Jetton with Deployable {
                         srcAsset: msg.srcAsset,
                         amount: value,
                         timelock: msg.timelock,
-                        messenger: msg.messenger,
                         hashlock: msg.hashlock,
                         jettonMasterAddress: msg.jettonMasterAddress,
                         htlcJettonWalletAddress: msg.htlcJettonWalletAddress
@@ -299,7 +253,7 @@ contract LayerswapV8Jetton with Deployable {
     receive(msg: AddLock){
         require(self.contractExists(msg.Id) == true ,"Contract Does Not Exist");
         let htlc: HTLC = (self.contracts.get(msg.Id)!!);
-        require(sender() == htlc.sender || sender() == htlc.messenger,"No Allowance");
+        require(sender() == htlc.sender ,"No Allowance");
         self.addLock(msg.Id,msg.hashlock,msg.timelock,context());
     }
 
@@ -429,7 +383,6 @@ contract LayerswapV8Jetton with Deployable {
                                                     hashlock: hashlock,
                                                     amount: htlc.amount,
                                                     timelock: timelock,
-                                                    messenger: htlc.messenger,
                                                     redeemed: false,
                                                     refunded: false,
                                                     jettonMasterAddress: htlc.jettonMasterAddress,

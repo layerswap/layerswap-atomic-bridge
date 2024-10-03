@@ -27,28 +27,25 @@
 
 ((cell, int, int, slice), ()) $LayerswapV8Jetton$_fun__commit((cell, int, int, slice) $self, slice $msgSlc, slice $sender, int $value) impure inline_ref {
     var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = $self;
-    var ($msg'dstChain, $msg'dstAsset, $msg'dstAddress, $msg'srcAsset, $msg'srcReceiver, $msg'timelock, $msg'messenger, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress, $msg'senderPubKey, $msg'hopChains, $msg'hopAssets, $msg'hopAddresses) = $CommitData$_load_not_mut($msgSlc);
+    var ($msg'dstChain, $msg'dstAsset, $msg'dstAddress, $msg'srcAsset, $msg'srcReceiver, $msg'timelock, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress, $msg'senderPubKey, $msg'hopChains, $msg'hopAssets, $msg'hopAddresses) = $CommitData$_load_not_mut($msgSlc);
     throw_unless(4670, ($value != 0));
     throw_unless(21683, ($msg'timelock > now()));
     $self'contractNonce = $self'contractNonce + 1;
     int $Id = ($self'seed ^ $self'contractNonce);
     throw_unless(24064, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8Jetton$_fun_contractExists($Id) == false));
-    $self'contracts~__tact_dict_set_int_cell(257, $Id, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress($msg'dstAddress, $msg'dstChain, $msg'dstAsset, $msg'srcAsset, $sender, $msg'senderPubKey, $msg'srcReceiver, 0, 0, $value, $msg'timelock, $msg'messenger, false, false, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress)));
-    $global_emit($TokenCommitted$_store_cell($TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_jettonMasterAddress_htlcJettonWalletAddress_senderPubKey_hopChains_hopAssets_hopAddresses($Id, $msg'dstChain, $msg'dstAddress, $msg'dstAsset, $sender, $msg'srcReceiver, $msg'srcAsset, $value, $msg'timelock, $msg'messenger, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress, $msg'senderPubKey, $msg'hopChains, $msg'hopAssets, $msg'hopAddresses)));
+    $self'contracts~__tact_dict_set_int_cell(257, $Id, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress($msg'dstAddress, $msg'dstChain, $msg'dstAsset, $msg'srcAsset, $sender, $msg'senderPubKey, $msg'srcReceiver, 0, 0, $value, $msg'timelock, false, false, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress)));
+    $global_emit($TokenCommitted$_store_cell($TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress_senderPubKey_hopChains_hopAssets_hopAddresses($Id, $msg'dstChain, $msg'dstAddress, $msg'dstAsset, $sender, $msg'srcReceiver, $msg'srcAsset, $value, $msg'timelock, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress, $msg'senderPubKey, $msg'hopChains, $msg'hopAssets, $msg'hopAddresses)));
     return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
 }
 
 ((cell, int, int, slice), ()) $LayerswapV8Jetton$_fun__lock((cell, int, int, slice) $self, slice $msgSlc, slice $sender, int $value) impure inline_ref {
     var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = $self;
-    var ($msg'Id, $msg'timelock, $msg'srcReceiver, $msg'srcAsset, $msg'dstChain, $msg'dstAddress, $msg'dstAsset, $msg'hashlock, $msg'messenger, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress) = $LockData$_load_not_mut($msgSlc);
+    var ($msg'Id, $msg'timelock, $msg'srcReceiver, $msg'srcAsset, $msg'dstChain, $msg'dstAddress, $msg'dstAsset, $msg'hashlock, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress) = $LockData$_load_not_mut($msgSlc);
     throw_unless(21683, (now() < $msg'timelock));
     throw_unless(4670, ($value != 0));
     throw_unless(11493, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8Jetton$_fun_contractExists($msg'Id) == false));
-    $self'contracts~__tact_dict_set_int_cell(257, $msg'Id, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress($msg'dstAddress, $msg'dstChain, $msg'dstAsset, $msg'srcAsset, $sender, 0, $msg'srcReceiver, 0, $msg'hashlock, $value, $msg'timelock, $msg'messenger, false, false, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress)));
-    if (( (( ~ __tact_slice_eq_bits($self'zeroAddress, $msg'messenger) )) ? (($msg'Id != 0)) : (false) )) {
-        $global_send($SendParameters$_constructor_to_bounce_value_mode_body($msg'messenger, true, 20000000, 0, $Notify$_store_cell($Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress($msg'Id, $msg'hashlock, $msg'dstChain, $msg'dstAsset, $msg'dstAddress, $msg'srcAsset, $sender, $msg'srcReceiver, $value, $msg'timelock, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress))));
-    }
-    $global_emit($TokenLocked$_store_cell($TokenLocked$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_hashlock_jettonMasterAddress_htlcJettonWalletAddress($msg'Id, $msg'dstChain, $msg'dstAddress, $msg'dstAddress, $sender, $msg'srcReceiver, $msg'srcAsset, $value, $msg'timelock, $msg'messenger, $msg'hashlock, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress)));
+    $self'contracts~__tact_dict_set_int_cell(257, $msg'Id, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress($msg'dstAddress, $msg'dstChain, $msg'dstAsset, $msg'srcAsset, $sender, 0, $msg'srcReceiver, 0, $msg'hashlock, $value, $msg'timelock, false, false, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress)));
+    $global_emit($TokenLocked$_store_cell($TokenLocked$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_hashlock_jettonMasterAddress_htlcJettonWalletAddress($msg'Id, $msg'dstChain, $msg'dstAddress, $msg'dstAddress, $sender, $msg'srcReceiver, $msg'srcAsset, $value, $msg'timelock, $msg'hashlock, $msg'jettonMasterAddress, $msg'htlcJettonWalletAddress)));
     return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
 }
 
@@ -62,7 +59,7 @@
     int $length = 0;
     var ($key, $value, $fresh$flag_0) = __tact_dict_min_int_cell($self'contracts, 257);
     while ($fresh$flag_0) {
-        var ($value'dstAddress, $value'dstChain, $value'dstAsset, $value'srcAsset, $value'sender, $value'senderPubKey, $value'srcReceiver, $value'secret, $value'hashlock, $value'amount, $value'timelock, $value'messenger, $value'redeemed, $value'refunded, $value'jettonMasterAddress, $value'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt($value));
+        var ($value'dstAddress, $value'dstChain, $value'dstAsset, $value'srcAsset, $value'sender, $value'senderPubKey, $value'srcReceiver, $value'secret, $value'hashlock, $value'amount, $value'timelock, $value'redeemed, $value'refunded, $value'jettonMasterAddress, $value'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt($value));
         $length = $length + 1;
         ($key, $value, $fresh$flag_0) = __tact_dict_next_int_cell($self'contracts, 257, $key);
     }
@@ -75,7 +72,7 @@
     int $i = 0;
     var ($key, $value, $fresh$flag_1) = __tact_dict_min_int_cell($self'contracts, 257);
     while ($fresh$flag_1) {
-        var ($value'dstAddress, $value'dstChain, $value'dstAsset, $value'srcAsset, $value'sender, $value'senderPubKey, $value'srcReceiver, $value'secret, $value'hashlock, $value'amount, $value'timelock, $value'messenger, $value'redeemed, $value'refunded, $value'jettonMasterAddress, $value'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt($value));
+        var ($value'dstAddress, $value'dstChain, $value'dstAsset, $value'srcAsset, $value'sender, $value'senderPubKey, $value'srcReceiver, $value'secret, $value'hashlock, $value'amount, $value'timelock, $value'redeemed, $value'refunded, $value'jettonMasterAddress, $value'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt($value));
         if (( __tact_slice_eq_bits($senderAddr, $value'sender) )) {
             $result~__tact_dict_set_int_int(257, $i, $key, 257);
             $i = $i + 1;
@@ -89,12 +86,12 @@
     var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = $self;
     var (($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw)) = $ctx;
     throw_unless(58417, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8Jetton$_fun_contractExists($Id) == true));
-    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'messenger, $htlc'redeemed, $htlc'refunded, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $Id)));
+    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'redeemed, $htlc'refunded, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $Id)));
     throw_unless(8650, ($htlc'hashlock == 0));
     throw_unless(21683, ($timelock > now()));
     throw_unless(46887, ($htlc'redeemed == false));
     throw_unless(49162, ($htlc'refunded == false));
-    $self'contracts~__tact_dict_set_int_cell(257, $Id, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, 0, $hashlock, $htlc'amount, $timelock, $htlc'messenger, false, false, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress)));
+    $self'contracts~__tact_dict_set_int_cell(257, $Id, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_redeemed_refunded_jettonMasterAddress_htlcJettonWalletAddress($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, 0, $hashlock, $htlc'amount, $timelock, false, false, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress)));
     $global_send($SendParameters$_constructor_to_bounce_value_mode(__tact_context_get_sender(), false, 0, 64));
     return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
 }
@@ -125,8 +122,8 @@
     var ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress) = $self;
     var ($msg'Id, $msg'hashlock, $msg'timelock) = $msg;
     throw_unless(58417, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8Jetton$_fun_contractExists($msg'Id) == true));
-    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'messenger, $htlc'redeemed, $htlc'refunded, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
-    throw_unless(31687, ( (( __tact_slice_eq_bits($htlc'sender, __tact_context_get_sender()) )) ? (true) : (( __tact_slice_eq_bits($htlc'messenger, __tact_context_get_sender()) )) ));
+    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'redeemed, $htlc'refunded, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
+    throw_unless(31687, ( __tact_slice_eq_bits($htlc'sender, __tact_context_get_sender()) ));
     ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8Jetton$_fun_addLock($msg'Id, $msg'hashlock, $msg'timelock, __tact_context_get());
     return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
 }
@@ -135,7 +132,7 @@
     var ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress) = $self;
     var ($msg'data, $msg'signature) = $msg;
     throw_unless(58417, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8Jetton$_fun_contractExists(preload_int($msg'data, 257)) == true));
-    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'messenger, $htlc'redeemed, $htlc'refunded, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, preload_int($msg'data, 257))));
+    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'redeemed, $htlc'refunded, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, preload_int($msg'data, 257))));
     throw_unless(48401, check_signature(slice_hash($msg'data), $msg'signature, $htlc'senderPubKey));
     int $Id = $msg'data~load_int(257);
     int $hashlock = $msg'data~load_int(257);
@@ -150,7 +147,7 @@
     var ($msg'Id, $msg'secret) = $msg;
     var ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
     throw_unless(58417, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8Jetton$_fun_contractExists($msg'Id) == true));
-    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'messenger, $htlc'redeemed, $htlc'refunded, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
+    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'redeemed, $htlc'refunded, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
     slice $hashlockFromSecretSlice = $Builder$_fun_asSlice(store_uint(begin_cell(), $msg'secret, 256));
     int $hashlockFromSecret = string_hash($hashlockFromSecretSlice);
     throw_unless(50918, ($htlc'hashlock == $hashlockFromSecret));
@@ -168,7 +165,7 @@
     var ($msg'Id) = $msg;
     var ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
     throw_unless(58417, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8Jetton$_fun_contractExists($msg'Id) == true));
-    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'messenger, $htlc'redeemed, $htlc'refunded, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
+    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'redeemed, $htlc'refunded, $htlc'jettonMasterAddress, $htlc'htlcJettonWalletAddress) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
     throw_unless(38239, ($htlc'timelock < now()));
     throw_unless(49162, ($htlc'refunded == false));
     throw_unless(46887, ($htlc'redeemed == false));

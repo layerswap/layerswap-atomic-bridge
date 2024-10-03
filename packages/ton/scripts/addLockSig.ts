@@ -23,12 +23,12 @@ async function run() {
   const walletSender = walletContract.sender(key2.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQDijUGKy4DJqVZSZYYB6ulVcnitg9tDZ8Kv9M8M6Q2Qlv19"); 
+  const contractAddress = Address.parse("kQCEheJe-tMhwQ2XeILH5avb3GcOlWCYujGUiaMPAyBI_xqE"); 
   const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
   const amount = toNano("0.1");
 
-  const Id = BigInt("1051");
+  const Id = BigInt("101");
   const hashlock = BigInt("96184405605761239365615141159737855805714574759278034204903698408753403233303");
   const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600);
 

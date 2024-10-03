@@ -19,7 +19,7 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQD55cXZ48PdxZjZdgBSBdLVTVKLRj8p0619BEr7QRSDeLF_"); 
+  const contractAddress = Address.parse("EQBYNb_1ocBx1NPRjncXDU5P343byJmI0mGeyb3rF59v__c-"); 
   const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
   const amount = toNano("0.1");
@@ -27,7 +27,7 @@ async function run() {
   const addLockMessage: AddLock = {
     $$type: "AddLock",
     Id: 101n,
-    hashlock: 20548678321456934993365688499927729765381779202072073513007694262427584456407n,
+    hashlock: 96184405605761239365615141159737855805714574759278034204903698408753403233303n,
     timelock: BigInt(Math.floor(Date.now() / 1000) + 3600),
   };
 
@@ -37,7 +37,7 @@ async function run() {
   let currentSeqno = seqno;
   while (currentSeqno == seqno) {
     console.log("Waiting for transaction to confirm...");
-    await sleep(1500);
+    await sleep(2000);
     currentSeqno = await walletContract.getSeqno();
   }
   console.log("Transaction confirmed!");

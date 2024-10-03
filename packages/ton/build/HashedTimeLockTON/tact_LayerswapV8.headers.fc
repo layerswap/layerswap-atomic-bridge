@@ -57,29 +57,23 @@ builder $DeployOk$_store(builder build_0, (int) v) inline;
 ;; $DeployOk$_store_cell
 cell $DeployOk$_store_cell((int) v) inline;
 
-;; $Notify$_store
-builder $Notify$_store(builder build_0, (int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice) v) inline_ref;
-
-;; $Notify$_store_cell
-cell $Notify$_store_cell((int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice) v) inline;
-
 ;; $HTLC$_store
-builder $HTLC$_store(builder build_0, (slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int) v) inline_ref;
+builder $HTLC$_store(builder build_0, (slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int) v) inline_ref;
 
 ;; $HTLC$_store_cell
-cell $HTLC$_store_cell((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int) v) inline;
+cell $HTLC$_store_cell((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int) v) inline;
 
 ;; $HTLC$_load
-(slice, ((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int))) $HTLC$_load(slice sc_0) inline_ref;
+(slice, ((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int))) $HTLC$_load(slice sc_0) inline_ref;
 
 ;; $HTLC$_as_optional
-tuple $HTLC$_as_optional((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int) v) inline;
+tuple $HTLC$_as_optional((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int) v) inline;
 
 ;; $HTLC$_load_opt
 tuple $HTLC$_load_opt(cell cl) inline;
 
 ;; $Commit$_load
-(slice, ((slice, slice, slice, slice, slice, int, slice, int, cell, cell, cell))) $Commit$_load(slice sc_0) inline_ref;
+(slice, ((slice, slice, slice, slice, slice, int, int, cell, cell, cell))) $Commit$_load(slice sc_0) inline_ref;
 
 ;; $AddLock$_load
 (slice, ((int, int, int))) $AddLock$_load(slice sc_0) inline;
@@ -88,7 +82,7 @@ tuple $HTLC$_load_opt(cell cl) inline;
 (slice, ((slice, slice))) $AddLockSig$_load(slice sc_0) inline;
 
 ;; $Lock$_load
-(slice, ((int, int, int, slice, slice, slice, slice, slice, slice))) $Lock$_load(slice sc_0) inline_ref;
+(slice, ((int, int, int, slice, slice, slice, slice, slice))) $Lock$_load(slice sc_0) inline_ref;
 
 ;; $Redeem$_load
 (slice, ((int, int))) $Redeem$_load(slice sc_0) inline;
@@ -97,16 +91,16 @@ tuple $HTLC$_load_opt(cell cl) inline;
 (slice, ((int))) $Refund$_load(slice sc_0) inline;
 
 ;; $TokenCommitted$_store
-builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell) v) inline_ref;
+builder $TokenCommitted$_store(builder build_0, (int, slice, slice, slice, slice, slice, slice, int, int, int, cell, cell, cell) v) inline_ref;
 
 ;; $TokenCommitted$_store_cell
-cell $TokenCommitted$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell) v) inline;
+cell $TokenCommitted$_store_cell((int, slice, slice, slice, slice, slice, slice, int, int, int, cell, cell, cell) v) inline;
 
 ;; $TokenLocked$_store
-builder $TokenLocked$_store(builder build_0, (int, int, slice, slice, slice, slice, slice, slice, int, int, slice) v) inline_ref;
+builder $TokenLocked$_store(builder build_0, (int, int, slice, slice, slice, slice, slice, slice, int, int) v) inline_ref;
 
 ;; $TokenLocked$_store_cell
-cell $TokenLocked$_store_cell((int, int, slice, slice, slice, slice, slice, slice, int, int, slice) v) inline;
+cell $TokenLocked$_store_cell((int, int, slice, slice, slice, slice, slice, slice, int, int) v) inline;
 
 ;; $LayerswapV8$_store
 builder $LayerswapV8$_store(builder build_0, (cell, int, int, slice) v) inline;
@@ -118,10 +112,10 @@ builder $LayerswapV8$_store(builder build_0, (cell, int, int, slice) v) inline;
 ((cell, cell)) $StateInit$_not_null(tuple v) inline;
 
 ;; $HTLC$_not_null
-((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int)) $HTLC$_not_null(tuple v) inline;
+((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int)) $HTLC$_not_null(tuple v) inline;
 
 ;; $HTLC$_to_tuple
-tuple $HTLC$_to_tuple(((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int)) v) inline;
+tuple $HTLC$_to_tuple(((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int)) v) inline;
 
 ;; $HTLC$_to_opt_tuple
 tuple $HTLC$_to_opt_tuple(tuple v) inline;
@@ -162,8 +156,8 @@ slice $Builder$_fun_asSlice(builder $self) impure inline;
 ;; $LayerswapV8$_fun_getContracts
 ((cell, int, int, slice), cell) $LayerswapV8$_fun_getContracts((cell, int, int, slice) $self, slice $senderAddr) impure inline_ref;
 
-;; $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded
-((slice, slice, slice, slice, slice, int, slice, int, int, int, int, slice, int, int)) $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_messenger_redeemed_refunded(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, int $senderPubKey, slice $srcReceiver, int $secret, int $hashlock, int $amount, int $timelock, slice $messenger, int $redeemed, int $refunded) inline;
+;; $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_redeemed_refunded
+((slice, slice, slice, slice, slice, int, slice, int, int, int, int, int, int)) $HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_redeemed_refunded(slice $dstAddress, slice $dstChain, slice $dstAsset, slice $srcAsset, slice $sender, int $senderPubKey, slice $srcReceiver, int $secret, int $hashlock, int $amount, int $timelock, int $redeemed, int $refunded) inline;
 
 ;; $SendParameters$_constructor_to_bounce_value_mode
 ((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode(slice $to, int $bounce, int $value, int $mode) inline;
@@ -180,17 +174,11 @@ slice $Builder$_fun_asSlice(builder $self) impure inline;
 ;; $LayerswapV8$_fun_notify
 ((cell, int, int, slice), ()) $LayerswapV8$_fun_notify((cell, int, int, slice) $self, cell $body) impure inline;
 
-;; $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_senderPubKey_hopChains_hopAssets_hopAddresses
-((int, slice, slice, slice, slice, slice, slice, int, int, slice, int, cell, cell, cell)) $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger_senderPubKey_hopChains_hopAssets_hopAddresses(int $Id, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger, int $senderPubKey, cell $hopChains, cell $hopAssets, cell $hopAddresses) inline;
+;; $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_senderPubKey_hopChains_hopAssets_hopAddresses
+((int, slice, slice, slice, slice, slice, slice, int, int, int, cell, cell, cell)) $TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_senderPubKey_hopChains_hopAssets_hopAddresses(int $Id, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, int $senderPubKey, cell $hopChains, cell $hopAssets, cell $hopAddresses) inline;
 
-;; $SendParameters$_constructor_to_bounce_value_mode_body
-((int, slice, int, int, cell, cell, cell)) $SendParameters$_constructor_to_bounce_value_mode_body(slice $to, int $bounce, int $value, int $mode, cell $body) inline;
-
-;; $Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress
-((int, int, slice, slice, slice, slice, slice, slice, int, int, slice, slice)) $Notify$_constructor_Id_hashlock_dstChain_dstAsset_dstAddress_srcAsset_sender_srcReceiver_amount_timelock_jettonMasterAddress_htlcJettonWalletAddress(int $Id, int $hashlock, slice $dstChain, slice $dstAsset, slice $dstAddress, slice $srcAsset, slice $sender, slice $srcReceiver, int $amount, int $timelock, slice $jettonMasterAddress, slice $htlcJettonWalletAddress) inline;
-
-;; $TokenLocked$_constructor_Id_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger
-((int, int, slice, slice, slice, slice, slice, slice, int, int, slice)) $TokenLocked$_constructor_Id_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_messenger(int $Id, int $hashlock, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock, slice $messenger) inline;
+;; $TokenLocked$_constructor_Id_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock
+((int, int, slice, slice, slice, slice, slice, slice, int, int)) $TokenLocked$_constructor_Id_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock(int $Id, int $hashlock, slice $dstChain, slice $dstAddress, slice $dstAsset, slice $sender, slice $srcReceiver, slice $srcAsset, int $amount, int $timelock) inline;
 
 ;; $DeployOk$_constructor_queryId
 ((int)) $DeployOk$_constructor_queryId(int $queryId) inline;

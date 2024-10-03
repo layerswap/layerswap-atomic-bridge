@@ -19,12 +19,12 @@ export async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("kQCRA38mPeNFfuzRzSWBEW5jwO0U8_OLie90CBXQz08Tgd-6"); 
+  const contractAddress = Address.parse("kQCEheJe-tMhwQ2XeILH5avb3GcOlWCYujGUiaMPAyBI_xqE"); 
   const newContract = LayerswapV8.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
   const Id = BigInt("101");
-  const secret = BigInt("52665169651947448673905966427789022674069582136158513027251783919593735585792"); 
+  const secret = BigInt("9065364567159659789812097500307188665539569649970302555505078182575840194842"); 
 
   const redeemMessage: Redeem = {
     $$type: "Redeem",
