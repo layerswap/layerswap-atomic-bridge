@@ -57,22 +57,6 @@ contract LayerswapV8ERC20 {
     );
   }
 
-  error FundsNotSent();
-  error NotFutureTimelock();
-  error NotPassedTimelock();
-  error LockAlreadyExists();
-  error HTLCAlreadyExists();
-  error HTLCNotExists();
-  error HashlockNotMatch();
-  error AlreadyRedeemed();
-  error AlreadyRefunded();
-  error IncorrectData();
-  error InsufficientBalance();
-  error NoAllowance();
-  error AlreadyLocked();
-  error InvalidSigniture();
-  error HashlockAlreadySet();
-
   struct HTLC {
     string dstAddress;
     string dstChain;
@@ -137,7 +121,7 @@ contract LayerswapV8ERC20 {
   event LowLevelErrorOccurred(bytes lowLevelData);
 
   modifier _exists(bytes32 Id) {
-    if (!hasHTLC(Id)) revert HTLCNotExists();
+    require(hasHTLC(Id),"HTLC Not Exists");
     _;
   }
 
@@ -154,32 +138,20 @@ contract LayerswapV8ERC20 {
     uint amount,
     address tokenContract
   ) external returns (bytes32 Id) {
-    if (amount == 0) {
-      revert FundsNotSent();
-    }
-    if (timelock <= block.timestamp) {
-      revert NotFutureTimelock();
-    }
+    require(amount > 0,"Funds Not Sent");
+    require(timelock > block.timestamp,"Not Future Timelock");
 
     IERC20 token = IERC20(tokenContract);
 
-    if (token.balanceOf(msg.sender) < amount) {
-      revert InsufficientBalance();
-    }
-
-    if (token.allowance(msg.sender, address(this)) < amount) {
-      revert NoAllowance();
-    }
-
+    require(token.balanceOf(msg.sender) >= amount,"Insufficient Balance");
+    require(token.allowance(msg.sender, address(this)) >= amount,"No Allowance");
     token.safeTransferFrom(msg.sender, address(this), amount);
 
     contractNonce += 1;
     Id = bytes32(blockHashAsUint ^ contractNonce);
 
     //Remove this check; the ID is guaranteed to be unique.
-    if (hasHTLC(Id)) {
-      revert HTLCAlreadyExists();
-    }
+    require(!hasHTLC(Id),"HTLC Already Exists");
     contractIds.push(Id);
     contracts[Id] = HTLC(
       dstAddress,
@@ -216,24 +188,19 @@ contract LayerswapV8ERC20 {
 
   function addLock(bytes32 Id, bytes32 hashlock, uint256 timelock) external _exists(Id) returns (bytes32) {
     HTLC storage htlc = contracts[Id];
-    if (htlc.refunded == true) {
-      revert AlreadyRefunded();
-    }
-    if (timelock <= block.timestamp) {
-      revert NotFutureTimelock();
-    }
+    require(!htlc.refunded,"Already Refunded");
+    require(timelock > block.timestamp,"Not Future Timelock");
     if (msg.sender == htlc.sender || msg.sender == address(this)) {
       if (htlc.hashlock == 0) {
         htlc.hashlock = hashlock;
         htlc.timelock = timelock;
       } else {
-        revert HashlockAlreadySet();
+          require(false,"Hashlock Already Set");
       }
-
       emit TokenLockAdded(Id, hashlock, timelock);
       return Id;
     } else {
-      revert NoAllowance();
+          require(false,"No Allowance"); 
     }
   }
 
@@ -241,7 +208,7 @@ contract LayerswapV8ERC20 {
     if (verifyMessage(message, v, r, s)) {
       return this.addLock(message.Id, message.hashlock, message.timelock);
     } else {
-      revert InvalidSigniture();
+      require(false,"Invalid Signiture");
     }
   }
 
@@ -268,24 +235,13 @@ contract LayerswapV8ERC20 {
     uint256 amount,
     address tokenContract
   ) external returns (bytes32) {
-    if (timelock <= block.timestamp) {
-      revert NotFutureTimelock();
-    }
-    if (amount == 0) {
-      revert FundsNotSent();
-    }
-    if (hasHTLC(Id)) {
-      revert HTLCAlreadyExists();
-    }
+    require(amount > 0, "Funds Not Sent");
+    require(timelock > block.timestamp,"Not Future Timelock");
+    require(!hasHTLC(Id),"HTLC Already Exists");
     IERC20 token = IERC20(tokenContract);
 
-    if (token.balanceOf(msg.sender) < amount) {
-      revert InsufficientBalance();
-    }
-
-    if (token.allowance(msg.sender, address(this)) < amount) {
-      revert NoAllowance();
-    }
+    require(token.balanceOf(msg.sender) >= amount,"Insufficient Balance");
+    require(token.allowance(msg.sender, address(this)) >= amount,"No Allowance");
 
     token.safeTransferFrom(msg.sender, address(this), amount);
     contracts[Id] = HTLC(
@@ -332,9 +288,9 @@ contract LayerswapV8ERC20 {
   function redeem(bytes32 Id, uint256 secret) external _exists(Id) returns (bool) {
     HTLC storage htlc = contracts[Id];
 
-    if (htlc.hashlock != sha256(abi.encodePacked(secret))) revert HashlockNotMatch();
-    if (htlc.redeemed) revert AlreadyRedeemed();
-    if (htlc.refunded) revert AlreadyRefunded();
+    require(htlc.hashlock == sha256(abi.encodePacked(secret)),"Hashlock Not Match");
+    require(!htlc.refunded,"Already Refunded");
+    require(!htlc.redeemed,"Already Redeemed");
 
     htlc.secret = secret;
     htlc.redeemed = true;
@@ -351,10 +307,9 @@ contract LayerswapV8ERC20 {
    */
   function refund(bytes32 Id) external _exists(Id) returns (bool) {
     HTLC storage htlc = contracts[Id];
-
-    if (htlc.refunded) revert AlreadyRefunded();
-    if (htlc.redeemed) revert AlreadyRedeemed();
-    if (htlc.timelock > block.timestamp) revert NotPassedTimelock();
+    require(!htlc.refunded,"Already Refunded");
+    require(!htlc.redeemed,"Already Redeemed");
+    require(htlc.timelock <= block.timestamp,"Not Passed Timelock");
 
     htlc.refunded = true;
     IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);

@@ -41,20 +41,6 @@ contract LayerswapV8 {
     );
   }
 
-  error FundsNotSent();
-  error NotFutureTimelock();
-  error NotPassedTimelock();
-  error LockAlreadyExists();
-  error HTLCAlreadyExists();
-  error HTLCNotExists();
-  error HashlockNotMatch();
-  error AlreadyRedeemed();
-  error AlreadyRefunded();
-  error AlreadyLocked();
-  error NoAllowance();
-  error InvalidSigniture();
-  error HashlockAlreadySet();
-
   // Structure for storing swap-related data
   struct HTLC {
     string dstAddress;
@@ -110,7 +96,7 @@ contract LayerswapV8 {
   event LowLevelErrorOccurred(bytes lowLevelData);
 
   modifier _exists(bytes32 Id) {
-    if (!hasHTLC(Id)) revert HTLCNotExists();
+    require(hasHTLC(Id),"HTLC Not Exists");
     _;
   }
 
@@ -130,19 +116,13 @@ contract LayerswapV8 {
     address srcReceiver,
     uint256 timelock
   ) external payable returns (bytes32 Id) {
-    if (msg.value == 0) {
-      revert FundsNotSent();
-    }
-    if (timelock <= block.timestamp) {
-      revert NotFutureTimelock();
-    }
+    require(msg.value > 0,"Funds Not Sent");
+    require(timelock > block.timestamp,"Not Future Timelock");
     contractNonce += 1;
     Id = bytes32(blockHashAsUint ^ contractNonce);
 
     //Remove this check; the ID is guaranteed to be unique.
-    if (hasHTLC(Id)) {
-      revert HTLCAlreadyExists();
-    }
+    require(!hasHTLC(Id),"HTLC Already Exists");
     contractIds.push(Id);
     contracts[Id] = HTLC(
       dstAddress,
@@ -177,10 +157,9 @@ contract LayerswapV8 {
 
   function refund(bytes32 Id) external _exists(Id) returns (bool) {
     HTLC storage htlc = contracts[Id];
-
-    if (htlc.refunded) revert AlreadyRefunded();
-    if (htlc.redeemed) revert AlreadyRedeemed();
-    if (htlc.timelock > block.timestamp) revert NotPassedTimelock();
+    require(!htlc.refunded,"Already Refunded");
+    require(!htlc.redeemed,"Already Redeemed");
+    require(htlc.timelock <= block.timestamp,"Not Passed Timelock");
 
     htlc.refunded = true;
     (bool success, ) = htlc.sender.call{ value: htlc.amount }('');
@@ -191,25 +170,19 @@ contract LayerswapV8 {
 
   function addLock(bytes32 Id, bytes32 hashlock, uint256 timelock) external _exists(Id) returns (bytes32) {
     HTLC storage htlc = contracts[Id];
-    if (htlc.refunded == true) {
-      revert AlreadyRefunded();
-    }
-    if (timelock <= block.timestamp) {
-      revert NotFutureTimelock();
-    }
-
+    require(!htlc.refunded,"Already Refunded");
+    require(timelock > block.timestamp,"Not Future Timelock");
     if (msg.sender == htlc.sender || msg.sender == address(this)) {
       if (htlc.hashlock == 0) {
         htlc.hashlock = hashlock;
         htlc.timelock = timelock;
       } else {
-        revert HashlockAlreadySet();
+        require(false,"Hashlock Already Set");
       }
-
       emit TokenLockAdded(Id, hashlock, timelock);
       return Id;
     } else {
-      revert NoAllowance();
+      require(false,"No Allowance"); 
     }
   }
 
@@ -217,7 +190,7 @@ contract LayerswapV8 {
     if (verifyMessage(message, v, r, s)) {
       return this.addLock(message.Id, message.hashlock, message.timelock);
     } else {
-      revert InvalidSigniture();
+      require(false,"Invalid Signiture");
     }
   }
 
@@ -231,15 +204,9 @@ contract LayerswapV8 {
     string memory dstAddress,
     string memory dstAsset
   ) external payable returns (bytes32) {
-    if (msg.value == 0) {
-      revert FundsNotSent();
-    }
-    if (timelock <= block.timestamp) {
-      revert NotFutureTimelock();
-    }
-    if (hasHTLC(Id)) {
-      revert HTLCAlreadyExists();
-    }
+    require(msg.value > 0, "Funds Not Sent");
+    require(timelock > block.timestamp,"Not Future Timelock");
+    require(!hasHTLC(Id),"HTLC Already Exists");
     contracts[Id] = HTLC(
       dstAddress,
       dstChain,
@@ -273,9 +240,9 @@ contract LayerswapV8 {
   function redeem(bytes32 Id, uint256 secret) external _exists(Id) returns (bool) {
     HTLC storage htlc = contracts[Id];
 
-    if (htlc.hashlock != sha256(abi.encodePacked(secret))) revert HashlockNotMatch();
-    if (htlc.refunded) revert AlreadyRefunded();
-    if (htlc.redeemed) revert AlreadyRedeemed();
+    require(htlc.hashlock == sha256(abi.encodePacked(secret)),"Hashlock Not Match");
+    require(!htlc.refunded,"Already Refunded");
+    require(!htlc.redeemed,"Already Redeemed");
 
     htlc.secret = secret;
     htlc.redeemed = true;
