@@ -203,7 +203,7 @@ describe("HTLC", () => {
     console.log(`[${TIMELOCK * 1000}] the Timelock`);
 
     const commitTx = await program.methods
-      .commit(IDArray, HOPCHAINS, HOPASSETS, HOPADDRESSES, DSTCHAIN, DSTASSET, DSTADDRESS, SRCASSET, bob.publicKey, TIMELOCK, wallet.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
+      .commit(IDArray, HOPCHAINS, HOPASSETS, HOPADDRESSES, DSTCHAIN, DSTASSET, DSTADDRESS, SRCASSET, bob.publicKey, TIMELOCK, new anchor.BN(AMOUNT), pda.htlcBump)
       .accountsPartial({
         sender: wallet.publicKey,
         htlc: pda.htlc,
@@ -225,12 +225,10 @@ describe("HTLC", () => {
 
     const lockCommitTx = await program.methods.addLock(IDArray, HASHLOCKArray, TIMELOCK).
       accountsPartial({
-        messenger: wallet.publicKey,
+        sender: wallet.publicKey,
         htlc: pda.htlc,
-
       }).signers([wallet.payer])
       .rpc();
-
 
     const [, htlcBalancePost] = await readAccount(pda.htlcTokenAccount, provider);
     assert.equal(htlcBalancePost, "1000000000");
@@ -243,38 +241,38 @@ describe("HTLC", () => {
     )
     const details = await program.methods.getDetails(IDArray).accountsPartial({ htlc: pda.htlc }).rpc();
     console.log(`[${details}] the details`);
-    // const redeemTx = await program.methods.redeem(IDArray, SECRETArray, pda.htlcBump).
-    //   accountsPartial({
-    //     userSigning: wallet.publicKey,
-    //     htlc: pda.htlc,
-    //     htlcTokenAccount: pda.htlcTokenAccount,
-    //     sender: wallet.publicKey,
-    //     srcReceiver: bob.publicKey,
-    //     tokenContract: tokenMint,
-    //     srcReceiverTokenAccount: bobTokenAccount,
-    //   })
-    //   .signers([wallet.payer])
-    //   .rpc();
-
-    // //Assert that 100 tokens were sent to bob.
-    // const [, bobBalance] = await readAccount(bobTokenAccount, provider);
-    // assert.equal(bobBalance, "1000000000");
-
-    await wait(20000);
-    const refundTx = await program.methods.refund(IDArray, pda.htlcBump).
+    const redeemTx = await program.methods.redeem(IDArray, SECRETArray, pda.htlcBump).
       accountsPartial({
         userSigning: wallet.publicKey,
         htlc: pda.htlc,
         htlcTokenAccount: pda.htlcTokenAccount,
         sender: wallet.publicKey,
+        srcReceiver: bob.publicKey,
         tokenContract: tokenMint,
-        senderTokenAccount: walletTokenAccount,
+        srcReceiverTokenAccount: bobTokenAccount,
       })
       .signers([wallet.payer])
       .rpc();
 
-    const [, WalletBalanceRefund] = await readAccount(walletTokenAccount, provider);
-    assert.equal(WalletBalanceRefund, "1337000000");
+    //Assert that 100 tokens were sent to bob.
+    const [, bobBalance] = await readAccount(bobTokenAccount, provider);
+    assert.equal(bobBalance, "1000000000");
+
+    // await wait(20000);
+    // const refundTx = await program.methods.refund(IDArray, pda.htlcBump).
+    //   accountsPartial({
+    //     userSigning: wallet.publicKey,
+    //     htlc: pda.htlc,
+    //     htlcTokenAccount: pda.htlcTokenAccount,
+    //     sender: wallet.publicKey,
+    //     tokenContract: tokenMint,
+    //     senderTokenAccount: walletTokenAccount,
+    //   })
+    //   .signers([wallet.payer])
+    //   .rpc();
+
+    // const [, WalletBalanceRefund] = await readAccount(walletTokenAccount, provider);
+    // assert.equal(WalletBalanceRefund, "1337000000");
 
     // Assert that htlc token account was correctly closed.
     try {
@@ -306,7 +304,6 @@ describe("HTLC", () => {
   //   //   console.log(`tokenLocked srcAsset ${event.srcAsset}`);
   //   //   console.log(`tokenLocked amount ${event.amount}`);
   //   //   console.log(`tokenLocked timelock ${event.timelock}`);
-  //   //   console.log(`tokenLocked messenger ${event.messenger}`);
   //   //   console.log(`tokenLocked ID ${event.ID}`);
   //   //   console.log(`tokenLocked tokenContract ${event.tokenContract}`);
   //   // });
@@ -317,7 +314,7 @@ describe("HTLC", () => {
 
 
   //   const lockTx = await program.methods
-  //     .lock(IDArray, HASHLOCKArray, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, wallet.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
+  //     .lock(IDArray, HASHLOCKArray, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
   //     .accountsPartial({
   //       sender: wallet.publicKey,
   //       htlc: pda.htlc,
@@ -380,7 +377,7 @@ describe("HTLC", () => {
   //   console.log(`[${TIME * 1000}] the Timelock`);
 
   //   const lockTx = await program.methods
-  //     .lock(IDArray, HASHLOCKArray, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, wallet.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
+  //     .lock(IDArray, HASHLOCKArray, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
   //     .accountsPartial({
   //       sender: wallet.publicKey,
   //       htlc: pda.htlc,

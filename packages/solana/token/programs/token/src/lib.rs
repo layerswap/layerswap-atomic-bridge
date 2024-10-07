@@ -30,7 +30,7 @@ const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 ///  2) lock(src_receiver, hashlock, timelock, tokenContract, amount) - a
 ///      sender calls this to create a new HTLC on a given token (tokenContract)
 ///      for the given amount. A [u8; 32] Id is returned.
-///  3) add_lock(Id, hashlock) - the messenger calls this function
+///  3) add_lock(Id, hashlock) - the sender calls this function
 ///      to add hashlock to the HTLC.
 ///  4) redeem(Id, secret) - once the src_receiver knows the secret of
 ///      the hashlock hash they can claim the tokens with this function
@@ -145,7 +145,6 @@ pub mod anchor_htlc {
         src_asset: String,
         src_receiver: Pubkey,
         timelock: u64,
-        messenger: Pubkey,
         amount: u64,
         commit_bump: u8,
     ) -> Result<[u8; 32]> {
@@ -180,7 +179,6 @@ pub mod anchor_htlc {
         htlc.secret = [0u8; 32];
         htlc.amount = amount;
         htlc.timelock = timelock;
-        htlc.messenger = messenger;
         htlc.token_contract = *ctx.accounts.token_contract.to_account_info().key;
         htlc.token_wallet = *ctx.accounts.htlc_token_account.to_account_info().key;
         htlc.redeemed = false;
@@ -212,7 +210,6 @@ pub mod anchor_htlc {
         dst_asset: String,
         src_asset: String,
         src_receiver: Pubkey,
-        messenger: Pubkey,
         amount: u64,
         lock_bump: u8,
     ) -> Result<[u8; 32]> {
@@ -248,7 +245,6 @@ pub mod anchor_htlc {
         htlc.secret = [0u8; 32];
         htlc.amount = amount;
         htlc.timelock = timelock;
-        htlc.messenger = messenger;
         htlc.token_contract = *ctx.accounts.token_contract.to_account_info().key;
         htlc.token_wallet = *ctx.accounts.htlc_token_account.to_account_info().key;
         htlc.redeemed = false;
@@ -257,7 +253,7 @@ pub mod anchor_htlc {
         Ok(Id)
     }
 
-    /// @dev Called by the messenger to add hashlock to the HTLC
+    /// @dev Called by the sender to add hashlock to the HTLC
     ///
     /// @param Id of the HTLC.
     /// @param hashlock to be added.
@@ -354,7 +350,6 @@ pub mod anchor_htlc {
         msg!("secret: {:?}", hex::encode(htlc.secret.clone()));
         msg!("amount: {:?}", htlc.amount);
         msg!("timelock: {:?}", htlc.timelock);
-        msg!("messenger: {:?}", htlc.messenger);
         msg!("token_contract: {:?}", htlc.token_contract);
         msg!("token_wallet: {:?}", htlc.token_wallet);
         msg!("redeemed: {:?}", htlc.redeemed);
@@ -371,7 +366,6 @@ pub mod anchor_htlc {
             secret: htlc.secret.clone(),
             amount: htlc.amount,
             timelock: htlc.timelock,
-            messenger: htlc.messenger,
             token_contract: htlc.token_contract,
             token_wallet: htlc.token_wallet,
             redeemed: htlc.redeemed,
@@ -393,7 +387,6 @@ pub struct HTLC {
     pub secret: [u8; 32],
     pub amount: u64,   //TODO: check if this should be u256, though the spl uses u64
     pub timelock: u64, //TODO: check if this should be u256
-    pub messenger: Pubkey,
     pub token_contract: Pubkey,
     pub token_wallet: Pubkey,
     pub redeemed: bool,
@@ -619,7 +612,7 @@ pub struct Refund<'info> {
 #[instruction(Id: [u8;32])]
 pub struct AddLock<'info> {
     #[account(mut)]
-    messenger: Signer<'info>,
+    sender: Signer<'info>,
 
     #[account(mut,
     seeds = [
@@ -628,7 +621,7 @@ pub struct AddLock<'info> {
     bump,
     constraint = !htlc.redeemed @ HTLCError::AlreadyRedeemed,
     constraint = !htlc.refunded @ HTLCError::AlreadyRefunded,
-    constraint = htlc.sender == messenger.key() || htlc.messenger == messenger.key() @ HTLCError::UnauthorizedAccess,
+    constraint = htlc.sender == sender.key() @ HTLCError::UnauthorizedAccess,
     constraint = htlc.hashlock == [0u8;32] @ HTLCError::HashlockAlreadySet,
     )]
     pub htlc: Box<Account<'info, HTLC>>,
@@ -674,7 +667,6 @@ pub struct GetDetails<'info> {
 //     pub src_asset: String,
 //     pub amount: u64,
 //     pub timelock: u64,
-//     pub messenger: Pubkey,
 //     pub token_contract: Pubkey,
 // }
 
