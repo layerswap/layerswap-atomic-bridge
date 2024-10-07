@@ -6,24 +6,6 @@
 //            |___/                            |_|
 
 use starknet::ContractAddress;
-// #[starknet::interface]
-// pub trait IMessenger<TContractState> {
-//     fn notify(
-//         ref self: TContractState,
-//         Id: u256,
-//         hashlock: u256,
-//         dstChain: felt252,
-//         dstAsset: felt252,
-//         dstAddress: felt252,
-//         srcAsset: felt252,
-//         sender: ContractAddress,
-//         srcReceiver: ContractAddress,
-//         amount: u256,
-//         timelock: u256,
-//         tokenContract: ContractAddress,
-//     );
-// }
-
 #[starknet::interface]
 pub trait IHashedTimelockERC20<TContractState> {
     fn commit_hop(
@@ -38,7 +20,6 @@ pub trait IHashedTimelockERC20<TContractState> {
         srcAsset: felt252,
         srcReceiver: ContractAddress,
         timelock: u256,
-        messenger: ContractAddress,
         tokenContract: ContractAddress,
     ) -> u256;
     fn commit(
@@ -50,7 +31,6 @@ pub trait IHashedTimelockERC20<TContractState> {
         srcAsset: felt252,
         srcReceiver: ContractAddress,
         timelock: u256,
-        messenger: ContractAddress,
         tokenContract: ContractAddress,
     ) -> u256;
     fn lock(
@@ -64,7 +44,6 @@ pub trait IHashedTimelockERC20<TContractState> {
         dstChain: felt252,
         dstAddress: ByteArray,
         dstAsset: felt252,
-        messenger: ContractAddress,
         tokenContract: ContractAddress,
     ) -> u256;
     fn redeem(ref self: TContractState, Id: u256, secret: u256) -> bool;
@@ -98,7 +77,6 @@ mod HashedTimelockERC20 {
     //TODO: Check if this should be IERC20SafeDispatcher
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use alexandria_bytes::{Bytes, BytesTrait};
-    // use super::{IMessengerDispatcher, IMessengerDispatcherTrait};
 
     #[storage]
     struct Storage {
@@ -121,7 +99,6 @@ mod HashedTimelockERC20 {
         secret: u256,
         amount: u256,
         timelock: u256,
-        messenger: ContractAddress,
         tokenContract: ContractAddress,
         redeemed: bool,
         refunded: bool,
@@ -152,7 +129,6 @@ mod HashedTimelockERC20 {
         srcAsset: felt252,
         amount: u256,
         timelock: u256,
-        messenger: ContractAddress,
         tokenContract: ContractAddress,
     }
     #[derive(Drop, starknet::Event)]
@@ -170,7 +146,6 @@ mod HashedTimelockERC20 {
         srcAsset: felt252,
         amount: u256,
         timelock: u256,
-        messenger: ContractAddress,
         tokenContract: ContractAddress,
     }
     #[derive(Drop, starknet::Event)]
@@ -178,7 +153,7 @@ mod HashedTimelockERC20 {
         #[key]
         Id: u256,
         #[key]
-        messenger: ContractAddress,
+        sender: ContractAddress,
         hashlock: u256,
         timelock: u256,
     }
@@ -221,7 +196,6 @@ mod HashedTimelockERC20 {
             srcAsset: felt252,
             srcReceiver: ContractAddress,
             timelock: u256,
-            messenger: ContractAddress,
             tokenContract: ContractAddress,
         ) -> u256 {
             assert!(timelock > get_block_timestamp().into(), "Not Future TimeLock");
@@ -259,7 +233,6 @@ mod HashedTimelockERC20 {
                         secret: 0,
                         amount: amount,
                         timelock: timelock,
-                        messenger: messenger,
                         tokenContract: tokenContract,
                         redeemed: false,
                         refunded: false,
@@ -280,7 +253,6 @@ mod HashedTimelockERC20 {
                         srcAsset: srcAsset,
                         amount: amount,
                         timelock: timelock,
-                        messenger: messenger,
                         tokenContract: tokenContract,
                     }
                 );
@@ -296,7 +268,6 @@ mod HashedTimelockERC20 {
             srcAsset: felt252,
             srcReceiver: ContractAddress,
             timelock: u256,
-            messenger: ContractAddress,
             tokenContract: ContractAddress,
         ) -> u256 {
             assert!(timelock > get_block_timestamp().into(), "Not Future TimeLock");
@@ -337,7 +308,6 @@ mod HashedTimelockERC20 {
                         secret: 0,
                         amount: amount,
                         timelock: timelock,
-                        messenger: messenger,
                         tokenContract: tokenContract,
                         redeemed: false,
                         refunded: false,
@@ -358,7 +328,6 @@ mod HashedTimelockERC20 {
                         srcAsset: srcAsset,
                         amount: amount,
                         timelock: timelock,
-                        messenger: messenger,
                         tokenContract: tokenContract,
                     }
                 );
@@ -383,7 +352,6 @@ mod HashedTimelockERC20 {
             dstChain: felt252,
             dstAddress: ByteArray,
             dstAsset: felt252,
-            messenger: ContractAddress,
             tokenContract: ContractAddress,
         ) -> u256 {
             assert!(timelock > get_block_timestamp().into(), "Not Future TimeLock");
@@ -413,7 +381,6 @@ mod HashedTimelockERC20 {
                         secret: 0,
                         amount: amount,
                         timelock: timelock,
-                        messenger: messenger,
                         tokenContract: tokenContract,
                         redeemed: false,
                         refunded: false
@@ -432,29 +399,9 @@ mod HashedTimelockERC20 {
                         srcAsset: srcAsset,
                         amount: amount,
                         timelock: timelock,
-                        messenger: messenger,
                         tokenContract: tokenContract,
                     }
                 );
-            // if !messenger.is_zero() {
-            //     let messenger: IMessengerDispatcher = IMessengerDispatcher {
-            //         contract_address: messenger
-            //     };
-            //     messenger
-            //         .notify(
-            //             Id,
-            //             hashlock,
-            //             dstChain,
-            //             dstAsset,
-            //             dstAddress,
-            //             srcAsset,
-            //             get_caller_address(),
-            //             srcReceiver,
-            //             amount,
-            //             timelock,
-            //             tokenContract,
-            //         );
-            // }
             // let curId = self.lockCounter.read() + 1;
             // self.lockCounter.write(curId);
             // self.lockIds.write(curId, Id);
@@ -520,10 +467,7 @@ mod HashedTimelockERC20 {
             assert!(!htlc.refunded, "Funds Are Already Refunded");
             assert!(!htlc.redeemed, "Funds Are Already Redeemed");
             assert!(htlc.hashlock == 0, "Hashlock Already Set");
-            assert!(
-                get_caller_address() == htlc.sender || get_caller_address() == htlc.messenger,
-                "Not The Messenger"
-            );
+            assert!(get_caller_address() == htlc.sender, "Unauthorized Access");
 
             self.contracts.entry(Id).hashlock.write(hashlock);
             self.contracts.entry(Id).timelock.write(timelock);
@@ -531,7 +475,7 @@ mod HashedTimelockERC20 {
                 .emit(
                     TokenLockAdded {
                         Id: Id,
-                        messenger: get_caller_address(),
+                        sender: get_caller_address(),
                         hashlock: hashlock,
                         timelock: timelock,
                     }
