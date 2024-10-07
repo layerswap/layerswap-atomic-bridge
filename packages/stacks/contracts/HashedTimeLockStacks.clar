@@ -17,25 +17,24 @@
 
 ;; constants
 ;;
-(define-constant err-funds-not-sent (err u100))
-(define-constant err-not-future-timelock (err u101))
-(define-constant err-not-passed-timelock (err u102))
-(define-constant err-lock-already-exists (err u103))
-(define-constant err-htlc-already-exists (err u104))
-(define-constant err-htlc-not-exists (err u105))
-(define-constant err-hashlock-not-match (err u106))
-(define-constant err-already-redeemed (err u107))
-(define-constant err-already-refunded (err u108))
-(define-constant err-no-messenger (err u109))
-(define-constant err-already-locked (err u110))
-(define-constant err-no-allowance (err u111))
-(define-constant err-invalid-signature (err u112))
-(define-constant err-hashlock-already-set (err u113))
-(define-constant err-tx-failed (err u114))
-(define-constant err-in-stacks-or-clarity (err u115))
+(define-constant err-funds-not-sent (err u1000))
+(define-constant err-not-future-timelock (err u1001))
+(define-constant err-not-passed-timelock (err u1002))
+(define-constant err-lock-already-exists (err u1003))
+(define-constant err-htlc-already-exists (err u1004))
+(define-constant err-htlc-not-exists (err u1005))
+(define-constant err-hashlock-not-match (err u1006))
+(define-constant err-already-redeemed (err u1007))
+(define-constant err-already-refunded (err u1008))
+(define-constant err-already-locked (err u1009))
+(define-constant err-no-allowance (err u1010))
+(define-constant err-invalid-signature (err u1011))
+(define-constant err-hashlock-already-set (err u1012))
+(define-constant err-tx-failed (err u1013))
+(define-constant err-in-stacks-or-clarity (err u1014))
 
 
-(define-constant contract-owner tx-sender)
+;; (define-constant contract-owner tx-sender)
 
 ;; data vars
 ;;
@@ -59,7 +58,6 @@
     timelock: uint,
     amount: uint,
     secret: (buff 32),
-    messenger: principal,
     redeemed: bool,
     refunded: bool
   }
@@ -77,7 +75,6 @@
     (src-asset (string-ascii 256))
     (src-receiver principal)
     (timelock uint)
-    (messenger principal)
     (msg-value uint)
 )
   (let (
@@ -99,7 +96,6 @@
           timelock: timelock,
           amount: msg-value,
           secret: 0x0000000000000000000000000000000000000000000000000000000000000000,
-          messenger: messenger,
           redeemed: false,
           refunded: false
         })
@@ -136,7 +132,6 @@
         timelock: (get timelock htlc),
         amount: (get amount htlc),
         secret: (get secret htlc),
-        messenger: (get messenger htlc),
         redeemed: (get redeemed htlc),
         refunded: true  
       }) err-in-stacks-or-clarity)
@@ -156,7 +151,6 @@
     (dst-chain (string-ascii 256))
     (dst-address (string-ascii 256))
     (dst-asset (string-ascii 256))
-    (messenger principal)
     (msg-value uint)
   )
   (let (
@@ -178,13 +172,11 @@
           timelock: timelock,
           amount: msg-value,
           secret: 0x0000000000000000000000000000000000000000000000000000000000000000, 
-          messenger: messenger,
           redeemed: false,
           refunded: false
         })
       err-htlc-already-exists
     )
-    ;;TODO: messenger call
     (try! (stx-transfer? msg-value tx-sender (as-contract tx-sender)))
     (print (unwrap! (map-get? contracts {id:id}) err-in-stacks-or-clarity))
     (ok id)
@@ -213,7 +205,6 @@
         timelock: (get timelock htlc),
         amount: (get amount htlc),
         secret: secret,
-        messenger: (get messenger htlc),
         redeemed: true,
         refunded: (get refunded htlc)  
       }) err-in-stacks-or-clarity)
@@ -227,29 +218,8 @@
   (let (
     (htlc (unwrap! (map-get? contracts {id: id}) err-htlc-not-exists))
   )
-  (asserts! (is-eq false (get refunded htlc)) err-already-refunded)
-  (asserts! (< (unwrap! (get-block-info? time (- block-height u1)) err-in-stacks-or-clarity) (get timelock htlc)) err-not-future-timelock)
-  (asserts! (is-eq 0x0000000000000000000000000000000000000000000000000000000000000000 (get hashlock htlc)) err-hashlock-already-set)
-  (asserts! (or (is-eq tx-sender (get messenger htlc)) (is-eq tx-sender (get sender htlc))) err-no-allowance)
-
-  (asserts! (map-set contracts {id: id}
-      {
-        dstAddress: (get dstAddress htlc),
-        dstChain: (get dstChain htlc),
-        dstAsset: (get dstAsset htlc),
-        srcAsset: (get srcAsset htlc),
-        sender: (get sender htlc),
-        srcReceiver: (get srcReceiver htlc),
-        hashlock: hashlock,
-        timelock: timelock,
-        amount: (get amount htlc),
-        secret: (get secret htlc),
-        messenger: (get messenger htlc),
-        redeemed: (get redeemed htlc),
-        refunded: (get refunded htlc)  
-      }) err-in-stacks-or-clarity)
-    (ok id)
-  )
+  (asserts! (is-eq tx-sender (get sender htlc)) err-no-allowance)
+  (apply-lock id hashlock timelock))
 )
 
 (define-public (add-lock-sig (id uint) (hashlock (buff 32)) (timelock uint) (signature (buff 65)))
@@ -264,7 +234,34 @@
       (signer-addr (unwrap! (principal-of? user-pub-key) err-in-stacks-or-clarity))
     )
     (asserts! (is-eq signer-addr (get sender htlc)) err-invalid-signature)
-    (add-lock id hashlock timelock)
+    (apply-lock id hashlock timelock)
+  )
+)
+
+(define-private (apply-lock (id uint) (hashlock (buff 32)) (timelock uint)) 
+  (let (
+    (htlc (unwrap! (map-get? contracts {id: id}) err-htlc-not-exists))
+  )
+  (asserts! (is-eq false (get refunded htlc)) err-already-refunded)
+  (asserts! (< (unwrap! (get-block-info? time (- block-height u1)) err-in-stacks-or-clarity) timelock) err-not-future-timelock)
+  (asserts! (is-eq 0x0000000000000000000000000000000000000000000000000000000000000000 (get hashlock htlc)) err-hashlock-already-set)
+
+  (asserts! (map-set contracts {id: id}
+      {
+        dstAddress: (get dstAddress htlc),
+        dstChain: (get dstChain htlc),
+        dstAsset: (get dstAsset htlc),
+        srcAsset: (get srcAsset htlc),
+        sender: (get sender htlc),
+        srcReceiver: (get srcReceiver htlc),
+        hashlock: hashlock,
+        timelock: timelock,
+        amount: (get amount htlc),
+        secret: (get secret htlc),
+        redeemed: (get redeemed htlc),
+        refunded: (get refunded htlc)  
+      }) err-in-stacks-or-clarity)
+    (ok id)
   )
 )
 

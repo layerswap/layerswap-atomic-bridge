@@ -16,19 +16,18 @@ const network = new StacksTestnet();
 const secretKey = "753b7cc01a1a2e86221266a154af739463fce51219d97e4f856cd7200c3bd2a601";
 
 const id = "6464";
-const hashlock = Buffer.from("33077a6fd2d083b7918f9f7f5d54788cad71867010632a5d551ac9203571b1d1","hex");
+const hashlock = Buffer.from("88470a9f59f469bf204c9ea2bfc95ff9d7d54adf37cd56fc011e05f857f01c8d","hex");
 const timelock = BigInt(Math.floor(Date.now() / 1000) + 100);
 const srcReceiver = 'ST2D4483A7FHNKV1ANCBWQ4TEDH31ZY1R8AG6WFCA';
 const srcAsset = 'STX';
 const dstChain = 'ethereum';  
 const dstAddress = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e';
 const dstAsset = 'ETH';
-const messenger = 'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG';
-const msgValue = 10;
+const msgValue = 36;
 
 const txOptions = {
   contractAddress: 'ST136VTJP5KQ24EDMKWP0PJ44VVHMGX4KNKAW3XW5',
-  contractName: 'ball',
+  contractName: 'amigo',
   functionName: 'lock',
   functionArgs: [
     uintCV(id),
@@ -39,7 +38,6 @@ const txOptions = {
     stringAsciiCV(dstChain),
     stringAsciiCV(dstAddress),
     stringAsciiCV(dstAsset),
-    principalCV(messenger),
     uintCV(msgValue)
   ],
   senderKey: (secretKey),  

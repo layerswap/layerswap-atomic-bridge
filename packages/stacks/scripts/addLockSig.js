@@ -20,8 +20,8 @@ const network = new StacksTestnet();
 const secretKey = "81cbdb1230785684d0a49a1e069d6c911366db4af6242b0212b3b3335624a2a301";
 
 async function main() {
-  const id_ = "41280769475503092";
-  const hashlock_ = "33077a6fd2d083b7918f9f7f5d54788cad71867010632a5d551ac9203571b1d1";
+  const id_ = "41284274423257323";
+  const hashlock_ = "88470a9f59f469bf204c9ea2bfc95ff9d7d54adf37cd56fc011e05f857f01c8d";
   const timelock_ = BigInt(Math.floor(Date.now() / 1000) + 3600) ;
 
   const id = BigInt(id_);
@@ -30,7 +30,7 @@ async function main() {
   
   const txOptions = {
     contractAddress: 'ST136VTJP5KQ24EDMKWP0PJ44VVHMGX4KNKAW3XW5',
-    contractName: 'stx',
+    contractName: 'marco',
     functionName: 'add-lock-sig',
     functionArgs: [
       uintCV(id),

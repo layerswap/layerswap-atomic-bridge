@@ -2,10 +2,10 @@ import { uintCV, callReadOnlyFunction, getPublicKey,createStacksPrivateKey} from
 import { StacksTestnet } from '@stacks/network';
 
 const contractAddress = 'ST136VTJP5KQ24EDMKWP0PJ44VVHMGX4KNKAW3XW5';
-const contractName = 'stx';
+const contractName = 'marco';
 const functionName = 'get-contract-details';
 
-const uintValue = uintCV(BigInt('41280778475505780'));
+const uintValue = uintCV(BigInt('41284274423257323'));
 
 const network = new StacksTestnet();
 const senderAddress = 'ST136VTJP5KQ24EDMKWP0PJ44VVHMGX4KNKAW3XW5';

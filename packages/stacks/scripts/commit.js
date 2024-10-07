@@ -20,12 +20,11 @@ const dstAddress = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e';
 const srcAsset = 'STX';
 const srcReceiver = 'ST2D4483A7FHNKV1ANCBWQ4TEDH31ZY1R8AG6WFCA';
 const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600);
-const messenger = 'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG';
-const msgValue = 10;
+const msgValue = 33;
 
 const txOptions = {
   contractAddress: 'ST136VTJP5KQ24EDMKWP0PJ44VVHMGX4KNKAW3XW5',
-  contractName: 'stx',
+  contractName: 'jiza',
   functionName: 'commit',
   functionArgs: [
     stringAsciiCV(dstChain),
@@ -34,7 +33,6 @@ const txOptions = {
     stringAsciiCV(srcAsset),
     principalCV(srcReceiver),
     uintCV(timelock),
-    principalCV(messenger),
     uintCV(msgValue)
   ],
   senderKey: (secretKey),  

@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@hirosystems/clarinet-sdk": "^2.3.2",
+    "@hirosystems/clarinet-sdk": "^2.9.0",
     "@stacks/encryption": "^6.16.1",
     "@stacks/keychain": "^4.3.8",
     "@stacks/transactions": "^6.16.1",
