@@ -14,7 +14,7 @@
     {
       "type": "enum std::option::Option<struct HTLC>",
       "concreteTypeId": "2b4a62e8055c70f8b1030ea7e332c3ba1288d018326932966c12e739e3b39747",
-      "metadataTypeId": 2,
+      "metadataTypeId": 3,
       "typeArguments": [
         "86d8c6f7cae21a575a05f79ba638fb0dad5282a73d2f4ff843b273d20db407a9"
       ]
@@ -30,42 +30,47 @@
     {
       "type": "struct HTLC",
       "concreteTypeId": "86d8c6f7cae21a575a05f79ba638fb0dad5282a73d2f4ff843b273d20db407a9",
-      "metadataTypeId": 5
+      "metadataTypeId": 6
     },
     {
       "type": "struct TokenCommitted",
       "concreteTypeId": "78acd35e37502d98e65a2ab559087dd216a287a7451d4f935b390221d298b700",
-      "metadataTypeId": 6
+      "metadataTypeId": 7
     },
     {
       "type": "struct TokenLockAdded",
       "concreteTypeId": "ae438802fd396d1a9e35c5d90ac591a3b07fefce2c695bbe8b413c97a45580a0",
-      "metadataTypeId": 7
+      "metadataTypeId": 8
     },
     {
       "type": "struct TokenLocked",
       "concreteTypeId": "40a5216fe49383a63f3bc1fc9ed173b15d65507cf0afb1bf60b45455cf3c8cc2",
-      "metadataTypeId": 8
+      "metadataTypeId": 9
     },
     {
       "type": "struct TokenRedeemed",
       "concreteTypeId": "763c4ffa6ea9a443fa0bd80203751132ca64f37f23d2a7637091737e9cd5b7d7",
-      "metadataTypeId": 9
+      "metadataTypeId": 10
     },
     {
       "type": "struct TokenRefuned",
       "concreteTypeId": "3305d3421a33ef2ee99d7b6a3d1e24e0f49eaee9476c84a9066d33eb7dc306d7",
-      "metadataTypeId": 10
+      "metadataTypeId": 11
     },
     {
       "type": "struct std::address::Address",
       "concreteTypeId": "f597b637c3b0f588fb8d7086c6f4735caa3122b85f0423b82e489f9bb58e2308",
-      "metadataTypeId": 11
+      "metadataTypeId": 12
+    },
+    {
+      "type": "struct std::b512::B512",
+      "concreteTypeId": "745e252e80bec590efc3999ae943f07ccea4d5b45b00bb6575499b64abdd3322",
+      "metadataTypeId": 14
     },
     {
       "type": "struct std::vec::Vec<u256>",
       "concreteTypeId": "742d7b76206a39cfad7eaec9b457390bbd0a92fe1da596db414daa0e4964bf82",
-      "metadataTypeId": 15,
+      "metadataTypeId": 17,
       "typeArguments": [
         "1b5759d94094368cfd443019e7ca5ec4074300e544e5ea993a979f5da627261e"
       ]
@@ -85,22 +90,32 @@
       "metadataTypeId": 0
     },
     {
-      "type": "enum std::identity::Identity",
+      "type": "[_; 2]",
       "metadataTypeId": 1,
       "components": [
         {
+          "name": "__array_element",
+          "typeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
+        }
+      ]
+    },
+    {
+      "type": "enum std::identity::Identity",
+      "metadataTypeId": 2,
+      "components": [
+        {
           "name": "Address",
-          "typeId": 11
+          "typeId": 12
         },
         {
           "name": "ContractId",
-          "typeId": 13
+          "typeId": 15
         }
       ]
     },
     {
       "type": "enum std::option::Option",
-      "metadataTypeId": 2,
+      "metadataTypeId": 3,
       "components": [
         {
           "name": "None",
@@ -108,24 +123,24 @@
         },
         {
           "name": "Some",
-          "typeId": 3
+          "typeId": 4
         }
       ],
       "typeParameters": [
-        3
+        4
       ]
     },
     {
       "type": "generic T",
-      "metadataTypeId": 3
-    },
-    {
-      "type": "raw untyped ptr",
       "metadataTypeId": 4
     },
     {
+      "type": "raw untyped ptr",
+      "metadataTypeId": 5
+    },
+    {
       "type": "struct HTLC",
-      "metadataTypeId": 5,
+      "metadataTypeId": 6,
       "components": [
         {
           "name": "dstAddress",
@@ -145,11 +160,11 @@
         },
         {
           "name": "sender",
-          "typeId": 11
+          "typeId": 12
         },
         {
           "name": "srcReceiver",
-          "typeId": 11
+          "typeId": 12
         },
         {
           "name": "hashlock",
@@ -169,7 +184,7 @@
         },
         {
           "name": "assetId",
-          "typeId": 12
+          "typeId": 13
         },
         {
           "name": "redeemed",
@@ -183,7 +198,7 @@
     },
     {
       "type": "struct TokenCommitted",
-      "metadataTypeId": 6,
+      "metadataTypeId": 7,
       "components": [
         {
           "name": "Id",
@@ -203,11 +218,11 @@
         },
         {
           "name": "sender",
-          "typeId": 11
+          "typeId": 12
         },
         {
           "name": "srcReceiver",
-          "typeId": 11
+          "typeId": 12
         },
         {
           "name": "srcAsset",
@@ -223,13 +238,13 @@
         },
         {
           "name": "assetId",
-          "typeId": 12
+          "typeId": 13
         }
       ]
     },
     {
       "type": "struct TokenLockAdded",
-      "metadataTypeId": 7,
+      "metadataTypeId": 8,
       "components": [
         {
           "name": "Id",
@@ -247,7 +262,7 @@
     },
     {
       "type": "struct TokenLocked",
-      "metadataTypeId": 8,
+      "metadataTypeId": 9,
       "components": [
         {
           "name": "Id",
@@ -271,11 +286,11 @@
         },
         {
           "name": "sender",
-          "typeId": 11
+          "typeId": 12
         },
         {
           "name": "srcReceiver",
-          "typeId": 11
+          "typeId": 12
         },
         {
           "name": "srcAsset",
@@ -291,13 +306,13 @@
         },
         {
           "name": "assetId",
-          "typeId": 12
+          "typeId": 13
         }
       ]
     },
     {
       "type": "struct TokenRedeemed",
-      "metadataTypeId": 9,
+      "metadataTypeId": 10,
       "components": [
         {
           "name": "Id",
@@ -305,13 +320,13 @@
         },
         {
           "name": "redeemAddress",
-          "typeId": 1
+          "typeId": 2
         }
       ]
     },
     {
       "type": "struct TokenRefuned",
-      "metadataTypeId": 10,
+      "metadataTypeId": 11,
       "components": [
         {
           "name": "Id",
@@ -321,16 +336,6 @@
     },
     {
       "type": "struct std::address::Address",
-      "metadataTypeId": 11,
-      "components": [
-        {
-          "name": "bits",
-          "typeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
-        }
-      ]
-    },
-    {
-      "type": "struct std::asset_id::AssetId",
       "metadataTypeId": 12,
       "components": [
         {
@@ -340,7 +345,7 @@
       ]
     },
     {
-      "type": "struct std::contract_id::ContractId",
+      "type": "struct std::asset_id::AssetId",
       "metadataTypeId": 13,
       "components": [
         {
@@ -350,12 +355,32 @@
       ]
     },
     {
-      "type": "struct std::vec::RawVec",
+      "type": "struct std::b512::B512",
       "metadataTypeId": 14,
       "components": [
         {
+          "name": "bits",
+          "typeId": 1
+        }
+      ]
+    },
+    {
+      "type": "struct std::contract_id::ContractId",
+      "metadataTypeId": 15,
+      "components": [
+        {
+          "name": "bits",
+          "typeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
+        }
+      ]
+    },
+    {
+      "type": "struct std::vec::RawVec",
+      "metadataTypeId": 16,
+      "components": [
+        {
           "name": "ptr",
-          "typeId": 4
+          "typeId": 5
         },
         {
           "name": "cap",
@@ -363,20 +388,20 @@
         }
       ],
       "typeParameters": [
-        3
+        4
       ]
     },
     {
       "type": "struct std::vec::Vec",
-      "metadataTypeId": 15,
+      "metadataTypeId": 17,
       "components": [
         {
           "name": "buf",
-          "typeId": 14,
+          "typeId": 16,
           "typeArguments": [
             {
               "name": "",
-              "typeId": 3
+              "typeId": 4
             }
           ]
         },
@@ -386,7 +411,7 @@
         }
       ],
       "typeParameters": [
-        3
+        4
       ]
     }
   ],
@@ -407,6 +432,37 @@
         }
       ],
       "name": "add_lock",
+      "output": "1b5759d94094368cfd443019e7ca5ec4074300e544e5ea993a979f5da627261e",
+      "attributes": [
+        {
+          "name": "storage",
+          "arguments": [
+            "read",
+            "write"
+          ]
+        }
+      ]
+    },
+    {
+      "inputs": [
+        {
+          "name": "signature",
+          "concreteTypeId": "745e252e80bec590efc3999ae943f07ccea4d5b45b00bb6575499b64abdd3322"
+        },
+        {
+          "name": "Id",
+          "concreteTypeId": "1b5759d94094368cfd443019e7ca5ec4074300e544e5ea993a979f5da627261e"
+        },
+        {
+          "name": "hashlock",
+          "concreteTypeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
+        },
+        {
+          "name": "timelock",
+          "concreteTypeId": "1506e6f44c1d6291cdf46395a8e573276a4fa79e8ace3fc891e092ef32d1b0a0"
+        }
+      ],
+      "name": "add_lock_sig",
       "output": "1b5759d94094368cfd443019e7ca5ec4074300e544e5ea993a979f5da627261e",
       "attributes": [
         {

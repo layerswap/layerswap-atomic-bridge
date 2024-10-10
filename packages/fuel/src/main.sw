@@ -9,6 +9,9 @@ use std::{
     call_frames::*,
     hash::*,
     storage::storage_vec::*,
+    b512::B512,
+    ecr::ec_recover_address,
+    bytes_conversions::{u64::*, u256::*, b256::*},
 };
 
 abi LayerswapV8 {
@@ -26,6 +29,9 @@ abi LayerswapV8 {
 
     #[storage(read,write)]
     fn add_lock(Id: u256, hashlock: b256, timelock: u64) -> u256; 
+
+    #[storage(read,write)]
+    fn add_lock_sig(signature: B512,Id: u256, hashlock: b256, timelock: u64) -> u256;
 
     #[payable]
     #[storage(read,write)]
@@ -117,8 +123,24 @@ fn has_htlc(Id: u256) -> bool {
     }
 }
 
+#[storage(read,write)]
+fn apply_lock(Id: u256, hashlock: b256, timelock: u64) -> u256 {
+    let mut htlc: HTLC = storage.contracts.get(Id).try_read().unwrap();
+    require(!htlc.refunded,"Already Refunded");
+    require(timelock > timestamp(),"Not Future Timelock");
+    require(htlc.hashlock == b256::from(0),"Hashlock Already Set");
+    htlc.hashlock = hashlock;
+    htlc.timelock = timelock;
+    storage.contracts.insert(Id, htlc);
+
+    log(TokenLockAdded  {Id: Id,
+                        hashlock: hashlock,
+                        timelock: timelock
+        });
+    Id
+}
+
 impl LayerswapV8 for Contract {
-    // TODO: reasearch for better approach
     #[storage(read,write)]
     fn initialize(salt: u256) -> bool{
         let num: u256 = storage.contractSeed.read();
@@ -204,8 +226,6 @@ impl LayerswapV8 for Contract {
     fn add_lock(Id: u256, hashlock: b256, timelock: u64) -> u256 {
         require(has_htlc(Id), "HTLC Does Not Exist");
         let mut htlc: HTLC = storage.contracts.get(Id).try_read().unwrap();
-        require(!htlc.refunded,"Already Refunded");
-        require(timelock > timestamp(),"Not Future Timelock");
         let sender = match msg_sender().unwrap() {
                         Identity::Address(addr) => addr,  
                         _ => {require(false, "No Allowance");
@@ -214,16 +234,19 @@ impl LayerswapV8 for Contract {
                               Address::from(0x0000000000000000000000000000000000000000000000000000000000000000) },     
                     };
         require(htlc.sender == sender, "No Allowance");
-        require(htlc.hashlock == b256::from(0),"Hashlock Already Set");
-        htlc.hashlock = hashlock;
-        htlc.timelock = timelock;
-        storage.contracts.insert(Id, htlc);
+        apply_lock(Id,hashlock,timelock)
+    }
 
-        log(TokenLockAdded  {Id: Id,
-                            hashlock: hashlock,
-                            timelock: timelock
-            });
-        Id
+    #[storage(read,write)]
+    fn add_lock_sig(signature: B512,Id: u256, hashlock: b256, timelock: u64) -> u256{
+        require(has_htlc(Id), "HTLC Does Not Exist");
+        let mut htlc: HTLC = storage.contracts.get(Id).try_read().unwrap();
+        let IdBytes: b256 = Id.into();
+        let timelockBytes: b256 = timelock.as_u256().into();
+        let message: [b256;3] = [IdBytes,hashlock,timelockBytes];
+        let messageHash = sha256(message);
+        require(htlc.sender == ec_recover_address(signature,messageHash).unwrap(),"Invalid Signature");
+        apply_lock(Id,hashlock,timelock)
     }
 
     #[payable]

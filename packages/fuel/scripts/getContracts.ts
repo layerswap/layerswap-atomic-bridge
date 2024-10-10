@@ -5,7 +5,7 @@ import * as path from 'path';
 const filePath = path.join(__dirname, '../out/release/fuel-abi.json');
 const contractAbi = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
-const contractAddressString = '0xed0b3a20a5a0f6e0f6fec1a9f27630fde03fba04cb304c575543946eaf3d8756';
+const contractAddressString = '0x00f3dfc843089523a41a08a611ad39eef57de6ebdb58915840ed81d3fe9a5476';
 
 async function getWalletBalances() {
   const provider = await Provider.create('https://testnet.fuel.network/v1/graphql');
