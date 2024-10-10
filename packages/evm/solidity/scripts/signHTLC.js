@@ -5,8 +5,8 @@ async function signHTLC() {
     const domain = {
         name: "LayerswapV8",
         version: "1",
-        chainId: 421614,
-        verifyingContract: "0x3E3Abe0752A588e78b6F8926631bBb453d2bddCa",
+        chainId: 13473,
+        verifyingContract: "0xeAdCC212315Fd1Ef9f85F2778517bca30E91F6D6",
         salt: "0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0"
     };
 
@@ -28,18 +28,20 @@ async function signHTLC() {
     console.log('Computed Domain Separator:', domainSeparator);
 
     const types = {
-        lockCommitmentMsg: [
+        addLockMsg: [
+            { name: "Id", type: "bytes32" },
             { name: "hashlock", type: "bytes32" },
             { name: "timelock", type: "uint256" },
         ],
     };
 
     const message = {
-        hashlock: "0x928a260e1022cffc1b90018ab7f80ed5b2aef0b25d8c7c6825348811c30c7b8a",
-        timelock: 1724673591,
+        Id: "0x524a8f4ca981947dff186948faaaea46a5722292a31191c759082b46b6b746ad",
+        hashlock: "0xa388e8a0625bf6f2630e44283a57a4d6d416c39a7b06fbd3a54a827d73bea05c",
+        timelock: 1726156825,
     };
 
-    const privateKey =  '0xe9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9';
+    const privateKey =  '01d3a69085f30b41b28ec56f8759784c7711d6311e53fb9e9d7e589d94196728';
     const wallet = new ethers.Wallet(privateKey);
 
     const signature = await wallet.signTypedData(domain, types, message);

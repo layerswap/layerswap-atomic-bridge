@@ -1,1 +1,1 @@
-export * from '../build/HashedTimeLockTON/tact_HashedTimeLockTON';
+export * from '../build/HashedTimeLockTON/tact_LayerswapV8';
