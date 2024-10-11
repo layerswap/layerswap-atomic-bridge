@@ -597,7 +597,14 @@ pub struct GetDetails<'info> {
     )]
     pub htlc: Box<Account<'info, HTLC>>,
 }
+#[derive(Accounts)]
 
+pub struct GetCommitId<'info> {
+    ///CHECK: The sender
+    pub sender: UncheckedAccount<'info>,
+    ///CHECK: The reciever
+    pub receiver: UncheckedAccount<'info>,
+}
 // #[event]
 // pub struct TokenCommitted {
 //     pub commitId: [u8; 32],
