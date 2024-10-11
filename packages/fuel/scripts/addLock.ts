@@ -5,7 +5,7 @@ import * as path from 'path';
 const filePath = path.join(__dirname, '../out/release/fuel-abi.json');
 const contractAbi = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
-const contractAddressString = '0x00f3dfc843089523a41a08a611ad39eef57de6ebdb58915840ed81d3fe9a5476';
+const contractAddressString = '0xc58d73c0515ff40d01b919b3ed9fb16891a6b631ca57f5613e6ec26729e81305';
 
 async function getWalletBalances() {
   const provider = await Provider.create('https://testnet.fuel.network/v1/graphql');
@@ -16,7 +16,7 @@ async function getWalletBalances() {
 
   const contractAddress = Address.fromB256(contractAddressString);
   const contractInstance = new Contract(contractAddress, contractAbi, wallet);
-  const Id = 54079385413661825002756453772014361870896886140818619726462513491823303364787n;
+  const Id = 1n;
   const hashlock = "0x3b7674662e6569056cef73dab8b7809085a32beda0e8eb9e9b580cfc2af22a55";
   const currentUnixTime = Math.floor(Date.now() / 1000) + 3600;
   const timelock = DateTime.fromUnixSeconds(currentUnixTime).toTai64();           

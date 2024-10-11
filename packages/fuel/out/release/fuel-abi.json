@@ -38,39 +38,34 @@
       "metadataTypeId": 7
     },
     {
-      "type": "struct TokenLockAdded",
-      "concreteTypeId": "ae438802fd396d1a9e35c5d90ac591a3b07fefce2c695bbe8b413c97a45580a0",
-      "metadataTypeId": 8
-    },
-    {
       "type": "struct TokenLocked",
       "concreteTypeId": "40a5216fe49383a63f3bc1fc9ed173b15d65507cf0afb1bf60b45455cf3c8cc2",
-      "metadataTypeId": 9
+      "metadataTypeId": 8
     },
     {
       "type": "struct TokenRedeemed",
       "concreteTypeId": "763c4ffa6ea9a443fa0bd80203751132ca64f37f23d2a7637091737e9cd5b7d7",
-      "metadataTypeId": 10
+      "metadataTypeId": 9
     },
     {
       "type": "struct TokenRefuned",
       "concreteTypeId": "3305d3421a33ef2ee99d7b6a3d1e24e0f49eaee9476c84a9066d33eb7dc306d7",
-      "metadataTypeId": 11
+      "metadataTypeId": 10
     },
     {
       "type": "struct std::address::Address",
       "concreteTypeId": "f597b637c3b0f588fb8d7086c6f4735caa3122b85f0423b82e489f9bb58e2308",
-      "metadataTypeId": 12
+      "metadataTypeId": 11
     },
     {
       "type": "struct std::b512::B512",
       "concreteTypeId": "745e252e80bec590efc3999ae943f07ccea4d5b45b00bb6575499b64abdd3322",
-      "metadataTypeId": 14
+      "metadataTypeId": 13
     },
     {
       "type": "struct std::vec::Vec<u256>",
       "concreteTypeId": "742d7b76206a39cfad7eaec9b457390bbd0a92fe1da596db414daa0e4964bf82",
-      "metadataTypeId": 17,
+      "metadataTypeId": 16,
       "typeArguments": [
         "1b5759d94094368cfd443019e7ca5ec4074300e544e5ea993a979f5da627261e"
       ]
@@ -105,11 +100,11 @@
       "components": [
         {
           "name": "Address",
-          "typeId": 12
+          "typeId": 11
         },
         {
           "name": "ContractId",
-          "typeId": 15
+          "typeId": 14
         }
       ]
     },
@@ -160,11 +155,11 @@
         },
         {
           "name": "sender",
-          "typeId": 12
+          "typeId": 11
         },
         {
           "name": "srcReceiver",
-          "typeId": 12
+          "typeId": 11
         },
         {
           "name": "hashlock",
@@ -184,7 +179,7 @@
         },
         {
           "name": "assetId",
-          "typeId": 13
+          "typeId": 12
         },
         {
           "name": "redeemed",
@@ -218,11 +213,11 @@
         },
         {
           "name": "sender",
-          "typeId": 12
+          "typeId": 11
         },
         {
           "name": "srcReceiver",
-          "typeId": 12
+          "typeId": 11
         },
         {
           "name": "srcAsset",
@@ -238,31 +233,13 @@
         },
         {
           "name": "assetId",
-          "typeId": 13
-        }
-      ]
-    },
-    {
-      "type": "struct TokenLockAdded",
-      "metadataTypeId": 8,
-      "components": [
-        {
-          "name": "Id",
-          "typeId": "1b5759d94094368cfd443019e7ca5ec4074300e544e5ea993a979f5da627261e"
-        },
-        {
-          "name": "hashlock",
-          "typeId": "7c5ee1cecf5f8eacd1284feb5f0bf2bdea533a51e2f0c9aabe9236d335989f3b"
-        },
-        {
-          "name": "timelock",
-          "typeId": "1506e6f44c1d6291cdf46395a8e573276a4fa79e8ace3fc891e092ef32d1b0a0"
+          "typeId": 12
         }
       ]
     },
     {
       "type": "struct TokenLocked",
-      "metadataTypeId": 9,
+      "metadataTypeId": 8,
       "components": [
         {
           "name": "Id",
@@ -286,11 +263,11 @@
         },
         {
           "name": "sender",
-          "typeId": 12
+          "typeId": 11
         },
         {
           "name": "srcReceiver",
-          "typeId": 12
+          "typeId": 11
         },
         {
           "name": "srcAsset",
@@ -306,13 +283,13 @@
         },
         {
           "name": "assetId",
-          "typeId": 13
+          "typeId": 12
         }
       ]
     },
     {
       "type": "struct TokenRedeemed",
-      "metadataTypeId": 10,
+      "metadataTypeId": 9,
       "components": [
         {
           "name": "Id",
@@ -326,7 +303,7 @@
     },
     {
       "type": "struct TokenRefuned",
-      "metadataTypeId": 11,
+      "metadataTypeId": 10,
       "components": [
         {
           "name": "Id",
@@ -336,7 +313,7 @@
     },
     {
       "type": "struct std::address::Address",
-      "metadataTypeId": 12,
+      "metadataTypeId": 11,
       "components": [
         {
           "name": "bits",
@@ -346,7 +323,7 @@
     },
     {
       "type": "struct std::asset_id::AssetId",
-      "metadataTypeId": 13,
+      "metadataTypeId": 12,
       "components": [
         {
           "name": "bits",
@@ -356,7 +333,7 @@
     },
     {
       "type": "struct std::b512::B512",
-      "metadataTypeId": 14,
+      "metadataTypeId": 13,
       "components": [
         {
           "name": "bits",
@@ -366,7 +343,7 @@
     },
     {
       "type": "struct std::contract_id::ContractId",
-      "metadataTypeId": 15,
+      "metadataTypeId": 14,
       "components": [
         {
           "name": "bits",
@@ -376,7 +353,7 @@
     },
     {
       "type": "struct std::vec::RawVec",
-      "metadataTypeId": 16,
+      "metadataTypeId": 15,
       "components": [
         {
           "name": "ptr",
@@ -393,11 +370,11 @@
     },
     {
       "type": "struct std::vec::Vec",
-      "metadataTypeId": 17,
+      "metadataTypeId": 16,
       "components": [
         {
           "name": "buf",
-          "typeId": 16,
+          "typeId": 15,
           "typeArguments": [
             {
               "name": "",
@@ -672,16 +649,12 @@
       "concreteTypeId": "8c25cb3686462e9a86d2883c5688a22fe738b0bbc85f458d2d2b5f3f667c6d5a"
     },
     {
-      "logId": "12557029732458786074",
-      "concreteTypeId": "ae438802fd396d1a9e35c5d90ac591a3b07fefce2c695bbe8b413c97a45580a0"
+      "logId": "4658166154044605350",
+      "concreteTypeId": "40a5216fe49383a63f3bc1fc9ed173b15d65507cf0afb1bf60b45455cf3c8cc2"
     },
     {
       "logId": "8695557382153973144",
       "concreteTypeId": "78acd35e37502d98e65a2ab559087dd216a287a7451d4f935b390221d298b700"
-    },
-    {
-      "logId": "4658166154044605350",
-      "concreteTypeId": "40a5216fe49383a63f3bc1fc9ed173b15d65507cf0afb1bf60b45455cf3c8cc2"
     },
     {
       "logId": "8519772532095165507",

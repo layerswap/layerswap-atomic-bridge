@@ -82,11 +82,6 @@ pub struct TokenLocked {Id: u256,
                         assetId: AssetId
 }
 
-pub struct TokenLockAdded  {Id: u256,
-                            hashlock: b256,
-                            timelock: u64
-}
-
 pub struct TokenRefuned { Id: u256 }
 
 pub struct TokenRedeemed { Id: u256,
@@ -133,9 +128,17 @@ fn apply_lock(Id: u256, hashlock: b256, timelock: u64) -> u256 {
     htlc.timelock = timelock;
     storage.contracts.insert(Id, htlc);
 
-    log(TokenLockAdded  {Id: Id,
-                        hashlock: hashlock,
-                        timelock: timelock
+    log(TokenLocked {   Id: Id, 
+                        hashlock: hashlock, 
+                        dstChain: htlc.dstChain,
+                        dstAddress: htlc.dstAddress,
+                        dstAsset: htlc.dstAddress,
+                        sender: htlc.sender, 
+                        srcReceiver: htlc.srcReceiver, 
+                        srcAsset: htlc.srcAsset,
+                        amount: htlc.amount,
+                        timelock: timelock,
+                        assetId: htlc.assetId
         });
     Id
 }
