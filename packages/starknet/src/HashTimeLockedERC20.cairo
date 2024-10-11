@@ -109,7 +109,6 @@ mod HashedTimelockERC20 {
     enum Event {
         TokenCommitted: TokenCommitted,
         TokenLocked: TokenLocked,
-        TokenLockAdded: TokenLockAdded,
         TokenRedeemed: TokenRedeemed,
         TokenRefunded: TokenRefunded,
     }
@@ -147,15 +146,6 @@ mod HashedTimelockERC20 {
         amount: u256,
         timelock: u256,
         tokenContract: ContractAddress,
-    }
-    #[derive(Drop, starknet::Event)]
-    struct TokenLockAdded {
-        #[key]
-        Id: u256,
-        #[key]
-        sender: ContractAddress,
-        hashlock: u256,
-        timelock: u256,
     }
     #[derive(Drop, starknet::Event)]
     struct TokenRedeemed {
@@ -473,11 +463,18 @@ mod HashedTimelockERC20 {
             self.contracts.entry(Id).timelock.write(timelock);
             self
                 .emit(
-                    TokenLockAdded {
+                    TokenLocked {
                         Id: Id,
-                        sender: get_caller_address(),
                         hashlock: hashlock,
+                        dstChain: htlc.dstChain,
+                        dstAddress: htlc.dstAddress,
+                        dstAsset: htlc.dstAsset,
+                        sender: get_caller_address(),
+                        srcReceiver: htlc.srcReceiver,
+                        srcAsset: htlc.srcAsset,
+                        amount: htlc.amount,
                         timelock: timelock,
+                        tokenContract: htlc.tokenContract,
                     }
                 );
             Id
