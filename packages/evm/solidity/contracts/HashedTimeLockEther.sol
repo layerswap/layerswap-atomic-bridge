@@ -90,7 +90,6 @@ contract LayerswapV8 {
     uint256 timelock
   );
 
-  event TokenLockAdded(bytes32 indexed Id, bytes32 hashlock, uint256 timelock);
   event TokenRefunded(bytes32 indexed Id);
   event TokenRedeemed(bytes32 indexed Id, address redeemAddress);
   event LowLevelErrorOccurred(bytes lowLevelData);
@@ -179,7 +178,18 @@ contract LayerswapV8 {
       } else {
         require(false,"Hashlock Already Set");
       }
-      emit TokenLockAdded(Id, hashlock, timelock);
+      emit TokenLocked(
+                        Id,
+                        hashlock,
+                        htlc.dstChain,
+                        htlc.dstAddress,
+                        htlc.dstAsset,
+                        htlc.sender,
+                        htlc.srcReceiver,
+                        htlc.srcAsset,
+                        htlc.amount,
+                        timelock
+                      );
       return Id;
     } else {
       require(false,"No Allowance"); 
