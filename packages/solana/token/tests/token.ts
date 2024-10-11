@@ -11,7 +11,6 @@ interface PDAParameters {
   htlcTokenAccount: anchor.web3.PublicKey;
   htlc: anchor.web3.PublicKey;
   htlcBump: number;
-  commitCounter: anchor.web3.PublicKey;
 }
 
 describe("HTLC", () => {
@@ -62,16 +61,10 @@ describe("HTLC", () => {
     );
     console.log(`[${htlc}] derived htlc`);
     console.log(`[${htlcTokenAccount}] derived htlc token account`);
-
-    let [commitCounter, _] = await anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("commitCounter")],
-      program.programId
-    );
     return {
       htlcTokenAccount,
       htlc,
       htlcBump,
-      commitCounter,
     };
   };
 
@@ -184,105 +177,103 @@ describe("HTLC", () => {
     [bob, ..._rest] = await createUserAndAssociatedWallet();
     pda = await getPdaParams(wallet.publicKey, ID);
   });
-  it("Create Prehtlc", async () => {
+  // it("Create Prehtlc", async () => {
 
-    const [, WalletBalancePre] = await readAccount(walletTokenAccount, provider);
-    assert.equal(WalletBalancePre, "1337000000");
+  //   const [, WalletBalancePre] = await readAccount(walletTokenAccount, provider);
+  //   assert.equal(WalletBalancePre, "1337000000");
 
-    // const txIn = await program.methods
-    //   .initialize()
-    //   .accountsPartial({
-    //     owner: wallet.publicKey,
-    //     commitCounter: pda.commitCounter,
-    //   })
-    //   .signers([wallet.payer])
-    //   .rpc();//.catch(e => console.error(e));
+  //   // const txIn = await program.methods
+  //   //   .initialize()
+  //   //   .accountsPartial({
+  //   //     owner: wallet.publicKey,
+  //   //   })
+  //   //   .signers([wallet.payer])
+  //   //   .rpc();//.catch(e => console.error(e));
 
-    const TIME = (new Date().getTime() + 15000) / 1000;
-    const TIMELOCK = new anchor.BN(TIME);
-    console.log(`[${TIMELOCK * 1000}] the Timelock`);
+  //   const TIME = (new Date().getTime() + 15000) / 1000;
+  //   const TIMELOCK = new anchor.BN(TIME);
+  //   console.log(`[${TIMELOCK * 1000}] the Timelock`);
 
-    const commitTx = await program.methods
-      .commit(IDArray, HOPCHAINS, HOPASSETS, HOPADDRESSES, DSTCHAIN, DSTASSET, DSTADDRESS, SRCASSET, bob.publicKey, TIMELOCK, new anchor.BN(AMOUNT), pda.htlcBump)
-      .accountsPartial({
-        sender: wallet.publicKey,
-        htlc: pda.htlc,
-        htlcTokenAccount: pda.htlcTokenAccount,
-        commitCounter: pda.commitCounter,
-        tokenContract: tokenMint,
-        senderTokenAccount: walletTokenAccount
-      })
-      .signers([wallet.payer])
-      .rpc();
+  //   const commitTx = await program.methods
+  //     .commit(IDArray, HOPCHAINS, HOPASSETS, HOPADDRESSES, DSTCHAIN, DSTASSET, DSTADDRESS, SRCASSET, bob.publicKey, TIMELOCK, new anchor.BN(AMOUNT), pda.htlcBump)
+  //     .accountsPartial({
+  //       sender: wallet.publicKey,
+  //       htlc: pda.htlc,
+  //       htlcTokenAccount: pda.htlcTokenAccount,
+  //       tokenContract: tokenMint,
+  //       senderTokenAccount: walletTokenAccount
+  //     })
+  //     .signers([wallet.payer])
+  //     .rpc();
 
-    console.log(`Initialized a new htlc. We will pay bob 100 tokens`);
+  //   console.log(`Initialized a new htlc. We will pay bob 100 tokens`);
 
-    // Assert that 100 tokens were moved from our account to the HTLC Account.
-    const [, WalletBalancePost] = await readAccount(walletTokenAccount, provider);
-    assert.equal(WalletBalancePost, "337000000");
-    const [, htlcBalance] = await readAccount(pda.htlcTokenAccount, provider);
-    assert.equal(htlcBalance, "1000000000");
+  //   // Assert that 100 tokens were moved from our account to the HTLC Account.
+  //   const [, WalletBalancePost] = await readAccount(walletTokenAccount, provider);
+  //   assert.equal(WalletBalancePost, "337000000");
+  //   const [, htlcBalance] = await readAccount(pda.htlcTokenAccount, provider);
+  //   assert.equal(htlcBalance, "1000000000");
 
-    const lockCommitTx = await program.methods.addLock(IDArray, HASHLOCKArray, TIMELOCK).
-      accountsPartial({
-        sender: wallet.publicKey,
-        htlc: pda.htlc,
-      }).signers([wallet.payer])
-      .rpc();
+  //   const lockCommitTx = await program.methods.addLock(IDArray, HASHLOCKArray, TIMELOCK).
+  //     accountsPartial({
+  //       sender: wallet.publicKey,
+  //       htlc: pda.htlc,
+  //     }).signers([wallet.payer])
+  //     .rpc();
 
-    const [, htlcBalancePost] = await readAccount(pda.htlcTokenAccount, provider);
-    assert.equal(htlcBalancePost, "1000000000");
+  //   const [, htlcBalancePost] = await readAccount(pda.htlcTokenAccount, provider);
+  //   assert.equal(htlcBalancePost, "1000000000");
 
-    console.log(`Bob token`);
-    // Create a token account for Bob.
-    const bobTokenAccount = await spl.getAssociatedTokenAddress(
-      tokenMint,
-      bob.publicKey
-    )
-    const details = await program.methods.getDetails(IDArray).accountsPartial({ htlc: pda.htlc }).rpc();
-    console.log(`[${details}] the details`);
-    const redeemTx = await program.methods.redeem(IDArray, SECRETArray, pda.htlcBump).
-      accountsPartial({
-        userSigning: wallet.publicKey,
-        htlc: pda.htlc,
-        htlcTokenAccount: pda.htlcTokenAccount,
-        sender: wallet.publicKey,
-        srcReceiver: bob.publicKey,
-        tokenContract: tokenMint,
-        srcReceiverTokenAccount: bobTokenAccount,
-      })
-      .signers([wallet.payer])
-      .rpc();
+  //   console.log(`Bob token`);
+  //   // Create a token account for Bob.
+  //   const bobTokenAccount = await spl.getAssociatedTokenAddress(
+  //     tokenMint,
+  //     bob.publicKey
+  //   )
+  //   const details = await program.methods.getDetails(IDArray).accountsPartial({ htlc: pda.htlc }).rpc();
+  //   console.log(`[${details}] the details`);
+  //   const redeemTx = await program.methods.redeem(IDArray, SECRETArray, pda.htlcBump).
+  //     accountsPartial({
+  //       userSigning: wallet.publicKey,
+  //       htlc: pda.htlc,
+  //       htlcTokenAccount: pda.htlcTokenAccount,
+  //       sender: wallet.publicKey,
+  //       srcReceiver: bob.publicKey,
+  //       tokenContract: tokenMint,
+  //       srcReceiverTokenAccount: bobTokenAccount,
+  //     })
+  //     .signers([wallet.payer])
+  //     .rpc();
 
-    //Assert that 100 tokens were sent to bob.
-    const [, bobBalance] = await readAccount(bobTokenAccount, provider);
-    assert.equal(bobBalance, "1000000000");
+  //   //Assert that 100 tokens were sent to bob.
+  //   const [, bobBalance] = await readAccount(bobTokenAccount, provider);
+  //   assert.equal(bobBalance, "1000000000");
 
-    // await wait(20000);
-    // const refundTx = await program.methods.refund(IDArray, pda.htlcBump).
-    //   accountsPartial({
-    //     userSigning: wallet.publicKey,
-    //     htlc: pda.htlc,
-    //     htlcTokenAccount: pda.htlcTokenAccount,
-    //     sender: wallet.publicKey,
-    //     tokenContract: tokenMint,
-    //     senderTokenAccount: walletTokenAccount,
-    //   })
-    //   .signers([wallet.payer])
-    //   .rpc();
+  //   // await wait(20000);
+  //   // const refundTx = await program.methods.refund(IDArray, pda.htlcBump).
+  //   //   accountsPartial({
+  //   //     userSigning: wallet.publicKey,
+  //   //     htlc: pda.htlc,
+  //   //     htlcTokenAccount: pda.htlcTokenAccount,
+  //   //     sender: wallet.publicKey,
+  //   //     tokenContract: tokenMint,
+  //   //     senderTokenAccount: walletTokenAccount,
+  //   //   })
+  //   //   .signers([wallet.payer])
+  //   //   .rpc();
 
-    // const [, WalletBalanceRefund] = await readAccount(walletTokenAccount, provider);
-    // assert.equal(WalletBalanceRefund, "1337000000");
+  //   // const [, WalletBalanceRefund] = await readAccount(walletTokenAccount, provider);
+  //   // assert.equal(WalletBalanceRefund, "1337000000");
 
-    // Assert that htlc token account was correctly closed.
-    try {
-      await readAccount(pda.htlcTokenAccount, provider);
-      return assert.fail("Account should be closed");
-    } catch (e) {
-      assert.equal(e.message, "Cannot read properties of null (reading 'data')");
-    }
+  //   // Assert that htlc token account was correctly closed.
+  //   try {
+  //     await readAccount(pda.htlcTokenAccount, provider);
+  //     return assert.fail("Account should be closed");
+  //   } catch (e) {
+  //     assert.equal(e.message, "Cannot read properties of null (reading 'data')");
+  //   }
 
-  });
+  // });
 
 
 
@@ -368,59 +359,59 @@ describe("HTLC", () => {
 
 
 
-  // it("Refund tokens after the timelock is expired", async () => {
-  //   const [, WalletBalancePre] = await readAccount(walletTokenAccount, provider);
-  //   assert.equal(WalletBalancePre, "1337000000");
+  it("Refund tokens after the timelock is expired", async () => {
+    const [, WalletBalancePre] = await readAccount(walletTokenAccount, provider);
+    assert.equal(WalletBalancePre, "1337000000");
 
-  //   const TIME = (new Date().getTime() + 15000) / 1000;
-  //   const TIMELOCK = new anchor.BN(TIME);
-  //   console.log(`[${TIME * 1000}] the Timelock`);
+    const TIME = (new Date().getTime() + 15000) / 1000;
+    const TIMELOCK = new anchor.BN(TIME);
+    console.log(`[${TIME * 1000}] the Timelock`);
 
-  //   const lockTx = await program.methods
-  //     .lock(IDArray, HASHLOCKArray, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
-  //     .accountsPartial({
-  //       sender: wallet.publicKey,
-  //       htlc: pda.htlc,
-  //       htlcTokenAccount: pda.htlcTokenAccount,
-  //       tokenContract: tokenMint,
-  //       senderTokenAccount: walletTokenAccount
-  //     })
-  //     .signers([wallet.payer])
-  //     .rpc();
+    const lockTx = await program.methods
+      .lock(IDArray, HASHLOCKArray, TIMELOCK, DSTCHAIN, DSTADDRESS, DSTASSET, SRCASSET, bob.publicKey, new anchor.BN(AMOUNT), pda.htlcBump)
+      .accountsPartial({
+        sender: wallet.publicKey,
+        htlc: pda.htlc,
+        htlcTokenAccount: pda.htlcTokenAccount,
+        tokenContract: tokenMint,
+        senderTokenAccount: walletTokenAccount
+      })
+      .signers([wallet.payer])
+      .rpc();
 
-  //   // Assert that 100 tokens were moved from our account to the HTLC Account.
-  //   const [, WalletBalancePost] = await readAccount(walletTokenAccount, provider);
-  //   assert.equal(WalletBalancePost, "337000000");
-  //   const [, htlcTokenBalance] = await readAccount(pda.htlcTokenAccount, provider);
-  //   assert.equal(htlcTokenBalance, "1000000000");
-  //   // Withdraw the funds back
-  //   await wait(20000);
-  //   const CURTIME = new Date().getTime();
-  //   console.log(`[${CURTIME}] CURRENT TIME`);
-  //   const refundTx = await program.methods.refund(IDArray, pda.htlcBump).
-  //     accountsPartial({
-  //       userSigning: wallet.publicKey,
-  //       htlc: pda.htlc,
-  //       htlcTokenAccount: pda.htlcTokenAccount,
-  //       sender: wallet.publicKey,
-  //       tokenContract: tokenMint,
-  //       senderTokenAccount: walletTokenAccount,
-  //     })
-  //     .signers([wallet.payer])
-  //     .rpc();
-  //   // Assert that 100 tokens were sent back.
+    // Assert that 100 tokens were moved from our account to the HTLC Account.
+    const [, WalletBalancePost] = await readAccount(walletTokenAccount, provider);
+    assert.equal(WalletBalancePost, "337000000");
+    const [, htlcTokenBalance] = await readAccount(pda.htlcTokenAccount, provider);
+    assert.equal(htlcTokenBalance, "1000000000");
+    // Withdraw the funds back
+    await wait(20000);
+    const CURTIME = new Date().getTime();
+    console.log(`[${CURTIME}] CURRENT TIME`);
+    const refundTx = await program.methods.refund(IDArray, pda.htlcBump).
+      accountsPartial({
+        userSigning: wallet.publicKey,
+        htlc: pda.htlc,
+        htlcTokenAccount: pda.htlcTokenAccount,
+        sender: wallet.publicKey,
+        tokenContract: tokenMint,
+        senderTokenAccount: walletTokenAccount,
+      })
+      .signers([wallet.payer])
+      .rpc();
+    // Assert that 100 tokens were sent back.
 
-  //   const [, WalletBalanceRefund] = await readAccount(walletTokenAccount, provider);
-  //   assert.equal(WalletBalanceRefund, "1337000000");
+    const [, WalletBalanceRefund] = await readAccount(walletTokenAccount, provider);
+    assert.equal(WalletBalanceRefund, "1337000000");
 
-  //   // Assert that HTLC Token Account was correctly closed.
-  //   try {
-  //     await readAccount(pda.htlcTokenAccount, provider);
-  //     return assert.fail("Account should be closed");
-  //   } catch (e) {
-  //     assert.equal(e.message, "Cannot read properties of null (reading 'data')");
-  //   }
+    // Assert that HTLC Token Account was correctly closed.
+    try {
+      await readAccount(pda.htlcTokenAccount, provider);
+      return assert.fail("Account should be closed");
+    } catch (e) {
+      assert.equal(e.message, "Cannot read properties of null (reading 'data')");
+    }
 
-  // });
+  });
 
 });

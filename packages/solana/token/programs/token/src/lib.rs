@@ -15,9 +15,6 @@ use anchor_spl::{
 use sha2::{Digest, Sha256};
 use std::mem::size_of;
 declare_id!("3TTb3BF3H273DS8hCJT9w8wuhtchN7fi7tX2sZDZ3p3Q");
-
-const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
-
 /// @title Pre Hashed Timelock Contracts (PHTLCs) on Solana SPL tokens.
 ///
 /// This contract provides a way to lock and keep PHTLCs for SPL tokens.
@@ -103,30 +100,30 @@ pub mod anchor_htlc {
     use super::*;
     use anchor_spl::token::Transfer;
 
-    /// @dev Called by the owner(only once) to initialize the commit Counter.
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        require_keys_eq!(
-            ctx.accounts.owner.key(),
-            OWNER.parse::<Pubkey>().unwrap(),
-            HTLCError::NotOwner
-        );
+    /// @dev Called by the Sender to get the commitId from the given parameters.
+    pub fn get_commit_id(
+        ctx: Context<GetCommitId>,
+        amount: u64,
+        timelock: u64,
+    ) -> Result<[u8; 32]> {
+        let sender = &ctx.accounts.sender.to_account_info().key;
+        let receiver = &ctx.accounts.receiver.to_account_info().key;
         let clock = Clock::get().unwrap();
         let time: u64 = clock.unix_timestamp.try_into().unwrap();
-        let commit_counter = &mut ctx.accounts.commitCounter;
-        commit_counter.count = 0;
-        commit_counter.time = 1000 * time;
-        Ok(())
+
+        let mut hasher = Sha256::new();
+        hasher.update(ctx.program_id);
+        hasher.update(sender);
+        hasher.update(receiver);
+        hasher.update(&amount.to_be_bytes());
+        hasher.update(&time.to_be_bytes());
+        hasher.update(&timelock.to_be_bytes());
+
+        let commitId = hasher.finalize();
+        // let commitId = hex::encode(commitId);
+        // msg!("commit id: {}", commitId);
+        Ok(commitId.into())
     }
-
-    /// @dev Called by the Sender to get the commitId from the given parameters.
-    pub fn get_commit_id(ctx: Context<GetCommitId>) -> Result<u64> {
-        let commit_counter = &ctx.accounts.commitCounter;
-        let count = commit_counter.count + 1;
-        let time = commit_counter.time;
-
-        Ok(time ^ count)
-    }
-
     /// @dev Sender / Payer sets up a new pre-hash time lock contract depositing the
     /// funds and providing the reciever/src_receiver and terms.
     /// @param src_receiver reciever of the funds.
@@ -187,9 +184,6 @@ pub mod anchor_htlc {
         // msg!("hop chains: {:?}", hopChains);
         // msg!("hop assets: {:?}", hopAssets);
         // msg!("hop addresses: {:?}", hopAddresses);
-
-        let commit_counter = &mut ctx.accounts.commitCounter;
-        commit_counter.count += 1;
         Ok(Id)
     }
 
@@ -392,38 +386,6 @@ pub struct HTLC {
     pub redeemed: bool,
     pub refunded: bool,
 }
-
-#[account]
-#[derive(InitSpace)]
-pub struct CommitCounter {
-    pub count: u64,
-    pub time: u64,
-}
-
-#[derive(Accounts)]
-pub struct Initialize<'info> {
-    #[account(mut)]
-    pub owner: Signer<'info>,
-    #[account(
-        init,
-        seeds = [b"commitCounter"],
-        bump,
-        payer = owner,
-        space = CommitCounter::INIT_SPACE + 8
-    )]
-    pub commitCounter: Box<Account<'info, CommitCounter>>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct GetCommitId<'info> {
-    #[account(
-        seeds = [b"commitCounter"],
-        bump,
-    )]
-    pub commitCounter: Account<'info, CommitCounter>,
-}
-
 #[derive(Accounts)]
 #[instruction(Id: [u8;32], commit_bump: u8)]
 pub struct Commit<'info> {
@@ -452,12 +414,6 @@ pub struct Commit<'info> {
         token::authority=htlc,
     )]
     pub htlc_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(
-        mut,
-        seeds = [b"commitCounter"],
-        bump,
-    )]
-    pub commitCounter: Box<Account<'info, CommitCounter>>,
     pub token_contract: Account<'info, Mint>,
     #[account(
         mut,
@@ -628,17 +584,6 @@ pub struct AddLock<'info> {
 
     system_program: Program<'info, System>,
     rent: Sysvar<'info, Rent>,
-}
-
-#[derive(Accounts)]
-pub struct GetCommitCounter<'info> {
-    #[account(mut)]
-    pub owner: Signer<'info>,
-    #[account(
-        seeds = [b"commitCounter"],
-        bump,
-    )]
-    pub commitCounter: Box<Account<'info, CommitCounter>>,
 }
 
 #[derive(Accounts)]
