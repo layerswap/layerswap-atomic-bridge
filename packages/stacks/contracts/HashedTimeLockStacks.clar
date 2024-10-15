@@ -41,7 +41,7 @@
 (define-data-var contract-nonce uint u0)
 (define-data-var initial-seed uint u0)
 (define-data-var seed uint u0)
-(var-set seed (+ stx-liquid-supply (+ chain-id (+ (var-get initial-seed) (unwrap! (get-block-info? time (- block-height u1)) err-in-stacks-or-clarity)))))
+(var-set seed (+ stx-liquid-supply (+ chain-id (+ (var-get initial-seed) (unwrap! (get-stacks-block-info? time (- stacks-block-height u1)) err-in-stacks-or-clarity)))))
 
 ;; data maps
 ;;
@@ -63,11 +63,6 @@
   }
 )
 
-(define-map contractIds 
-  { id: uint } 
-  { lockId: uint }
-)
-
 (define-public (commit
     (dst-chain (string-ascii 256))
     (dst-asset (string-ascii 256))
@@ -81,7 +76,7 @@
     (id (bit-xor (var-get seed) (var-get contract-nonce)))
   )
     (asserts! (> msg-value u0) err-funds-not-sent)
-    (asserts! (> timelock (unwrap! (get-block-info? time (- block-height u1)) err-in-stacks-or-clarity)) err-not-future-timelock)
+    (asserts! (> timelock (unwrap! (get-stacks-block-info? time (- stacks-block-height u1)) err-in-stacks-or-clarity)) err-not-future-timelock)
   
     (asserts! 
       (map-insert contracts {id: id}
@@ -103,7 +98,15 @@
     )
     (var-set contract-nonce (+ (var-get contract-nonce) u1))
     (try! (stx-transfer? msg-value tx-sender (as-contract tx-sender)))
-    (print (unwrap! (map-get? contracts {id:id}) err-in-stacks-or-clarity))
+    (print {  id: id,
+              dstChain: dst-chain,
+              dstAddress: dst-address,
+              dstAsset: dst-asset,
+              sender: tx-sender,
+              srcReceiver: src-receiver,
+              srcAsset: src-asset,
+              amount: msg-value,
+              timelock: timelock})
     (ok id)
   )
 )
@@ -116,7 +119,7 @@
     )
     (asserts! (is-eq false (get refunded htlc)) err-already-refunded)
     (asserts! (is-eq false (get redeemed htlc)) err-already-redeemed)
-    (asserts! (>= (unwrap! (get-block-info? time (- block-height u1)) err-in-stacks-or-clarity) (get timelock htlc)) err-not-passed-timelock)
+    (asserts! (<= (get timelock htlc) (unwrap! (get-stacks-block-info? time (- stacks-block-height u1)) err-in-stacks-or-clarity) ) err-not-passed-timelock)
 
     (try! (as-contract (stx-transfer? (get amount htlc) tx-sender (get sender htlc))))
 
@@ -135,9 +138,7 @@
         redeemed: (get redeemed htlc),
         refunded: true  
       }) err-in-stacks-or-clarity)
-
-    (print (unwrap! (map-get? contracts {id:id}) err-in-stacks-or-clarity))
-      
+    (print id)
     (ok true)
   )
 )
@@ -157,7 +158,7 @@
     (existing-htlc (map-get? contracts {id: id}))
   )
     (asserts! (> msg-value u0) err-funds-not-sent)
-    (asserts! (> timelock (unwrap! (get-block-info? time (- block-height u1)) err-in-stacks-or-clarity)) err-not-future-timelock)
+    (asserts! (> timelock (unwrap! (get-stacks-block-info? time (- stacks-block-height u1)) err-in-stacks-or-clarity)) err-not-future-timelock)
 
     (asserts! 
       (map-insert contracts {id: id}
@@ -178,7 +179,16 @@
       err-htlc-already-exists
     )
     (try! (stx-transfer? msg-value tx-sender (as-contract tx-sender)))
-    (print (unwrap! (map-get? contracts {id:id}) err-in-stacks-or-clarity))
+    (print {id: id,
+            hashlock: hashlock,
+            dstChain: dst-chain,
+            dstAddress: dst-address,
+            dstAsset: dst-asset,
+            sender: tx-sender,
+            srcReceiver: src-receiver,
+            srcAsset: src-asset,
+            amount: msg-value,
+            timelock: timelock})
     (ok id)
   )
 )
@@ -209,7 +219,7 @@
         refunded: (get refunded htlc)  
       }) err-in-stacks-or-clarity)
     (try! (as-contract (stx-transfer? (get amount htlc) tx-sender (get srcReceiver htlc))))
-    (print (unwrap! (map-get? contracts {id:id}) err-in-stacks-or-clarity))
+    (print {id: id,redeemAddress: tx-sender})
     (ok true)
   )
 )
@@ -243,7 +253,7 @@
     (htlc (unwrap! (map-get? contracts {id: id}) err-htlc-not-exists))
   )
   (asserts! (is-eq false (get refunded htlc)) err-already-refunded)
-  (asserts! (< (unwrap! (get-block-info? time (- block-height u1)) err-in-stacks-or-clarity) timelock) err-not-future-timelock)
+  (asserts! (< (unwrap! (get-stacks-block-info? time (- stacks-block-height u1)) err-in-stacks-or-clarity) timelock) err-not-future-timelock)
   (asserts! (is-eq 0x0000000000000000000000000000000000000000000000000000000000000000 (get hashlock htlc)) err-hashlock-already-set)
 
   (asserts! (map-set contracts {id: id}
@@ -261,6 +271,16 @@
         redeemed: (get redeemed htlc),
         refunded: (get refunded htlc)  
       }) err-in-stacks-or-clarity)
+      (print {id: id,
+              hashlock: hashlock,
+              dstChain:  (get dstChain htlc),
+              dstAddress: (get dstAddress htlc),
+              dstAsset: (get dstAsset htlc),
+              sender: (get sender htlc),
+              srcReceiver: (get srcReceiver htlc),
+              srcAsset: (get srcAsset htlc),
+              amount: (get amount htlc),
+              timelock: timelock})
     (ok id)
   )
 )
@@ -276,4 +296,3 @@
 (define-private (has-HTLC (id uint)) 
   (map-get? contracts {id: id})
 )
-

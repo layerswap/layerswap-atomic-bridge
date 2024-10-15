@@ -12,12 +12,12 @@ async function main() {
   const network = new StacksTestnet();
   const secretKey = "753b7cc01a1a2e86221266a154af739463fce51219d97e4f856cd7200c3bd2a601";
   
-  const id = BigInt("41284274423257323");
+  const id = BigInt("41292735127580264");
   const secret = Buffer.from("746f6e0000000000000000000000000000000000000000000000000000000000","hex");
   
   const txOptions = {
     contractAddress: 'ST136VTJP5KQ24EDMKWP0PJ44VVHMGX4KNKAW3XW5',
-    contractName: 'marco',
+    contractName: 'LayerSwap',
     functionName: 'redeem',
     functionArgs: [
       uintCV(id),

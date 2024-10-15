@@ -17,7 +17,7 @@ const secretKey = "753b7cc01a1a2e86221266a154af739463fce51219d97e4f856cd7200c3bd
 
 const id = "6464";
 const hashlock = Buffer.from("88470a9f59f469bf204c9ea2bfc95ff9d7d54adf37cd56fc011e05f857f01c8d","hex");
-const timelock = BigInt(Math.floor(Date.now() / 1000) + 100);
+const timelock = BigInt(Math.floor(Date.now() / 1000) + 10);
 const srcReceiver = 'ST2D4483A7FHNKV1ANCBWQ4TEDH31ZY1R8AG6WFCA';
 const srcAsset = 'STX';
 const dstChain = 'ethereum';  
@@ -27,7 +27,7 @@ const msgValue = 36;
 
 const txOptions = {
   contractAddress: 'ST136VTJP5KQ24EDMKWP0PJ44VVHMGX4KNKAW3XW5',
-  contractName: 'amigo',
+  contractName: 'LayerSwap',
   functionName: 'lock',
   functionArgs: [
     uintCV(id),

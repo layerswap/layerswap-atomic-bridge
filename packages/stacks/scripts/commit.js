@@ -24,7 +24,7 @@ const msgValue = 33;
 
 const txOptions = {
   contractAddress: 'ST136VTJP5KQ24EDMKWP0PJ44VVHMGX4KNKAW3XW5',
-  contractName: 'jiza',
+  contractName: 'LayerSwap',
   functionName: 'commit',
   functionArgs: [
     stringAsciiCV(dstChain),

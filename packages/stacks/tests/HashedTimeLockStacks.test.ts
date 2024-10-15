@@ -589,7 +589,7 @@ simnet.mineBlock([
 const secret = crypto.randomBytes(32);
 const hashlockBuffer = crypto.createHash('sha256').update(secret).digest();
 const randomHashlock = new Uint8Array(hashlockBuffer);
-
+simnet.mineEmptyBlocks(60);
 simnet.mineBlock([
   tx.callPublicFn("HashedTimeLockStacks", "refund", [
     Cl.uint(expectedContractId)
