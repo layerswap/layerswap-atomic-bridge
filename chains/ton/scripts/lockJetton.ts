@@ -1,10 +1,10 @@
-import { CommitData, StringImpl, LayerswapV8Jetton, dictValueParserStringImpl } from "../build/JettonPreHTLC/tact_LayerswapV8Jetton"; 
+import { CommitData, StringImpl, HashedTimeLockTON, dictValueParserStringImpl } from "../build/JettonPreHTLC/tact_HashedTimeLockTON"; 
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { TonClient, WalletContractV4, Address, Cell, beginCell, Slice, Dictionary } from "@ton/ton";
 import { toNano, sleep, createStrMap } from "../utils/utils";
 import { TokenTransfer,JettonDefaultWallet } from "../build/SampleJetton/tact_JettonDefaultWallet";
-import { Builder } from "../build/JettonPreHTLC/tact_LayerswapV8Jetton";
+import { Builder } from "../build/JettonPreHTLC/tact_HashedTimeLockTON";
 
 export async function run() {
   const endpoint = await getHttpEndpoint({ network: "testnet" });
@@ -29,37 +29,41 @@ export async function run() {
 
   const queryId = BigInt(Date.now()); 
   const amount = 19n;
-  const destination = Address.parse("kQCEheJe-tMhwQ2XeILH5avb3GcOlWCYujGUiaMPAyBI_xqE");
+  const destination = Address.parse("EQDgEgN3StWZXGtSsosc1x9Fedj1eyoGNglISGFSyv7Vb609");
   const response_destination = Address.parse("0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y");
   const custom_payload: Cell | null = beginCell().storeInt(0,32).storeStringTail("Success").endCell(); 
   const forward_ton_amount = toNano("0.1"); 
   
-  const hashlock = BigInt("96184405605761239365615141159737855805714574759278034204903698408753403233303");
-  const Id = BigInt(64n); 
-  const dstChain: string = "STARKNET_SEPOLIA";
-  const dstAsset: string = "ETH";
+  const hashlock = BigInt("295302520933523434524523953486162027915865536417638551712283177493");
+  const commitId = BigInt(100n); 
+  const dstChain: string = "ETH SEPOLIA";
+  const dstAsset: string = "STARKNET SEPOLIA ETH";
   const dstAddress: string = "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f";
-  const srcAsset: string = "Jetton V8";
-  const srcReceiver: Address = Address.parse("0QCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw64m1");
-  const timelock = BigInt(Math.floor(Date.now() / 1000) + 100); 
+  const asset: string = "Jetton V8";
+  const receiver: Address = Address.parse("UQCA5WdfZ_il-bFktDYao5h4zf7sw_64KZRx1Yc2eJrRC4vm");
+  const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600); 
   const messenger: Address = Address.parse("EQB6ZTgwl_FX_fqvrAPTl4MspD_mSMdW4TZ0j7wEfSxqEty9");
   
   const jettonMasterAddress = Address.parse("kQCdbtPwe4P8eF_rH-o0vu4Plfqrhmr9MR-pKkzH487BLJOQ");
-  const htlcJettonWalletAddress = Address.parse("0:0e27a30ebae5144d77e61b3fb451cc6284947075ab0f5cac8961d10c00ceaf66");
+  const htlcJettonWalletAddress = Address.parse("0:b335132de969416a48b97a5e6e089916fb77d2cfaa55ade0621c8840782c5362");
 
   let b_0 = new Builder();
-  b_0.storeInt(Id, 257);
+  b_0.storeInt(hashlock, 257);
   b_0.storeInt(timelock, 257);
-  b_0.storeAddress(srcReceiver);
-  b_0.storeStringRefTail(srcAsset);
+  b_0.storeAddress(receiver);
+  b_0.storeStringRefTail(asset);
   b_0.storeStringRefTail(dstChain);
   let b_1 = new Builder();
   b_1.storeStringRefTail(dstAddress);
   b_1.storeStringRefTail(dstAsset);
-  b_1.storeInt(hashlock, 257);
+  if (commitId !== null && commitId !== undefined) { b_1.storeBit(true).storeInt(commitId, 257); } else { b_1.storeBit(false); }
+  b_1.storeAddress(messenger);
   b_1.storeAddress(jettonMasterAddress);
-  b_1.storeAddress(htlcJettonWalletAddress);
+  let b_2 = new Builder();
+  b_2.storeAddress(htlcJettonWalletAddress);
+  b_1.storeRef(b_2.endCell());
   b_0.storeRef(b_1.endCell());
+
   const forward_payload = beginCell().storeUint(1, 1).storeRef(beginCell().storeUint(317164721, 32).storeBuilder(b_0).endCell()).endCell();
 
   const tokenTransferMessage: TokenTransfer = {

@@ -2,7 +2,7 @@ import { HttpClient, Api } from 'tonapi-sdk-js';
 import { Cell } from '@ton/core';
 import { Address } from 'ton';
 import { hexToBase64 } from '../utils/utils';
-import { loadTokenCommitted } from '../wrappers/JettonPreHTLC';
+import { loadTokenCommitted } from '../wrappers/HashedTimeLockTON';
 
 async function parseEmit(address: string, token: string, index: number) {
     const httpClient = new HttpClient({
@@ -31,7 +31,7 @@ async function parseEmit(address: string, token: string, index: number) {
     }
 }
 
-const address = 'kQCYyxZVFbzr0txBY8DYdfzSoNx6Cpn3h37juE0yt1A3-dsA'; 
+const address = 'kQAGAGYM3nX_wACqnjycPtalQLV_a_StzBMfP-ZgZ-YTeAxR'; 
 const token = 'AGVYQVBYQDB6KRAAAAAFWAOS73LJHXPEWONMCFRIRGOBL7WIDI5D5G2GRWOD347TUUFWPUA'; 
 
 parseEmit(address, token, 0)

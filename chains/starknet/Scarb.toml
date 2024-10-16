@@ -1,0 +1,15 @@
+[package]
+name = "starknet_htlc"
+version = "0.1.0"
+edition = "2023_11"
+
+# See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
+
+[dependencies]
+starknet = ">=2.7.0"
+openzeppelin = "0.15.1"
+alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
+
+[[target.starknet-contract]]
+sierra = true
+casm = true

@@ -1,14 +1,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { contractAddress } from "ton";
-import { LayerswapV8 } from "../build/HashedTimeLockTON/tact_LayerswapV8";
+import { HashedTimeLockTON } from "../build/HashedTimeLockTON/tact_HashedTimeLockTON";
 import { prepareTactDeployment } from "@tact-lang/deployer";
 
 async function deployContract() {
     let testnet = true; 
-    let packageName = 'tact_LayerswapV8.pkg';
+    let packageName = 'tact_HashedTimeLockTON.pkg';
     let outputPath = path.resolve(__dirname, '../build/HashedTimeLockTON'); 
-    let init = await LayerswapV8.init();
+    let init = await HashedTimeLockTON.init();
 
     let address = contractAddress({
         workchain: 0, 

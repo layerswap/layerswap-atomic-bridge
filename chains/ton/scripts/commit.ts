@@ -1,29 +1,35 @@
 import { getHttpEndpoint } from "@orbs-network/ton-access";
 import { mnemonicToWalletKey } from "ton-crypto";
 import { TonClient, WalletContractV4, Address } from "@ton/ton";
-import { Commit,LayerswapV8 } from "../build/HashedTimeLockTON/tact_LayerswapV8"; 
-import { toNano, sleep, createStrMap } from "../utils/utils";
+import { Commit, CommitData, StringImpl,HashedTimeLockTON } from "../build/HashedTimeLockTON/tact_HashedTimeLockTON"; 
+import { toNano, sleep, createStrMap, createIntMap } from "../utils/utils";
 
 const hopChains = createStrMap([
-  [0n, { $$type: 'StringImpl', data: "STARKNET_SEPOLIA" }]
+  [0n, { $$type: 'StringImpl', data: "chain 1" }],
+  [1n, { $$type: 'StringImpl', data: "chain 2" }],
+  [2n, { $$type: 'StringImpl', data: "chain 3" }]
 ]);
 
 const hopAssets = createStrMap([
-  [0n, { $$type: 'StringImpl', data: "ETH" }]
+  [0n, { $$type: 'StringImpl', data: "asset 1" }],
+  [1n, { $$type: 'StringImpl', data: "asset 2" }],
+  [2n, { $$type: 'StringImpl', data: "asset 3" }]
 ]);
 
 const hopAddresses = createStrMap([
-  [0n, { $$type: 'StringImpl', data: "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f" }]
+  [0n, { $$type: 'StringImpl', data: "address 1" }],
+  [1n, { $$type: 'StringImpl', data: "address 2" }],
+  [2n, { $$type: 'StringImpl', data: "address 3" }]
 ]);
 
-const dstChain: string = "STARKNET_SEPOLIA";
-const dstAsset: string = "ETH";
+const dstChain: string = "STARKNET SEPOLIA";
+const dstAsset: string = "STARKNET SEPOLIA";
 const dstAddress: string = "0x0430a74277723D1EBba7119339F0F8276ca946c1B2c73DE7636Fd9EBA31e1c1f";
 const srcAsset: string = "TON";
-const srcReceiver: Address = Address.parse("0QCfCUwHtdIzOvupHmIQO-z40lrb2sUsYWRrPgPhCiiw64m1");
+const srcReceiver: Address = Address.parse("0QDjCQc8cEH-wXETK0Ohoq17GJzgvf3eS6Uw-yrYJt2cMIG5");
 const timelock = BigInt(Math.floor(Date.now() / 1000) + 3600); 
+const messenger: Address = Address.parse("EQB6ZTgwl_FX_fqvrAPTl4MspD_mSMdW4TZ0j7wEfSxqEty9");
 const amount = toNano("0.2");
-const senderPubKey = BigInt("93313405977870926073550938810831536324369550307664963791822499149910443974887");
 
 async function run() {
   const endpoint = await getHttpEndpoint({ network: "testnet" });
@@ -40,24 +46,28 @@ async function run() {
   const walletSender = walletContract.sender(key.secretKey);
   const seqno = await walletContract.getSeqno();
 
-  const contractAddress = Address.parse("EQBYNb_1ocBx1NPRjncXDU5P343byJmI0mGeyb3rF59v__c-"); 
+  const contractAddress = Address.parse("kQBni1b2nJyY1OaExMDjHlWnZR4-WD4x4vx6UaLA_3AIaC25"); 
 
-  const newContract = LayerswapV8.fromAddress(contractAddress);
+  const newContract = HashedTimeLockTON.fromAddress(contractAddress);
   const contractProvider = client.open(newContract);
 
+  const commitData: CommitData = {
+    hopChains: hopChains,
+    hopAssets: hopAssets,
+    hopAddresses: hopAddresses,
+    dstChain: dstChain,
+    dstAsset: dstAsset,
+    dstAddress: dstAddress,
+    srcAsset: srcAsset,
+    srcReceiver: srcReceiver,
+    timelock: timelock,
+    messenger: messenger,
+    $$type: "CommitData"
+  };
 
   const commitMessage: Commit = {
     $$type: "Commit",
-        hopChains: hopChains,
-        hopAssets: hopAssets,
-        hopAddresses: hopAddresses,
-        dstChain: dstChain,
-        dstAsset: dstAsset,
-        dstAddress: dstAddress,
-        srcAsset: srcAsset,
-        srcReceiver: srcReceiver,
-        timelock: timelock,
-        senderPubKey: senderPubKey,
+    data: commitData
   };
 
   console.log("Sending Commit message...");
