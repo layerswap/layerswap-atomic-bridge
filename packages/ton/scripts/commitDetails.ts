@@ -9,7 +9,7 @@ async function run(){
 
     const client = new TonClient({ endpoint });
 
-    const bigIntValue = 79487511186371839588255465463422044852128997200189785173967264060596494197386n;
+    const bigIntValue = 1000001n;
     const bigIntString = bigIntValue.toString();
 
     const stack = [
@@ -17,7 +17,7 @@ async function run(){
     ];
 
     const details = await client.callGetMethod(
-        Address.parse("kQDj4UDbdWSJm4jVZOkr_hOFMkeUG8BahxApftBKOG4mhENF"),
+        Address.parse("EQABxU-5XJQxIVdsrsp67bJ0_72uzcShudE-hPedTh0zNo1H"),
         "getCommitDetails",
         stack
     );
@@ -33,12 +33,13 @@ async function run(){
     console.log("dstAsset: ", commitDetails[2].slice.bytes);
     console.log("srcAsset: ", commitDetails[3].slice.bytes);
     console.log("sender: ", commitDetails[4].slice.bytes);
-    console.log("srcReceiver: ", commitDetails[5].slice.bytes);
-    console.log("timelock: ", commitDetails[6].number.number);
-    console.log("amount: ", commitDetails[7].number.number);
-    console.log("messenger: ", commitDetails[8].slice.bytes);
-    console.log("locked: ", commitDetails[9].number.number );
-    console.log("uncommitted: ", commitDetails[10].number.number );
+    console.log("sender public key: ",commitDetails[5].number.number)
+    console.log("srcReceiver: ", commitDetails[6].slice.bytes);
+    console.log("timelock: ", commitDetails[7].number.number);
+    console.log("amount: ", commitDetails[8].number.number);
+    console.log("messenger: ", commitDetails[9].slice.bytes);
+    console.log("locked: ", commitDetails[10].number.number );
+    console.log("uncommitted: ", commitDetails[11].number.number );
 
 }
 

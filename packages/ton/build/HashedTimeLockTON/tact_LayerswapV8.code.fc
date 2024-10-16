@@ -1,0 +1,283 @@
+#pragma version =0.4.4;
+#pragma allow-post-modification;
+#pragma compute-asm-ltr;
+
+#include "tact_LayerswapV8.headers.fc";
+#include "tact_LayerswapV8.stdlib.fc";
+#include "tact_LayerswapV8.constants.fc";
+#include "tact_LayerswapV8.storage.fc";
+
+;;
+;; Contract LayerswapV8 functions
+;;
+
+(cell, int, int, slice) $LayerswapV8$_contract_init() impure inline_ref {
+    var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = (null(), 0, null(), __gen_slice_address_61ab4641fa30d9310391025086eec65d200d79268e1b7cd402565e01ba64be3c());
+    $self'seed = $global_random(10000000000000000000000000000000000000000000000000000000000000000000000000000, 99999999999999999999999999999999999999999999999999999999999999999999999999999);
+    return ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress);
+}
+
+((cell, int, int, slice), int) $LayerswapV8$_fun_contractExists((cell, int, int, slice) $self, int $id) impure inline_ref {
+    var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = $self;
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), (null?($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $id))) ? false : true));
+}
+
+((cell, int, int, slice), tuple) $LayerswapV8$_fun_getDetails((cell, int, int, slice) $self, int $Id) impure inline_ref {
+    var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = $self;
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), $HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $Id)));
+}
+
+((cell, int, int, slice), int) $LayerswapV8$_fun_getContractsLength((cell, int, int, slice) $self) impure inline_ref {
+    var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = $self;
+    int $length = 0;
+    var ($key, $value, $fresh$flag_0) = __tact_dict_min_int_cell($self'contracts, 257);
+    while ($fresh$flag_0) {
+        var ($value'dstAddress, $value'dstChain, $value'dstAsset, $value'srcAsset, $value'sender, $value'senderPubKey, $value'srcReceiver, $value'secret, $value'hashlock, $value'amount, $value'timelock, $value'redeemed, $value'refunded) = $HTLC$_not_null($HTLC$_load_opt($value));
+        $length = $length + 1;
+        ($key, $value, $fresh$flag_0) = __tact_dict_next_int_cell($self'contracts, 257, $key);
+    }
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), $length);
+}
+
+((cell, int, int, slice), cell) $LayerswapV8$_fun_getContracts((cell, int, int, slice) $self, slice $senderAddr) impure inline_ref {
+    var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = $self;
+    cell $result = null();
+    int $i = 0;
+    var ($key, $value, $fresh$flag_1) = __tact_dict_min_int_cell($self'contracts, 257);
+    while ($fresh$flag_1) {
+        var ($value'dstAddress, $value'dstChain, $value'dstAsset, $value'srcAsset, $value'sender, $value'senderPubKey, $value'srcReceiver, $value'secret, $value'hashlock, $value'amount, $value'timelock, $value'redeemed, $value'refunded) = $HTLC$_not_null($HTLC$_load_opt($value));
+        if (( __tact_slice_eq_bits($senderAddr, $value'sender) )) {
+            $result~__tact_dict_set_int_int(257, $i, $key, 257);
+            $i = $i + 1;
+        }
+        ($key, $value, $fresh$flag_1) = __tact_dict_next_int_cell($self'contracts, 257, $key);
+    }
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), $result);
+}
+
+((cell, int, int, slice), ()) $LayerswapV8$_fun_addLock((cell, int, int, slice) $self, int $Id, int $hashlock, int $timelock, (int, slice, int, slice) $ctx) impure inline_ref {
+    var (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)) = $self;
+    var (($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw)) = $ctx;
+    throw_unless(30789, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($Id) == true));
+    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'redeemed, $htlc'refunded) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $Id)));
+    throw_unless(46887, ($htlc'redeemed == false));
+    throw_unless(49162, ($htlc'refunded == false));
+    throw_unless(21683, ($timelock > now()));
+    throw_unless(8650, ($htlc'hashlock == 0));
+    $self'contracts~__tact_dict_set_int_cell(257, $Id, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_redeemed_refunded($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, 0, $hashlock, $htlc'amount, $timelock, false, false)));
+    $global_send($SendParameters$_constructor_to_bounce_value_mode(__tact_context_get_sender(), false, 0, 64));
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
+}
+
+;;
+;; Receivers of a Contract LayerswapV8
+;;
+
+(((cell, int, int, slice)), ()) $LayerswapV8$_internal_binary_Commit((cell, int, int, slice) $self, (slice, slice, slice, slice, slice, int, int, cell, cell, cell) $msg) impure inline {
+    var ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress) = $self;
+    var ($msg'dstChain, $msg'dstAsset, $msg'dstAddress, $msg'srcAsset, $msg'srcReceiver, $msg'timelock, $msg'senderPubKey, $msg'hopChains, $msg'hopAssets, $msg'hopAddresses) = $msg;
+    var ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
+    throw_unless(4670, ($ctx'value != 0));
+    throw_unless(21683, ($msg'timelock > now()));
+    $self'contractNonce = $self'contractNonce + 1;
+    int $Id = ($self'seed ^ $self'contractNonce);
+    throw_unless(24064, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($Id) == false));
+    $self'contracts~__tact_dict_set_int_cell(257, $Id, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_redeemed_refunded($msg'dstAddress, $msg'dstChain, $msg'dstAsset, $msg'srcAsset, $ctx'sender, $msg'senderPubKey, $msg'srcReceiver, 0, 0, $ctx'value, $msg'timelock, false, false)));
+    $global_emit($TokenCommitted$_store_cell($TokenCommitted$_constructor_Id_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock_senderPubKey_hopChains_hopAssets_hopAddresses($Id, $msg'dstChain, $msg'dstAddress, $msg'dstAsset, __tact_context_get_sender(), $msg'srcReceiver, $msg'srcAsset, $ctx'value, $msg'timelock, $msg'senderPubKey, $msg'hopChains, $msg'hopAssets, $msg'hopAddresses)));
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
+}
+
+(((cell, int, int, slice)), ()) $LayerswapV8$_internal_binary_AddLock((cell, int, int, slice) $self, (int, int, int) $msg) impure inline {
+    var ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress) = $self;
+    var ($msg'Id, $msg'hashlock, $msg'timelock) = $msg;
+    throw_unless(58417, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($msg'Id) == true));
+    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'redeemed, $htlc'refunded) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
+    throw_unless(31687, ( __tact_slice_eq_bits($htlc'sender, __tact_context_get_sender()) ));
+    ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_addLock($msg'Id, $msg'hashlock, $msg'timelock, __tact_context_get());
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
+}
+
+(((cell, int, int, slice)), ()) $LayerswapV8$_internal_binary_AddLockSig((cell, int, int, slice) $self, (slice, slice) $msg) impure inline {
+    var ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress) = $self;
+    var ($msg'data, $msg'signature) = $msg;
+    throw_unless(58417, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists(preload_int($msg'data, 257)) == true));
+    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'redeemed, $htlc'refunded) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, preload_int($msg'data, 257))));
+    throw_unless(48401, check_signature(slice_hash($msg'data), $msg'signature, $htlc'senderPubKey));
+    int $Id = $msg'data~load_int(257);
+    int $hashlock = $msg'data~load_int(257);
+    int $timelock = $msg'data~load_int(257);
+    var ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
+    ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_addLock($Id, $hashlock, $timelock, ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw));
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
+}
+
+(((cell, int, int, slice)), ()) $LayerswapV8$_internal_binary_Lock((cell, int, int, slice) $self, (int, int, int, slice, slice, slice, slice, slice) $msg) impure inline {
+    var ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress) = $self;
+    var ($msg'Id, $msg'hashlock, $msg'timelock, $msg'srcReceiver, $msg'srcAsset, $msg'dstChain, $msg'dstAddress, $msg'dstAsset) = $msg;
+    var ($ctx'bounced, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
+    throw_unless(21683, (now() < $msg'timelock));
+    throw_unless(4670, ($ctx'value != 0));
+    throw_unless(11493, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($msg'Id) == false));
+    $self'contracts~__tact_dict_set_int_cell(257, $msg'Id, $HTLC$_store_cell($HTLC$_constructor_dstAddress_dstChain_dstAsset_srcAsset_sender_senderPubKey_srcReceiver_secret_hashlock_amount_timelock_redeemed_refunded($msg'dstAddress, $msg'dstChain, $msg'dstAsset, $msg'srcAsset, __tact_context_get_sender(), 0, $msg'srcReceiver, 0, $msg'hashlock, $ctx'value, $msg'timelock, false, false)));
+    $global_emit($TokenLocked$_store_cell($TokenLocked$_constructor_Id_hashlock_dstChain_dstAddress_dstAsset_sender_srcReceiver_srcAsset_amount_timelock($msg'Id, $msg'hashlock, $msg'dstChain, $msg'dstAddress, $msg'dstAsset, __tact_context_get_sender(), $msg'srcReceiver, $msg'srcAsset, $ctx'value, $msg'timelock)));
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
+}
+
+(((cell, int, int, slice)), ()) $LayerswapV8$_internal_binary_Redeem((cell, int, int, slice) $self, (int, int) $msg) impure inline {
+    var ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress) = $self;
+    var ($msg'Id, $msg'secret) = $msg;
+    throw_unless(42857, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($msg'Id) == true));
+    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'redeemed, $htlc'refunded) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
+    throw_unless(49162, ($htlc'refunded == false));
+    throw_unless(46887, ($htlc'redeemed == false));
+    slice $hashlockFromSecretSlice = $Builder$_fun_asSlice(store_uint(begin_cell(), $msg'secret, 256));
+    int $hashlockFromSecret = string_hash($hashlockFromSecretSlice);
+    throw_unless(50918, ($htlc'hashlock == $hashlockFromSecret));
+    int $contractValue = $htlc'amount;
+    slice $recieverAddr = $htlc'srcReceiver;
+    $global_send($SendParameters$_constructor_to_bounce_value_mode($recieverAddr, false, $contractValue, 0));
+    $global_send($SendParameters$_constructor_to_bounce_value_mode(__tact_context_get_sender(), false, 0, 64));
+    $self'contracts~__tact_dict_delete_int(257, $msg'Id);
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
+}
+
+(((cell, int, int, slice)), ()) $LayerswapV8$_internal_binary_Refund((cell, int, int, slice) $self, (int) $msg) impure inline {
+    var ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress) = $self;
+    var ($msg'Id) = $msg;
+    var ($htlc'dstAddress, $htlc'dstChain, $htlc'dstAsset, $htlc'srcAsset, $htlc'sender, $htlc'senderPubKey, $htlc'srcReceiver, $htlc'secret, $htlc'hashlock, $htlc'amount, $htlc'timelock, $htlc'redeemed, $htlc'refunded) = $HTLC$_not_null($HTLC$_load_opt(__tact_dict_get_int_cell($self'contracts, 257, $msg'Id)));
+    throw_unless(42857, (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_contractExists($msg'Id) == true));
+    throw_unless(49162, ($htlc'refunded == false));
+    throw_unless(46887, ($htlc'redeemed == false));
+    throw_unless(38239, ($htlc'timelock < now()));
+    $global_send($SendParameters$_constructor_to_bounce_value_mode($htlc'sender, false, $htlc'amount, 0));
+    $global_send($SendParameters$_constructor_to_bounce_value_mode(__tact_context_get_sender(), false, 0, 64));
+    $self'contracts~__tact_dict_delete_int(257, $msg'Id);
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
+}
+
+(((cell, int, int, slice)), ()) $LayerswapV8$_internal_binary_Deploy((cell, int, int, slice) $self, (int) $deploy) impure inline {
+    var ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress) = $self;
+    var ($deploy'queryId) = $deploy;
+    ($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress)~$LayerswapV8$_fun_notify($DeployOk$_store_cell($DeployOk$_constructor_queryId($deploy'queryId)));
+    return (($self'contracts, $self'contractNonce, $self'seed, $self'zeroAddress), ());
+}
+
+;;
+;; Get methods of a Contract LayerswapV8
+;;
+
+_ %getDetails(int $Id) method_id(121337) {
+    int $Id = $Id;
+    var self = $LayerswapV8$_contract_load();
+    var res = self~$LayerswapV8$_fun_getDetails($Id);
+    return $HTLC$_to_opt_external(res);
+}
+
+_ %getContractsLength() method_id(98409) {
+    var self = $LayerswapV8$_contract_load();
+    var res = self~$LayerswapV8$_fun_getContractsLength();
+    return res;
+}
+
+_ %getContracts(slice $senderAddr) method_id(95431) {
+    slice $senderAddr = __tact_verify_address($senderAddr);
+    var self = $LayerswapV8$_contract_load();
+    var res = self~$LayerswapV8$_fun_getContracts($senderAddr);
+    return res;
+}
+
+_ lazy_deployment_completed() method_id {
+    return get_data().begin_parse().load_int(1);
+}
+
+;;
+;; Routing of a Contract LayerswapV8
+;;
+
+((cell, int, int, slice), int) $LayerswapV8$_contract_router_internal((cell, int, int, slice) self, int msg_bounced, slice in_msg) impure inline_ref {
+    ;; Handle bounced messages
+    if (msg_bounced) {
+        return (self, true);
+    }
+    
+    ;; Parse incoming message
+    int op = 0;
+    if (slice_bits(in_msg) >= 32) {
+        op = in_msg.preload_uint(32);
+    }
+    
+    
+    ;; Receive Commit message
+    if (op == 458640785) {
+        var msg = in_msg~$Commit$_load();
+        self~$LayerswapV8$_internal_binary_Commit(msg);
+        return (self, true);
+    }
+    
+    ;; Receive AddLock message
+    if (op == 1558004185) {
+        var msg = in_msg~$AddLock$_load();
+        self~$LayerswapV8$_internal_binary_AddLock(msg);
+        return (self, true);
+    }
+    
+    ;; Receive AddLockSig message
+    if (op == 3252164863) {
+        var msg = in_msg~$AddLockSig$_load();
+        self~$LayerswapV8$_internal_binary_AddLockSig(msg);
+        return (self, true);
+    }
+    
+    ;; Receive Lock message
+    if (op == 317164721) {
+        var msg = in_msg~$Lock$_load();
+        self~$LayerswapV8$_internal_binary_Lock(msg);
+        return (self, true);
+    }
+    
+    ;; Receive Redeem message
+    if (op == 1972220037) {
+        var msg = in_msg~$Redeem$_load();
+        self~$LayerswapV8$_internal_binary_Redeem(msg);
+        return (self, true);
+    }
+    
+    ;; Receive Refund message
+    if (op == 2910985977) {
+        var msg = in_msg~$Refund$_load();
+        self~$LayerswapV8$_internal_binary_Refund(msg);
+        return (self, true);
+    }
+    
+    ;; Receive Deploy message
+    if (op == 2490013878) {
+        var msg = in_msg~$Deploy$_load();
+        self~$LayerswapV8$_internal_binary_Deploy(msg);
+        return (self, true);
+    }
+    
+    return (self, false);
+}
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+    
+    ;; Context
+    var cs = in_msg_cell.begin_parse();
+    var msg_flags = cs~load_uint(4);
+    var msg_bounced = -(msg_flags & 1);
+    slice msg_sender_addr = __tact_verify_address(cs~load_msg_addr());
+    __tact_context = (msg_bounced, msg_sender_addr, msg_value, cs);
+    __tact_context_sender = msg_sender_addr;
+    
+    ;; Load contract data
+    var self = $LayerswapV8$_contract_load();
+    
+    ;; Handle operation
+    int handled = self~$LayerswapV8$_contract_router_internal(msg_bounced, in_msg);
+    
+    ;; Throw if not handled
+    throw_unless(130, handled);
+    
+    ;; Persist state
+    $LayerswapV8$_contract_store(self);
+}

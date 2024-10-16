@@ -1,8 +1,0 @@
-;; String "Uncommitted"
-slice __gen_slice_string_745fd96be4cd665d7df3e2789d5bcd205d53436c91efe2eae1b705281840e313() asm "B{b5ee9c7241010101000d000016556e636f6d6d6974746564420d80a5} B>boc <s PUSHSLICE";
-
-;; String "Redeemed"
-slice __gen_slice_string_2f7fe9b07f89441d6ea969c50c7445098198d0e0031cf5c4f19adb721422d770() asm "B{b5ee9c7241010101000a00001052656465656d65640fd3d370} B>boc <s PUSHSLICE";
-
-;; String "Unlocked"
-slice __gen_slice_string_d3c5974226249205b098bfc49055635817871f13c2281fb641070b6fd4cbe0d6() asm "B{b5ee9c7241010101000a000010556e6c6f636b6564b37615bc} B>boc <s PUSHSLICE";

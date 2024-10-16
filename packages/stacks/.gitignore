@@ -1,0 +1,35 @@
+# Ignore specific settings files
+**/settings/Mainnet.toml
+**/settings/Testnet.toml
+
+# Ignore cache files
+.cache/**
+
+# Ignore logs
+history.txt
+logs
+*.log
+npm-debug.log*
+
+# Ignore coverage reports
+coverage
+*.info
+
+# Ignore cost reports
+costs-reports.json
+
+# Ignore dependency directories
+node_modules/
+
+# Ignore IDE settings
+.vscode/
+
+# Ignore build or distribution directories
+dist/
+build/
+
+# Ignore deployment files (optional)
+deployments/
+
+# Ignore temporary TypeScript build files
+*.tsbuildinfo
