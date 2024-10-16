@@ -3,9 +3,6 @@ use anchor_lang::system_program;
 use sha2::{Digest, Sha256};
 use std::mem::size_of;
 declare_id!("2XfmTmnhz8kDnryZSJKKV53tLN7DKZbrN9Q1sZbJo5bc");
-
-const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
-
 /// @title Pre Hashed Timelock Contracts (PHTLCs) on Solana.
 ///
 /// This contract provides a way to create and keep PHTLCs for Solana.
@@ -18,7 +15,7 @@ const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 ///  2) lock(src_receiver, hashlock, timelock, amount) - a
 ///      sender calls this to create a new HTLC
 ///      for a given amount. A [u8; 32] Id is returned.
-///  3) addLock(Id, hashlock, timelock) - the messenger calls this function
+///  3) addLock(Id, hashlock, timelock) - the sender calls this function
 ///      to add the hashlock to HTLC.
 ///  4) redeem(Id, secret) - once the src_receiver knows the secret of
 ///      the hashlock hash they can claim the sol with this function
@@ -27,31 +24,27 @@ const OWNER: &str = "H732946dBhRx5pBbJnFJK7Gy4K6mSA5Svdt1eueExrTp";
 ///      back with this function.
 #[program]
 pub mod native_htlc {
-
     use super::*;
 
-    /// @dev Called by the owner(only once) to initialize the commit Counter .
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        require_keys_eq!(
-            ctx.accounts.owner.key(),
-            OWNER.parse::<Pubkey>().unwrap(),
-            HTLCError::NotOwner
-        );
-        let clock = Clock::get().unwrap();
-        let time: u64 = clock.unix_timestamp.try_into().unwrap();
-        let commit_counter = &mut ctx.accounts.commitCounter;
-        commit_counter.count = 0;
-        commit_counter.time = 1000 * time;
-        Ok(())
-    }
-
     /// @dev Called by the Sender to get the commitId from the given parameters.
-    pub fn get_commit_id(ctx: Context<GetCommitID>) -> Result<u64> {
-        let commit_counter = &ctx.accounts.commitCounter;
-        let count = commit_counter.count + 1;
-        let time = commit_counter.time;
+    pub fn get_commit_id(
+        ctx: Context<GetCommitId>,
+        amount: u64,
+        timelock: u64,
+    ) -> Result<[u8; 32]> {
+        let sender = &ctx.accounts.sender.to_account_info().key;
+        let receiver = &ctx.accounts.receiver.to_account_info().key;
 
-        Ok(time ^ count)
+        let mut hasher = Sha256::new();
+        hasher.update(ctx.program_id);
+        hasher.update(sender);
+        hasher.update(receiver);
+        hasher.update(&amount.to_be_bytes());
+        hasher.update(&timelock.to_be_bytes());
+
+        let commitId = hasher.finalize();
+
+        Ok(commitId.into())
     }
 
     /// @dev Sender / Payer sets up a new pre-hash time lock contract depositing the
@@ -72,7 +65,6 @@ pub mod native_htlc {
         src_asset: String,
         src_receiver: Pubkey,
         timelock: u64,
-        messenger: Pubkey,
         amount: u64,
         commit_bump: u8,
     ) -> Result<[u8; 32]> {
@@ -93,7 +85,6 @@ pub mod native_htlc {
         htlc.hashlock = [0u8; 32];
         htlc.amount = amount;
         htlc.timelock = timelock;
-        htlc.messenger = messenger;
         htlc.redeemed = false;
         htlc.refunded = false;
         htlc.secret = [0u8; 32];
@@ -114,9 +105,6 @@ pub mod native_htlc {
         // msg!("hop chains: {:?}", hopChains);
         // msg!("hop assets: {:?}", hopAssets);
         // msg!("hop addresses: {:?}", hopAddresses);
-
-        let commit_counter = &mut ctx.accounts.commitCounter;
-        commit_counter.count += 1;
 
         Ok(Id)
     }
@@ -139,7 +127,6 @@ pub mod native_htlc {
         dst_asset: String,
         src_asset: String,
         src_receiver: Pubkey,
-        messenger: Pubkey,
         lock_bump: u8,
     ) -> Result<[u8; 32]> {
         let clock = Clock::get().unwrap();
@@ -161,7 +148,6 @@ pub mod native_htlc {
         htlc.secret = [0u8; 32];
         htlc.amount = amount;
         htlc.timelock = timelock;
-        htlc.messenger = messenger;
         htlc.redeemed = false;
         htlc.refunded = false;
 
@@ -177,12 +163,11 @@ pub mod native_htlc {
             outer.as_slice(),
         );
         system_program::transfer(transfer_context, amount)?;
-        // if messenger != Pubkey::default(){}
 
         Ok(Id)
     }
 
-    /// @dev Called by the messenger to add hashlock to the HTLC
+    /// @dev Called by the sender to add hashlock to the HTLC
     ///
     /// @param Id of the HTLC to addLock.
     /// @param hashlock of the HTLC to be locked.
@@ -199,7 +184,6 @@ pub mod native_htlc {
         );
 
         let htlc = &mut ctx.accounts.htlc;
-
         htlc.hashlock = hashlock;
         htlc.timelock = timelock;
 
@@ -251,6 +235,7 @@ pub mod native_htlc {
     /// @param Id of the HTLC.
     pub fn getDetails(ctx: Context<GetDetails>, Id: [u8; 32]) -> Result<HTLC> {
         let htlc = &ctx.accounts.htlc;
+        msg!("hashlcok: {:?}", htlc.hashlock);
         Ok(HTLC {
             dst_address: htlc.dst_address.clone(),
             dst_chain: htlc.dst_chain.clone(),
@@ -262,7 +247,6 @@ pub mod native_htlc {
             secret: htlc.secret.clone(),
             amount: htlc.amount,
             timelock: htlc.timelock,
-            messenger: htlc.messenger,
             redeemed: htlc.redeemed,
             refunded: htlc.refunded,
         })
@@ -273,37 +257,6 @@ pub mod native_htlc {
 #[derive(Default)]
 pub struct IdStruct {
     pub id: [u8; 32],
-}
-
-#[account]
-#[derive(Default)]
-pub struct CommitCounter {
-    pub count: u64,
-    pub time: u64,
-}
-
-#[derive(Accounts)]
-pub struct Initialize<'info> {
-    #[account(mut)]
-    pub owner: Signer<'info>,
-    #[account(
-        init,
-        seeds = [b"commitCounter"],
-        bump,
-        payer = owner,
-        space = size_of::<CommitCounter>() + 8
-    )]
-    pub commitCounter: Box<Account<'info, CommitCounter>>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct GetCommitID<'info> {
-    #[account(
-        seeds = [b"commitCounter"],
-        bump,
-    )]
-    pub commitCounter: Account<'info, CommitCounter>,
 }
 
 #[account]
@@ -319,9 +272,15 @@ pub struct HTLC {
     pub secret: [u8; 32],
     pub amount: u64,
     pub timelock: u64,
-    pub messenger: Pubkey,
     pub redeemed: bool,
     pub refunded: bool,
+}
+#[derive(Accounts)]
+pub struct GetCommitId<'info> {
+    ///CHECK: The sender
+    pub sender: UncheckedAccount<'info>,
+    ///CHECK: The reciever
+    pub receiver: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
@@ -340,12 +299,6 @@ pub struct Commit<'info> {
         bump,
     )]
     pub htlc: Box<Account<'info, HTLC>>,
-    #[account(
-        mut,
-        seeds = [b"commitCounter"],
-        bump,
-    )]
-    pub commitCounter: Box<Account<'info, CommitCounter>>,
 
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
@@ -427,9 +380,9 @@ pub struct Refund<'info> {
 #[derive(Accounts)]
 #[instruction(Id: [u8; 32])]
 pub struct AddLock<'info> {
+    sender: Signer<'info>,
     #[account(mut)]
-    messenger: Signer<'info>,
-
+    payer: Signer<'info>,
     #[account(mut,
     seeds = [
         Id.as_ref()
@@ -437,7 +390,7 @@ pub struct AddLock<'info> {
     bump,
     constraint = !htlc.redeemed @ HTLCError::AlreadyRedeemed,
     constraint = !htlc.refunded @ HTLCError::AlreadyRefunded,
-    constraint = htlc.sender == messenger.key() || htlc.messenger == messenger.key() @ HTLCError::NotMessenger,
+    constraint = htlc.sender == sender.key() @ HTLCError::UnauthorizedAccess,
     constraint = htlc.hashlock == [0u8;32] @ HTLCError::HashlockAlreadySet,
     )]
     pub htlc: Box<Account<'info, HTLC>>,
@@ -458,23 +411,6 @@ pub struct GetDetails<'info> {
     pub htlc: Box<Account<'info, HTLC>>,
 }
 
-// #[event]
-// pub struct TokenCommited {
-//     pub commitId: [u8; 32],
-//     pub hopChains: Vec<String>,
-//     pub hopAssets: Vec<String>,
-//     pub hopAddresses: Vec<String>,
-//     pub dst_chain: String,
-//     pub dst_address: String,
-//     pub dst_asset: String,
-//     pub sender: Pubkey,
-//     pub src_receiver: Pubkey,
-//     pub src_asset: String,
-//     pub timelock: u64,
-//     pub messenger: Pubkey,
-//     pub amount: u64,
-// }
-
 #[error_code]
 pub enum HTLCError {
     #[msg("Not Future TimeLock.")]
@@ -493,8 +429,8 @@ pub enum HTLCError {
     AlreadyRefunded,
     #[msg("Funds Can Not Be Zero.")]
     FundsNotSent,
-    #[msg("Not The Messenger.")]
-    NotMessenger,
+    #[msg("Unauthorized Access.")]
+    UnauthorizedAccess,
     #[msg("Not The Owner.")]
     NotOwner,
     #[msg("Not The Sender.")]
