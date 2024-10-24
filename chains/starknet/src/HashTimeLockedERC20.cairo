@@ -11,6 +11,7 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn commit_hop(
         ref self: TContractState,
         amount: u256,
+        sender_key: felt252,
         hopChains: Span<felt252>,
         hopAssets: Span<felt252>,
         hopAddress: Span<felt252>,
@@ -25,6 +26,7 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn commit(
         ref self: TContractState,
         amount: u256,
+        sender_key: felt252,
         dstChain: felt252,
         dstAsset: felt252,
         dstAddress: ByteArray,
@@ -49,6 +51,15 @@ pub trait IHashedTimelockERC20<TContractState> {
     fn redeem(ref self: TContractState, Id: u256, secret: u256) -> bool;
     fn refund(ref self: TContractState, Id: u256) -> bool;
     fn addLock(ref self: TContractState, Id: u256, hashlock: u256, timelock: u256) -> u256;
+    fn addLockSig(
+        ref self: TContractState,
+        Id: u256,
+        hashlock: u256,
+        timelock: u256,
+        r: felt252,
+        s: felt252,
+        y_parity: bool,
+    ) -> u256;
     fn getDetails(self: @TContractState, Id: u256) -> HashedTimelockERC20::HTLC;
     fn getCommits(self: @TContractState, sender: ContractAddress) -> Span<u256>;
 }
@@ -69,15 +80,25 @@ pub trait IHashedTimelockERC20<TContractState> {
 ///      back with this function.
 #[starknet::contract]
 mod HashedTimelockERC20 {
+    use core::pedersen::PedersenTrait;
+    use core::hash::{HashStateTrait, HashStateExTrait};
     use core::traits::Into;
     use core::num::traits::Zero;
-    use starknet::ContractAddress;
+    use core::ecdsa::{check_ecdsa_signature, recover_public_key};
     use starknet::storage::{Map, StoragePathEntry};
-    use starknet::{get_caller_address, get_contract_address, get_block_timestamp, get_block_info};
+    use starknet::{
+        ContractAddress, get_caller_address, get_contract_address, get_block_timestamp,
+        get_block_info
+    };
     //TODO: Check if this should be IERC20SafeDispatcher
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use alexandria_bytes::{Bytes, BytesTrait};
 
+    const STARKNET_DOMAIN_TYPE_HASH: felt252 =
+        selector!("StarkNetDomain(name:felt,chainId:felt,version:felt)");
+    const MESSAGE_TYPE_HASH: felt252 =
+        selector!("Message(Id:u256,hashlock:u256,timelock:u256)u256(low:felt,high:felt)");
+    const U256_TYPE_HASH: felt252 = selector!("u256(low:felt,high:felt)");
     #[storage]
     struct Storage {
         commitCounter: u256,
@@ -94,6 +115,7 @@ mod HashedTimelockERC20 {
         dstAsset: felt252,
         srcAsset: felt252,
         sender: ContractAddress,
+        sender_key: felt252,
         srcReceiver: ContractAddress,
         hashlock: u256,
         secret: u256,
@@ -102,6 +124,20 @@ mod HashedTimelockERC20 {
         tokenContract: ContractAddress,
         redeemed: bool,
         refunded: bool,
+    }
+
+    #[derive(Drop, Copy, Hash)]
+    struct Message {
+        Id: u256,
+        hashlock: u256,
+        timelock: u256,
+    }
+
+    #[derive(Drop, Copy, Hash)]
+    struct StarknetDomain {
+        name: felt252,
+        chain_id: felt252,
+        version: felt252,
     }
 
     #[event]
@@ -152,6 +188,8 @@ mod HashedTimelockERC20 {
         #[key]
         Id: u256,
         redeemAddress: ContractAddress,
+        secret: u256,
+        hashlock: u256
     }
     #[derive(Drop, starknet::Event)]
     struct TokenRefunded {
@@ -170,13 +208,14 @@ mod HashedTimelockERC20 {
     impl HashedTimelockERC20 of super::IHashedTimelockERC20<ContractState> {
         /// @dev Sender / Payer sets up a new pre-hash timelock contract depositing the
         /// funds and providing the reciever/srcReceiver and terms.
-        /// @param srcReceiver reciever/srcReceiver of the funds.
+        /// @param srcReceiver reciever of the funds.
         /// @param timelock UNIX epoch seconds time that the lock expires at.
         ///                  Refunds can be made after this time.
         /// @return Id of the new HTLC. This is needed for subsequent calls.
         fn commit_hop(
             ref self: ContractState,
             amount: u256,
+            sender_key: felt252,
             hopChains: Span<felt252>,
             hopAssets: Span<felt252>,
             hopAddress: Span<felt252>,
@@ -218,6 +257,7 @@ mod HashedTimelockERC20 {
                         dstAsset: dstAsset,
                         srcAsset: srcAsset,
                         sender: get_caller_address(),
+                        sender_key: sender_key,
                         srcReceiver: srcReceiver,
                         hashlock: 0,
                         secret: 0,
@@ -252,6 +292,7 @@ mod HashedTimelockERC20 {
         fn commit(
             ref self: ContractState,
             amount: u256,
+            sender_key: felt252,
             dstChain: felt252,
             dstAsset: felt252,
             dstAddress: ByteArray,
@@ -293,6 +334,7 @@ mod HashedTimelockERC20 {
                         dstAsset: dstAsset,
                         srcAsset: srcAsset,
                         sender: get_caller_address(),
+                        sender_key: sender_key,
                         srcReceiver: srcReceiver,
                         hashlock: 0,
                         secret: 0,
@@ -326,7 +368,7 @@ mod HashedTimelockERC20 {
 
         /// @dev Sender / Payer sets up a new hash time lock contract depositing the
         /// funds and providing the reciever and terms.
-        /// @param srcReceiver srcReceiver of the funds.
+        /// @param srcReceiver receiver of the funds.
         /// @param hashlock A sha-256 hash hashlock.
         /// @param timelock UNIX epoch seconds time that the lock expires at.
         ///                  Refunds can be made after this time.
@@ -366,6 +408,7 @@ mod HashedTimelockERC20 {
                         dstAsset: dstAsset,
                         srcAsset: srcAsset,
                         sender: get_caller_address(),
+                        sender_key: '0', //as this won't be used
                         srcReceiver: srcReceiver,
                         hashlock: hashlock,
                         secret: 0,
@@ -420,7 +463,15 @@ mod HashedTimelockERC20 {
             self.contracts.entry(Id).redeemed.write(true);
             IERC20Dispatcher { contract_address: htlc.tokenContract }
                 .transfer(htlc.srcReceiver, htlc.amount);
-            self.emit(TokenRedeemed { Id: Id, redeemAddress: get_caller_address() });
+            self
+                .emit(
+                    TokenRedeemed {
+                        Id: Id,
+                        redeemAddress: get_caller_address(),
+                        secret: secret,
+                        hashlock: htlc.hashlock
+                    }
+                );
             true
         }
 
@@ -444,10 +495,10 @@ mod HashedTimelockERC20 {
             true
         }
 
-        /// @dev Called by the sender to convert the PHTLC to HTLC
+        /// @dev Called by the sender to add hashlock to the HTLC
         ///
-        /// @param Id of the PHTLC to convert.
-        /// @param hashlock of the HTLC to be locked.
+        /// @param Id of the HTLC.
+        /// @param hashlock to be added.
         /// @return Id of the locked HTLC
         fn addLock(ref self: ContractState, Id: u256, hashlock: u256, timelock: u256) -> u256 {
             assert!(timelock > get_block_timestamp().into(), "Not Future TimeLock");
@@ -457,7 +508,11 @@ mod HashedTimelockERC20 {
             assert!(!htlc.refunded, "Funds Are Already Refunded");
             assert!(!htlc.redeemed, "Funds Are Already Redeemed");
             assert!(htlc.hashlock == 0, "Hashlock Already Set");
-            assert!(get_caller_address() == htlc.sender, "Unauthorized Access");
+            assert!(
+                get_caller_address() == htlc.sender
+                    || get_caller_address() == get_contract_address(),
+                "Unauthorized Access"
+            );
 
             self.contracts.entry(Id).hashlock.write(hashlock);
             self.contracts.entry(Id).timelock.write(timelock);
@@ -479,7 +534,31 @@ mod HashedTimelockERC20 {
                 );
             Id
         }
+        fn addLockSig(
+            ref self: ContractState,
+            Id: u256,
+            hashlock: u256,
+            timelock: u256,
+            r: felt252,
+            s: felt252,
+            y_parity: bool,
+        ) -> u256 {
+            let sender_key = self.contracts.read(Id).sender_key;
+            let message = Message { Id: Id, hashlock: hashlock, timelock: timelock };
+            let message_hash: felt252 = self.get_message_hash(message, sender_key);
+            assert!(check_ecdsa_signature(message_hash, sender_key, r, s), "Invalid Signature");
 
+            if let Option::Some(recovered_key) = recover_public_key(message_hash, r, s, y_parity) {
+                assert!(recovered_key == sender_key, "Signed With Unknown Key");
+            } else {
+                //TODO: should this be here? As the ecdsa_signature check is already done
+                assert!(false, "Couldn't Recover The Public Key")
+            }
+            self.addLock(Id, hashlock, timelock)
+        }
+
+        /// @dev Returns the data of the HTLC with the given Id.
+        /// will return the default values if HTLC with the given Id does not exist.
         fn getDetails(self: @ContractState, Id: u256) -> HTLC {
             self.contracts.read(Id)
         }
@@ -505,6 +584,73 @@ mod HashedTimelockERC20 {
         fn hasHTLC(self: @ContractState, Id: u256) -> bool {
             let exists: bool = (!self.contracts.read(Id).sender.is_zero());
             exists
+        }
+        /// @dev Gets the StarkNet hash of the given message with the given public key.
+        /// @param message to be hashed.
+        /// @param sender_key to hash with.
+        fn get_message_hash(
+            self: @ContractState, message: Message, sender_key: felt252
+        ) -> felt252 {
+            let domain = StarknetDomain { name: 'LayerswapV8', chain_id: 'StarkNet', version: 1 };
+            //initialize the Pederson Hash with 0
+            let mut state = PedersenTrait::new(0);
+            //update with StarkNet Message
+            state = state.update_with('StarkNet Message');
+            //update with domain hash
+            state = state.update_with(self.hash_domain(domain));
+            //update with sender_key.
+            state = state.update_with(sender_key);
+            //update with message
+            state = state.update_with(self.hash_message(message));
+            // Hashing with the amount of elements being hashed
+            state = state.update_with(4);
+            state.finalize()
+        }
+        /// @dev Used to hash the given domain of StarknetDomain type.
+        /// @param domain to hash.
+        fn hash_domain(self: @ContractState, domain: StarknetDomain) -> felt252 {
+            //initialize the Pederson Hash with 0
+            let mut state = PedersenTrait::new(0);
+            //update with domain type hash
+            state = state.update_with(STARKNET_DOMAIN_TYPE_HASH);
+            //update with the domain(name, chain_id, version)
+            state = state.update_with(domain);
+            //update with the amount of elements being hashed
+            state = state.update_with(4);
+            //finalize the Pederson Hash and return the hash value
+            state.finalize()
+        }
+        /// @dev Used to hash the given message of Message type.
+        /// @param message  hash.
+        fn hash_message(self: @ContractState, message: Message) -> felt252 {
+            //initialize the Pederson Hash with 0
+            let mut state = PedersenTrait::new(0);
+            //update with message type hash
+            state = state.update_with(MESSAGE_TYPE_HASH);
+            //update with the Id
+            state = state.update_with(self.hash_u256(message.Id));
+            //update with the hashlock
+            state = state.update_with(self.hash_u256(message.hashlock));
+            //update with the timelock
+            state = state.update_with(self.hash_u256(message.timelock));
+            //update with the amount of elements being hashed
+            state = state.update_with(4);
+            //finalize the Pederson Hash and return the hash value
+            state.finalize()
+        }
+        /// @dev Used to hash the given u256 number.
+        /// @param number to hash.
+        fn hash_u256(self: @ContractState, number: u256) -> felt252 {
+            //initialize the Pederson Hash with 0
+            let mut state = PedersenTrait::new(0);
+            //update with u256 type hash
+            state = state.update_with(U256_TYPE_HASH);
+            //update with the u256 number(low, high)
+            state = state.update_with(number);
+            //update with the amount of elements being hashed
+            state = state.update_with(3);
+            //finalize the Pederson Hash and return the hash value
+            state.finalize()
         }
     }
 }
