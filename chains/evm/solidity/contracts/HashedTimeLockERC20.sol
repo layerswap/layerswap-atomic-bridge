@@ -115,7 +115,7 @@ contract LayerswapV8ERC20 {
     address tokenContract
   );
 
-  event TokenRedeemed(bytes32 indexed Id, address redeemAddress);
+  event TokenRedeemed(bytes32 indexed Id, address redeemAddress,uint256 secret,bytes32 hashlock);
   event TokenRefunded(bytes32 indexed Id);
   event LowLevelErrorOccurred(bytes lowLevelData);
 
@@ -306,7 +306,7 @@ contract LayerswapV8ERC20 {
     htlc.secret = secret;
     htlc.redeemed = true;
     IERC20(htlc.tokenContract).safeTransfer(htlc.srcReceiver, htlc.amount);
-    emit TokenRedeemed(Id, msg.sender);
+    emit TokenRedeemed(Id, msg.sender,secret,htlc.hashlock);
     return true;
   }
 
