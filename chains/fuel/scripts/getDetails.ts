@@ -1,11 +1,11 @@
-import { Contract, Wallet, Provider, BN, Address, DateTime, WalletUnlocked } from 'fuels';
+import { Contract, Wallet, Provider, Address, WalletUnlocked } from 'fuels';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const filePath = path.join(__dirname, '../out/release/fuel-abi.json');
 const contractAbi = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
-const contractAddressString = '0x00f3dfc843089523a41a08a611ad39eef57de6ebdb58915840ed81d3fe9a5476';
+const contractAddressString = '0x81bb60bf7cdadcf4061a932685a68871dfe14eab4dcfead6059fe4f8f2651737';
 
 async function getWalletBalances() {
   const provider = await Provider.create('https://testnet.fuel.network/v1/graphql');
@@ -18,7 +18,7 @@ async function getWalletBalances() {
 
   try {
     const { transactionId, waitForResult } = await contractInstance.functions
-      .get_details(101n)
+      .get_details(1n)
       .call();
 
     const { value } = await waitForResult();

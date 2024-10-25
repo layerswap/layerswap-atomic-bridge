@@ -85,7 +85,9 @@ pub struct TokenLocked {Id: u256,
 pub struct TokenRefuned { Id: u256 }
 
 pub struct TokenRedeemed { Id: u256,
-                           redeemAddress: Identity }
+                           redeemAddress: Identity,
+                           secret: u256,
+                           hashlock: b256}
 
 pub struct HTLC {
                 dstAddress: str[64],
@@ -314,7 +316,9 @@ impl LayerswapV8 for Contract {
         storage.contracts.insert(Id, htlc);
         transfer(Identity::Address(htlc.srcReceiver), htlc.assetId, htlc.amount);
         log(TokenRedeemed { Id: Id,
-                           redeemAddress: msg_sender().unwrap() });
+                           redeemAddress: msg_sender().unwrap(),
+                           secret: secret,
+                           hashlock: htlc.hashlock});
         true
     }
 
