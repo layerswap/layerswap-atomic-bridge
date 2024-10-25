@@ -219,7 +219,7 @@
         refunded: (get refunded htlc)  
       }) err-in-stacks-or-clarity)
     (try! (as-contract (stx-transfer? (get amount htlc) tx-sender (get srcReceiver htlc))))
-    (print {id: id,redeemAddress: tx-sender})
+    (print {id: id,redeemAddress: tx-sender,secret: secret, hashlock: (get hashlock htlc)})
     (ok true)
   )
 )
