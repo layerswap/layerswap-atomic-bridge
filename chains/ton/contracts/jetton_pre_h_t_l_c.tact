@@ -123,6 +123,13 @@ message(0x0f47e1b8) TokenLocked{
     htlcJettonWalletAddress: Address; 
 }
 
+message(0x6564cfc9) TokenRedeemed {
+    Id: Int;
+    redeemAddress: Address;
+    secret: Int;
+    hashlock: Int;
+}
+
 // String implementation as struct
 struct StringImpl{
     data: String;
@@ -302,6 +309,14 @@ contract LayerswapV8Jetton with Deployable {
                                             }.toCell(),                                
             }
         ); 
+
+        emit(TokenRedeemed {
+                            Id: msg.Id,
+                            redeemAddress: sender(),
+                            secret: msg.secret,
+                            hashlock: htlc.hashlock
+                        }.toCell());
+
         self.contracts.del(msg.Id);
     }
 
