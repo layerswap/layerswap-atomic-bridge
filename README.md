@@ -45,11 +45,11 @@ As we continue to experiment and test new ideas, expect significant changes to t
 
 ## Supported Networks
 
-- [Bitcoin](./packages/bitcoin/README.md)
-- [EVM](./packages/evm/README.md)
-- [Starknet](./packages/starknet/README.md)
-- [TON](./packages/ton/README.md)
-- [Solana](./packages/solana/README.md)
+- [Bitcoin](./chains/bitcoin/README.md)
+- [EVM](./chains/evm/README.md)
+- [Starknet](./chains/starknet/README.md)
+- [TON](./chains/ton/README.md)
+- [Solana](./chains/solana/README.md)
 - Aptos/Sui (in progress)
 - Stacks (in progress)
 
