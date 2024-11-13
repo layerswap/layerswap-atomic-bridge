@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const niljs = require("@nilfoundation/niljs"); 
 const createWallet = require("./createWallet.js");
+require('dotenv').config();
 
 const artifactPath = path.resolve(__dirname, "../artifacts/contracts/LayerswapV8.sol/LayerswapV8.json");
 const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
@@ -10,7 +11,7 @@ const CONTRACT_ABI = artifact.abi;
 (async () => {
   const client = new niljs.PublicClient({
   transport: new niljs.HttpTransport({
-    endpoint: "https://api.devnet.nil.foundation/api/bot-77/ecde966c3e13c0fd3e8dfd3f883c99fe",
+    endpoint: process.env.RPC_ENDPOINT,
   }),
   shardId: 1,
 });
@@ -35,7 +36,7 @@ const wallet = (await createWallet.createWallet()).wallet;
 const chainId = await client.chainId();
 const gasPrice = await client.getGasPrice(1);
 const htlcAddress = "0x00019b0a7f7bd293a0d8dc3f2526168247c50edb";
-const id = "0x3324742944c68e6143874d2befb52f07868820b19a353d9fe466e8a853e170d3";
+const id = "0x24A7A0A3630D6B6E4DF04CF38322FF3F0F511FE8C64552CD4DBE4C79D34F6BE4";
 
   try {
     const payload = {

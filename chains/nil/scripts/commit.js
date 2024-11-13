@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const niljs = require("@nilfoundation/niljs"); 
 const createWallet = require("../scripts/createWallet.js");
+require('dotenv').config();
 
 const artifactPath = path.resolve(__dirname, "../artifacts/contracts/LayerswapV8.sol/LayerswapV8.json");
 const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
@@ -10,13 +11,11 @@ const CONTRACT_ABI = artifact.abi;
 (async () => {
   const client = new niljs.PublicClient({
   transport: new niljs.HttpTransport({
-    endpoint: "https://api.devnet.nil.foundation/api/bot-77/ecde966c3e13c0fd3e8dfd3f883c99fe",
+    endpoint: process.env.RPC_ENDPOINT,
     timeout: 50000,
   }),
   shardId: 1,
 });
-
-const faucet = new niljs.Faucet(client);
 
 // using existing wallet
 const privKey = "0x8ffeaab7ddc21dbc0825bfa5ef1d2667bf2309ecfcbd9680fa3211ec99867b68";
@@ -54,7 +53,7 @@ const wallet = new niljs.WalletV1({
     const dstAddress = "0xDestinationAddress";
     const srcAsset = "NIL";
     const srcReceiver = "0x000145bc26f60bbd655ae18e376c2b46789b8268";
-    const timelock = (await client.getBlockByNumber("latest")).number + 10;
+    const timelock = (await client.getBlockByNumber("latest")).number + 10000000;
     const value = 15_000_000n;
     const senderPubKey = niljs.toHex(Uint8Array.from(wallet.pubkey));
     const htlcAddress = "0x00019b0a7f7bd293a0d8dc3f2526168247c50edb";

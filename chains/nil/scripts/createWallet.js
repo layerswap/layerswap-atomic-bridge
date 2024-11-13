@@ -7,11 +7,12 @@ const {
   generateRandomPrivateKey,
   waitTillCompleted,
 } = require( "@nilfoundation/niljs");
+require('dotenv').config();
 
 async function createWallet() {
   const client = new PublicClient({
   transport: new HttpTransport({
-    endpoint: "https://api.devnet.nil.foundation/api/bot-77/ecde966c3e13c0fd3e8dfd3f883c99fe",
+    endpoint: process.env.RPC_ENDPOINT,
   }),
   shardId: 1,
 });

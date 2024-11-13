@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const niljs = require("@nilfoundation/niljs"); 
+require('dotenv').config();
 
 const artifactPath = path.resolve(__dirname, "../artifacts/contracts/LayerswapV8.sol/LayerswapV8.json");
 const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
@@ -10,7 +11,7 @@ const CONTRACT_ABI = artifact.abi;
 (async () => {
   const client = new niljs.PublicClient({
     transport: new niljs.HttpTransport({
-      endpoint: "https://api.devnet.nil.foundation/api/bot-77/ecde966c3e13c0fd3e8dfd3f883c99fe",
+      endpoint: process.env.RPC_ENDPOINT,
     }),
     shardId: 1,
   });
