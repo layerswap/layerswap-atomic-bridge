@@ -17,7 +17,10 @@ use std::{
 abi LayerswapV8 {
     #[payable]
     #[storage(read,write)]
-    fn commit(dstChain: str[64],        
+    fn commit(hopChains: [str[64];5],
+              hopAssets: [str[64];5],
+              hopAddresses: [str[64];5],
+              dstChain: str[64],        
               dstAsset: str[64],        
               dstAddress: str[64],      
               srcAsset: str[64],        
@@ -57,7 +60,10 @@ abi LayerswapV8 {
     fn initialize(salt: u256) -> bool;
 }
 
-pub struct TokenCommitted  {Id: u256,
+pub struct TokenCommitted  {hopChains: [str[64];5],
+                            hopAssets: [str[64];5],
+                            hopAddresses: [str[64];5],
+                            Id: u256,
                             dstChain: str[64],
                             dstAsset: str[64],
                             dstAddress: str[64],
@@ -162,7 +168,10 @@ impl LayerswapV8 for Contract {
 
     #[payable]
     #[storage(read,write)]
-    fn commit(dstChain: str[64],
+    fn commit(hopChains: [str[64];5],
+              hopAssets: [str[64];5],
+              hopAddresses: [str[64];5],
+              dstChain: str[64],
               dstAsset: str[64],
               dstAddress: str[64],
               srcAsset: str[64],
@@ -195,7 +204,10 @@ impl LayerswapV8 for Contract {
         let result = storage.contracts.try_insert(Id,htlc);
         assert(result.is_ok());
 
-        log(TokenCommitted  {Id: Id,
+        log(TokenCommitted  {hopChains: hopChains,
+                            hopAssets: hopAssets,
+                            hopAddresses: hopAddresses,
+                            Id: Id,
                             dstChain: dstChain,
                             dstAsset: dstAsset,
                             dstAddress: dstAddress,
