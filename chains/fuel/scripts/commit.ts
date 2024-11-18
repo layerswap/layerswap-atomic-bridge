@@ -1,11 +1,11 @@
-import { Contract, Wallet, Provider, BN, Address, DateTime, WalletUnlocked } from 'fuels';
+import { Contract, Wallet, Provider, Address, DateTime, WalletUnlocked } from 'fuels';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const filePath = path.join(__dirname, '../out/release/fuel-abi.json');
 const contractAbi = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
-const contractAddressString = '0xc58d73c0515ff40d01b919b3ed9fb16891a6b631ca57f5613e6ec26729e81305';
+const contractAddressString = '0xca5320c8135c07d514f9d3c2606b1d9a24253fb9e24068261f228da941b39a1e';
 
 async function getWalletBalances() {
   const provider = await Provider.create('https://testnet.fuel.network/v1/graphql');
@@ -15,6 +15,9 @@ async function getWalletBalances() {
 
 // NOTE: All string variables should be padded to ensure they have 64 characters,
 // as the contract accepts only the str[64] type for string inputs.
+  const hopChains = ['TON'.padEnd(64, ' '),'TON'.padEnd(64, ' '),'TON'.padEnd(64, ' '),'TON'.padEnd(64, ' '),'TON'.padEnd(64, ' ')];
+  const hopAssets = ["Toncoin".padEnd(64, ' '),"Toncoin".padEnd(64, ' '),"Toncoin".padEnd(64, ' '),"Toncoin".padEnd(64, ' '),"Toncoin".padEnd(64, ' ')];
+  const hopAddresses = ["0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y".padEnd(64, ' '),"0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y".padEnd(64, ' '),"0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y".padEnd(64, ' '),"0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y".padEnd(64, ' '),"0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y".padEnd(64, ' ')];
   const dstChain = 'TON'.padEnd(64, ' ');
   const dstAsset = "Toncoin".padEnd(64, ' ');
   const dstAddress = "0QAS8JNB0G4zVkdxABCLVG-Vy3KXE3W3zz1yxpnfu4J-B40y".padEnd(64, ' ');
@@ -28,7 +31,7 @@ async function getWalletBalances() {
 
   try {
     const { transactionId, waitForResult } = await contractInstance.functions
-      .commit(dstChain, dstAsset, dstAddress, srcAsset, srcReceiver, timelock)
+      .commit(hopChains,hopAssets,hopAddresses,dstChain, dstAsset, dstAddress, srcAsset, srcReceiver, timelock)
       .callParams({
         forward: [1, provider.getBaseAssetId()],
       })

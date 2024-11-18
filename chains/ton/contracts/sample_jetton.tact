@@ -219,7 +219,7 @@ contract JettonDefaultWallet {
         }
 
         // 0xd53276db -- Cashback to the original Sender
-        if (msg.response_destination != null) { 
+        if (msg.response_destination != newAddress(0,0x0)) { 
             send(SendParameters {
                 to: msg.response_destination, 
                 value: msgValue,  
@@ -337,5 +337,3 @@ message(0xd53276db) TokenExcesses {
 message TokenUpdateContent {
     content: Cell;
 }
-
-

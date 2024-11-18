@@ -91,7 +91,7 @@ contract LayerswapV8 {
   );
 
   event TokenRefunded(bytes32 indexed Id);
-  event TokenRedeemed(bytes32 indexed Id, address redeemAddress);
+  event TokenRedeemed(bytes32 indexed Id, address redeemAddress,uint256 secret, bytes32 hashlock);
   event LowLevelErrorOccurred(bytes lowLevelData);
 
   modifier _exists(bytes32 Id) {
@@ -258,7 +258,7 @@ contract LayerswapV8 {
     htlc.redeemed = true;
     (bool success, ) = htlc.srcReceiver.call{ value: htlc.amount }('');
     require(success, 'Transfer failed');
-    emit TokenRedeemed(Id, msg.sender);
+    emit TokenRedeemed(Id, msg.sender,secret,htlc.hashlock);
     return true;
   }
 

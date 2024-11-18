@@ -16,11 +16,10 @@ import { concatBytes, hexToBytes } from "@stacks/common";
 import { createHash } from "crypto";
 
 const network = new StacksTestnet();
-// const secretKey = "753b7cc01a1a2e86221266a154af739463fce51219d97e4f856cd7200c3bd2a601"; // Xverse
-const secretKey = "81cbdb1230785684d0a49a1e069d6c911366db4af6242b0212b3b3335624a2a301";
+const secretKey = "753b7cc01a1a2e86221266a154af739463fce51219d97e4f856cd7200c3bd2a601"; // Xverse
 
 async function main() {
-  const id_ = "41292735127580264";
+  const id_ = "41305506774033082";
   const hashlock_ = "88470a9f59f469bf204c9ea2bfc95ff9d7d54adf37cd56fc011e05f857f01c8d";
   const timelock_ = BigInt(Math.floor(Date.now() / 1000) + 3600) ;
 
@@ -29,8 +28,8 @@ async function main() {
   const timelock = timelock_;
   
   const txOptions = {
-    contractAddress: 'ST136VTJP5KQ24EDMKWP0PJ44VVHMGX4KNKAW3XW5',
-    contractName: 'LayerSwap',
+    contractAddress: 'ST2R1JC4FWF70GM9M7C7F4WH76PVZCSNHHP1EBKGM',
+    contractName: 'redeemTest',
     functionName: 'add-lock-sig',
     functionArgs: [
       uintCV(id),
@@ -60,7 +59,7 @@ main().catch(console.error);
 
 
 function sign(id_,hashlock_,timelock_){
-  const address = getAddressFromPrivateKey("753b7cc01a1a2e86221266a154af739463fce51219d97e4f856cd7200c3bd2a601", TransactionVersion.Testnet);
+  const address = getAddressFromPrivateKey("dff46abadcbe3051f3eaa0857969117b1ab6bc65f3b6e31155d26236013633cf01", TransactionVersion.Testnet);
   console.log(address);
 
   const id = Cl.uint(id_);
@@ -76,7 +75,7 @@ function sign(id_,hashlock_,timelock_){
 
   const signature = signMessageHashRsv({
     messageHash: messageHash,
-    privateKey: createStacksPrivateKey("753b7cc01a1a2e86221266a154af739463fce51219d97e4f856cd7200c3bd2a601"),
+    privateKey: createStacksPrivateKey("dff46abadcbe3051f3eaa0857969117b1ab6bc65f3b6e31155d26236013633cf01"),
   }).data;
 
   return signature;

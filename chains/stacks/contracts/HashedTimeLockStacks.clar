@@ -64,6 +64,9 @@
 )
 
 (define-public (commit
+    (hop-chains (list 5 (string-ascii 256)))
+    (hop-assets (list 5 (string-ascii 256)))
+    (hop-addresses (list 5 (string-ascii 256)))
     (dst-chain (string-ascii 256))
     (dst-asset (string-ascii 256))
     (dst-address (string-ascii 256))
@@ -98,7 +101,10 @@
     )
     (var-set contract-nonce (+ (var-get contract-nonce) u1))
     (try! (stx-transfer? msg-value tx-sender (as-contract tx-sender)))
-    (print {  id: id,
+    (print {  hop-chains: hop-chains,
+              hop-assets: hop-assets,
+              hop-addresses: hop-addresses,
+              id: id,
               dstChain: dst-chain,
               dstAddress: dst-address,
               dstAsset: dst-asset,
@@ -219,7 +225,7 @@
         refunded: (get refunded htlc)  
       }) err-in-stacks-or-clarity)
     (try! (as-contract (stx-transfer? (get amount htlc) tx-sender (get srcReceiver htlc))))
-    (print {id: id,redeemAddress: tx-sender})
+    (print {id: id,redeemAddress: tx-sender,secret: secret, hashlock: (get hashlock htlc)})
     (ok true)
   )
 )

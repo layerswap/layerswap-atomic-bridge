@@ -5,8 +5,8 @@ async function signHTLC() {
     const domain = {
         name: "LayerswapV8",
         version: "1",
-        chainId: 13473,
-        verifyingContract: "0xeAdCC212315Fd1Ef9f85F2778517bca30E91F6D6",
+        chainId: 11155111,
+        verifyingContract: "0x4a403b55fe7348df85182abbd00402d7442e0af2",
         salt: "0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0"
     };
 
@@ -36,12 +36,12 @@ async function signHTLC() {
     };
 
     const message = {
-        Id: "0x524a8f4ca981947dff186948faaaea46a5722292a31191c759082b46b6b746ad",
-        hashlock: "0xa388e8a0625bf6f2630e44283a57a4d6d416c39a7b06fbd3a54a827d73bea05c",
-        timelock: 1726156825,
+        Id: "0x0072c2bb6f8417f7d8b7cfbeb95db2feb17d2d22f0c2801fec1684025d1059af",
+        hashlock: "0xddfafe7925d46e633decb4cb3c933b4c2f7d56679487f4b88ea3e6422eb2b81c",
+        timelock: 1729861884,
     };
 
-    const privateKey =  '01d3a69085f30b41b28ec56f8759784c7711d6311e53fb9e9d7e589d94196728';
+    const privateKey =  'e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9';
     const wallet = new ethers.Wallet(privateKey);
 
     const signature = await wallet.signTypedData(domain, types, message);

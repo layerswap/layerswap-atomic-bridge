@@ -92,6 +92,12 @@ message(0x95b0219d) TokenLocked{
     timelock: Int;
 }
 
+message(0x6564cfc9) TokenRedeemed {
+    Id: Int;
+    redeemAddress: Address;
+    secret: Int;
+    hashlock: Int;
+}
 // String implementation as struct
 struct StringImpl{
     data: String;
@@ -186,7 +192,7 @@ contract LayerswapV8 with Deployable {
                                             dstAsset: msg.dstAsset,
                                             srcAsset: msg.srcAsset,
                                             sender: sender(),
-                                            senderPubKey: 0, // as after locking it cant be used for AddLock
+                                            senderPubKey: 0, // as after locking it cant be used for AddLockSig
                                             srcReceiver: msg.srcReceiver,
                                             secret: 0,
                                             hashlock: msg.hashlock,
@@ -238,6 +244,13 @@ contract LayerswapV8 with Deployable {
                 value: 0,
                 mode: 64
                 });
+
+        emit(TokenRedeemed {
+                            Id: msg.Id,
+                            redeemAddress: sender(),
+                            secret: msg.secret,
+                            hashlock: htlc.hashlock
+                        }.toCell());
 
         self.contracts.del(msg.Id);
     }

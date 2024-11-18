@@ -1,4 +1,4 @@
-import { Contract, Wallet, Provider, BN, Address, DateTime, WalletUnlocked } from 'fuels';
+import { Contract, Wallet, Provider, Address, DateTime, WalletUnlocked } from 'fuels';
 import * as fs from 'fs';
 import * as path from 'path';
 
