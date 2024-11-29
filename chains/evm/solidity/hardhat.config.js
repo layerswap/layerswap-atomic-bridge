@@ -13,61 +13,86 @@ module.exports = {
         },
       },
   networks: {
-    kakarotSepolia: {
+    mantleSepolia: {
+      url: 'https://endpoints.omniatech.io/v1/mantle/sepolia/public',
+      accounts: [process.env.PRIV_KEY],
+    },
+    berachain: {
+      url: 'https://bartio.rpc.berachain.com/',
+      accounts: [process.env.PRIV_KEY],
+    },
+    kakarot_sepolia: {
       url: 'https://sepolia-rpc.kakarot.org',
-      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      accounts: [process.env.PRIV_KEY],
     },
     unichainSepolia: {
       url: 'https://sepolia.unichain.org',
-      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      accounts: [process.env.PRIV_KEY],
     },
     arbitrumSepolia: {
       url: 'https://arbitrum-sepolia.drpc.org',
-      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      accounts: [process.env.PRIV_KEY],
     },
     sepolia: {
       url: `https://sepolia.infura.io/v3/775081a490784e709d3457ed0e413b21`,
-      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      accounts: [process.env.PRIV_KEY],
     },
     lineaSepolia: {
       url: "https://rpc.sepolia.linea.build",
-      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      accounts: [process.env.PRIV_KEY],
       chainId: 59141,
     },
     optimismSepolia: {
       url: "https://sepolia.optimism.io",
-      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      accounts: [process.env.PRIV_KEY],
       chainId: 11155420,
     },
     taikoHekla: {
       url: "https://rpc.hekla.taiko.xyz.",
-      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      accounts: [process.env.PRIV_KEY],
       chainId: 167009,
     },
     immutableTestnet: {
       url: "https://rpc.testnet.immutable.com",
-      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      accounts: [process.env.PRIV_KEY],
       chainId: 13473,
     },
     minato: {
       url: 'https://rpc.minato.soneium.org/',
-      accounts: ['e9ac8d073f52df4c776f16915460806dc5c28c9bc9b510ad074c275c8cff89e9'],
+      accounts: [process.env.PRIV_KEY],
     },
   },
   etherscan: {
     apiKey: {
-      unichainSepolia: "Q7JD6R5A6S8B3KXIZFS5NBP13MJI9C74YH",
-      immutableTestnet: "pk_imapik-test-$JSr2xVyP--QDkeRDm@t",
-      optimismSepolia: "UM3DM9U5BE55IYGI656ET7VWI5PZJEHIS3",
-      lineaSepolia: "KRPGHKNVEKJVSA3NG8XGMAAS3ZQIZYFKNV",
-      taikoHekla: "XTMX6XTKPD8VCWD58AEPEKYTQB6QW5W1T8",
-      arbitrumSepolia: "J3J5B7TVWIDGV5236BHRGAUD9YJV5T33AH",
-      sepolia: "Q7JD6R5A6S8B3KXIZFS5NBP13MJI9C74YH",
-      kakarotSepolia: "kakarot_sepolia",
-      minato: "empty",
-      sepolia: "Q7JD6R5A6S8B3KXIZFS5NBP13MJI9C74YH"
+      berachain: process.env.berachain,
+      unichainSepolia: process.env.unichainSepolia,
+      immutableTestnet: process.env.immutableTestnet,
+      optimismSepolia: process.env.optimismSepolia,
+      lineaSepolia: process.env.lineaSepolia,
+      taikoHekla: process.env.taikoHekla,
+      arbitrumSepolia: process.env.arbitrumSepolia,
+      minato: process.env.minato,
+      sepolia: process.env.sepolia,
+      kakarot_sepolia: process.env.kakarotSepolia,
+      mantleSepolia: process.env.mantleSepolia,
     },
     customChains: [
+      {
+        network: "mantleSepolia",
+        chainId: 5003,
+        urls: {
+          apiURL: "https://api-sepolia.mantlescan.xyz/api",
+          browserURL: "https://sepolia.mantlescan.xyz/",
+        },
+      },
+      {
+        network: "berachain",
+        chainId: 80084,
+        urls: {
+          apiURL: "https://api.routescan.io/v2/network/testnet/evm/80084/etherscan/api/",
+          browserURL: "https://bartio.beratrail.io/",
+        },
+      },
       {
         network: "unicahinSepolia",
         chainId: 1301,
@@ -118,9 +143,9 @@ module.exports = {
       },
        {
         network: "kakarot_sepolia",
-        chainId: 1802203764_2,
+        chainId: 920637907288165,
         urls: {
-          apiURL: "https://api.routescan.io/v2/network/testnet/evm/1802203764_2/etherscan",
+          apiURL: "https://api.routescan.io/v2/network/testnet/evm/920637907288165/etherscan",
           browserURL: "https://sepolia.kakarotscan.org"
         }
       },

@@ -1,5 +1,5 @@
 /*
-_                                                 __     _____ 
+ _                                                 __     _____ 
 | |    __ _ _   _  ___ _ __ _____      ____ _ _ __ \ \   / ( _ )
 | |   / _` | | | |/ _ \ '__/ __\ \ /\ / / _` | '_ \ \ \ / // _ \
 | |__| (_| | |_| |  __/ |  \__ \\ V  V / (_| | |_) | \ V /| (_) |
@@ -10,396 +10,457 @@ _                                                 __     _____
 
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
-import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/**
- * @title Hashed Timelock contracts (HTLCs) on Ethereum ERC20 tokens.
- *
- * This contract provides a way to lock and keep HTLCs for ERC20 tokens.
- *
- * Protocol:
- *
- *  1) lock(srcReceiver, hashlock, timelock, tokenContract, amount) - a
- *      sender calls this to lock a new HTLC on a given token (tokenContract)
- *       for a given amount. A 32 byte contract id is returned
- *  2) redeem(contractId, secret) - once the srcReceiver knows the secret of
- *      the hashlock hash they can claim the tokens with this function
- *  3) refund() - after timelock has expired and if the srcReceiver did not
- *      redeem the tokens the sender / creator of the HTLC can get their tokens
- *      back with this function.
- */
+/// @title LayerswapV8ERC20 Contract
+/// @notice Implements the Layerswap V8 PreHTLC protocol for ERC20 tokens, enabling secure and atomic cross-chain swaps.
+/// @dev Manages HTLCs for ERC20 tokens with event-driven updates.
+
+/// @dev Represents the EIP-712 domain for signature verification.
 struct EIP712Domain {
-  string name;
-  string version;
-  uint256 chainId;
-  address verifyingContract;
-  bytes32 salt;
+    string name;
+    string version;
+    uint256 chainId;
+    address verifyingContract;
+    bytes32 salt;
 }
 
 contract LayerswapV8ERC20 {
-  using ECDSA for bytes32;
-  using Address for address;
+    using ECDSA for bytes32;
 
-  bytes32 private DOMAIN_SEPARATOR;
-  bytes32 private constant SALT = keccak256(abi.encodePacked('Layerswap V8'));
+    bytes32 private immutable DOMAIN_SEPARATOR;
 
-  constructor() {
-    DOMAIN_SEPARATOR = hashDomain(
-      EIP712Domain({
-        name: 'LayerswapV8ERC20',
-        version: '1',
-        chainId: block.chainid,
-        verifyingContract: address(this),
-        salt: SALT
-      })
-    );
-  }
-
-  struct HTLC {
-    string dstAddress;
-    string dstChain;
-    string dstAsset;
-    string srcAsset;
-    address payable sender;
-    address payable srcReceiver;
-    bytes32 hashlock;
-    uint256 timelock;
-    uint256 amount;
-    uint256 secret;
-    address tokenContract;
-    bool redeemed;
-    bool refunded;
-  }
-
-  struct addLockMsg {
-    bytes32 Id;
-    bytes32 hashlock;
-    uint256 timelock;
-  }
-
-  using SafeERC20 for IERC20;
-  mapping(bytes32 => HTLC) contracts;
-  bytes32[] contractIds;
-  uint256 blockHashAsUint = uint256(blockhash(block.number - 1));
-  uint256 contractNonce = 0;
-
-  event TokenCommitted(
-    bytes32 indexed Id,
-    string[] hopChains,
-    string[] hopAssets,
-    string[] hopAddresses,
-    string dstChain,
-    string dstAddress,
-    string dstAsset,
-    address indexed sender,
-    address indexed srcReceiver,
-    string srcAsset,
-    uint amount,
-    uint timelock,
-    address tokenContract
-  );
-
-  event TokenLocked(
-    bytes32 indexed Id,
-    bytes32 hashlock,
-    string dstChain,
-    string dstAddress,
-    string dstAsset,
-    address indexed sender,
-    address indexed srcReceiver,
-    string srcAsset,
-    uint amount,
-    uint timelock,
-    address tokenContract
-  );
-
-  event TokenRedeemed(bytes32 indexed Id, address redeemAddress,uint256 secret,bytes32 hashlock);
-  event TokenRefunded(bytes32 indexed Id);
-  event LowLevelErrorOccurred(bytes lowLevelData);
-
-  modifier _exists(bytes32 Id) {
-    require(hasHTLC(Id),"HTLC Not Exists");
-    _;
-  }
-
-  function commit(
-    string[] memory hopChains,
-    string[] memory hopAssets,
-    string[] memory hopAddresses,
-    string memory dstChain,
-    string memory dstAsset,
-    string memory dstAddress,
-    string memory srcAsset,
-    address srcReceiver,
-    uint timelock,
-    uint amount,
-    address tokenContract
-  ) external returns (bytes32 Id) {
-    require(amount > 0,"Funds Not Sent");
-    require(timelock > block.timestamp,"Not Future Timelock");
-
-    IERC20 token = IERC20(tokenContract);
-
-    require(token.balanceOf(msg.sender) >= amount,"Insufficient Balance");
-    require(token.allowance(msg.sender, address(this)) >= amount,"No Allowance");
-    token.safeTransferFrom(msg.sender, address(this), amount);
-
-    contractNonce += 1;
-    Id = bytes32(blockHashAsUint ^ contractNonce);
-
-    //Remove this check; the ID is guaranteed to be unique.
-    require(!hasHTLC(Id),"HTLC Already Exists");
-    contractIds.push(Id);
-    contracts[Id] = HTLC(
-      dstAddress,
-      dstChain,
-      dstAsset,
-      srcAsset,
-      payable(msg.sender),
-      payable(srcReceiver),
-      bytes32(0),
-      timelock,
-      amount,
-      uint256(0),
-      tokenContract,
-      false,
-      false
-    );
-
-    emit TokenCommitted(
-      Id,
-      hopChains,
-      hopAssets,
-      hopAddresses,
-      dstChain,
-      dstAddress,
-      dstAsset,
-      msg.sender,
-      srcReceiver,
-      srcAsset,
-      amount,
-      timelock,
-      tokenContract
-    );
-  }
-
-  function addLock(bytes32 Id, bytes32 hashlock, uint256 timelock) external _exists(Id) returns (bytes32) {
-    HTLC storage htlc = contracts[Id];
-    require(!htlc.refunded,"Already Refunded");
-    require(timelock > block.timestamp,"Not Future Timelock");
-    if (msg.sender == htlc.sender || msg.sender == address(this)) {
-      if (htlc.hashlock == 0) {
-        htlc.hashlock = hashlock;
-        htlc.timelock = timelock;
-      } else {
-          require(false,"Hashlock Already Set");
-      }
-      emit TokenLocked(
-                        Id,
-                        hashlock,
-                        htlc.dstChain,
-                        htlc.dstAddress,
-                        htlc.dstAsset,
-                        htlc.sender,
-                        htlc.srcReceiver,
-                        htlc.srcAsset,
-                        htlc.amount,
-                        timelock,
-                        htlc.tokenContract
-                      );
-      return Id;
-    } else {
-          require(false,"No Allowance"); 
-    }
-  }
-
-  function addLockSig(addLockMsg memory message, uint8 v, bytes32 r, bytes32 s) external returns (bytes32) {
-    if (verifyMessage(message, v, r, s)) {
-      return this.addLock(message.Id, message.hashlock, message.timelock);
-    } else {
-      require(false,"Invalid Signiture");
-    }
-  }
-
-  /**
-   * @dev Sender / Payer sets up a new hash time lock contract depositing the
-   * funds and providing the reciever and terms.
-   * @param srcReceiver srcReceiver of the funds.
-   * @param hashlock A sha-256 hash hashlock.
-   * @param timelock UNIX epoch seconds time that the lock expires at.
-   *                  unlocks can be made after this time.
-   * @return Id Id of the new HTLC. This is needed for subsequent
-   *                    calls.
-   */
-
-  function lock(
-    bytes32 Id,
-    bytes32 hashlock,
-    uint256 timelock,
-    address srcReceiver,
-    string memory srcAsset,
-    string memory dstChain,
-    string memory dstAddress,
-    string memory dstAsset,
-    uint256 amount,
-    address tokenContract
-  ) external returns (bytes32) {
-    require(amount > 0, "Funds Not Sent");
-    require(timelock > block.timestamp,"Not Future Timelock");
-    require(!hasHTLC(Id),"HTLC Already Exists");
-    IERC20 token = IERC20(tokenContract);
-
-    require(token.balanceOf(msg.sender) >= amount,"Insufficient Balance");
-    require(token.allowance(msg.sender, address(this)) >= amount,"No Allowance");
-
-    token.safeTransferFrom(msg.sender, address(this), amount);
-    contracts[Id] = HTLC(
-      dstAddress,
-      dstChain,
-      dstAsset,
-      srcAsset,
-      payable(msg.sender),
-      payable(srcReceiver),
-      hashlock,
-      timelock,
-      amount,
-      0x0,
-      tokenContract,
-      false,
-      false
-    );
-
-    contractIds.push(Id);
-    emit TokenLocked(
-      Id,
-      hashlock,
-      dstChain,
-      dstAddress,
-      dstAsset,
-      msg.sender,
-      srcReceiver,
-      srcAsset,
-      amount,
-      timelock,
-      tokenContract
-    );
-    return Id;
-  }
-
-  /**
-   * @dev Called by the srcReceiver once they know the secret of the hashlock.
-   * This will transfer the locked funds to their address.
-   *
-   * @param Id Id of the HTLC.
-   * @param secret sha256(secret) should equal the contract hashlock.
-   * @return bool true on success
-   */
-  function redeem(bytes32 Id, uint256 secret) external _exists(Id) returns (bool) {
-    HTLC storage htlc = contracts[Id];
-
-    require(htlc.hashlock == sha256(abi.encodePacked(secret)),"Hashlock Not Match");
-    require(!htlc.refunded,"Already Refunded");
-    require(!htlc.redeemed,"Already Redeemed");
-
-    htlc.secret = secret;
-    htlc.redeemed = true;
-    IERC20(htlc.tokenContract).safeTransfer(htlc.srcReceiver, htlc.amount);
-    emit TokenRedeemed(Id, msg.sender,secret,htlc.hashlock);
-    return true;
-  }
-
-  /**
-   * @dev Called by the sender if there was no redeem AND the time lock has
-   * expired. This will refund the contract amount.
-   * @param Id Id of HTLC to refund from.
-   * @return bool true on success
-   */
-  function refund(bytes32 Id) external _exists(Id) returns (bool) {
-    HTLC storage htlc = contracts[Id];
-    require(!htlc.refunded,"Already Refunded");
-    require(!htlc.redeemed,"Already Redeemed");
-    require(htlc.timelock <= block.timestamp,"Not Passed Timelock");
-
-    htlc.refunded = true;
-    IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
-    emit TokenRefunded(Id);
-    return true;
-  }
-
-  /**
-   * @dev Get contract details.
-   * @param Id HTLC contract id
-   */
-  function getDetails(bytes32 Id) external view returns (HTLC memory) {
-    return contracts[Id];
-  }
-
-  /**
-   * @dev Check if there is a contract with a given id.
-   * @param Id Id into contracts mapping.
-   */
-  function hasHTLC(bytes32 Id) internal view returns (bool exists) {
-    exists = (contracts[Id].sender != address(0));
-  }
-
-  function getContracts(address senderAddr) public view returns (bytes32[] memory) {
-    uint count = 0;
-
-    for (uint i = 0; i < contractIds.length; i++) {
-      HTLC memory htlc = contracts[contractIds[i]];
-      if (htlc.sender == senderAddr) {
-        count++;
-      }
+    /// @dev Sets up the EIP-712 domain details used for verifying signed messages.
+    constructor() {
+        DOMAIN_SEPARATOR = hashDomain(
+            EIP712Domain({
+                name: "LayerswapV8ERC20",
+                version: "1",
+                chainId: block.chainid,
+                verifyingContract: address(this),
+                salt: 0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0
+            })
+        );
     }
 
-    bytes32[] memory result = new bytes32[](count);
-    uint j = 0;
+    /// @dev Custom errors to simplify failure handling in the contract.
+    error FundsNotSent();
+    error NotFutureTimelock();
+    error NotPassedTimelock();
+    error HTLCAlreadyExists();
+    error HTLCNotExists();
+    error HashlockNotMatch();
+    error AlreadyClaimed();
+    error NoAllowance();
+    error InvalidSigniture();
+    error HashlockAlreadySet();
+    error TransferFailed();
+    error InsufficientBalance();
 
-    for (uint i = 0; i < contractIds.length; i++) {
-      if (contracts[contractIds[i]].sender == senderAddr) {
-        result[j] = contractIds[i];
-        j++;
-      }
+    /// @dev Represents a hashed time-locked contract (HTLC) for ERC20 tokens.
+    struct HTLC {
+        /// @notice The amount of ERC20 tokens locked in the HTLC.
+        uint256 amount;
+        /// @notice The hash of the secret required for redemption.
+        bytes32 hashlock;
+        /// @notice The ERC20 token contract address.
+        address tokenContract;
+        /// @notice The timestamp after which the funds can be refunded.
+        uint48 timelock;
+        /// @notice Indicates whether the funds were claimed (redeemed or refunded).
+        bool claimed;
+        /// @notice The creator of the HTLC.
+        address payable sender;
+        /// @notice The recipient of the funds if conditions are met.
+        address payable srcReceiver;
     }
 
-    return result;
-  }
+    /// @dev Represents the details required to add a lock, used as part of the `addLockSig` parameters.
+    struct addLockMsg {
+        /// @notice The identifier of the HTLC to which the hashlock should be added and the timelock updated.
+        bytes32 Id;
+        /// @notice The hashlock to be added to the HTLC.
+        bytes32 hashlock;
+        /// @notice The new timelock to be set for the HTLC.
+        uint48 timelock;
+    }
 
-  function hashDomain(EIP712Domain memory domain) private pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 salt)'),
-          keccak256(bytes(domain.name)),
-          keccak256(bytes(domain.version)),
-          domain.chainId,
-          domain.verifyingContract,
-          domain.salt
-        )
-      );
-  }
+    using SafeERC20 for IERC20;
 
-  // Hashes an EIP712 message struct
-  function hashMessage(addLockMsg memory message) private pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          keccak256('addLockMsg(bytes32 Id,bytes32 hashlock,uint256 timelock)'),
-          message.Id,
-          message.hashlock,
-          message.timelock
-        )
-      );
-  }
+    /// @dev Unique identifier generation using block hash and a nonce.
+    uint256 private immutable blockHashAsUint =
+        uint256(blockhash(block.number - 20));
+    uint256 private contractNonce = 0;
 
-  // Verifies an EIP712 message signature
-  function verifyMessage(addLockMsg memory message, uint8 v, bytes32 r, bytes32 s) private view returns (bool) {
-    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', DOMAIN_SEPARATOR, hashMessage(message)));
+    /// @dev Storage for HTLCs
+    mapping(bytes32 => HTLC) private contracts;
 
-    address recoveredAddress = ecrecover(digest, v, r, s);
+    /// @dev Emitted when an HTLC is created and ERC20 tokens are committed.
+    /// @param Id The unique identifier of the HTLC.
+    /// @param hopChains The sequence of chains forming the path from the source to the destination chain.
+    /// @param hopAssets The sequence of assets being swapped along the path.
+    /// @param hopAddresses The sequence of addresses involved along the path.
+    /// @param dstChain The destination blockchain.
+    /// @param dstAddress The recipient address on the destination chain.
+    /// @param dstAsset The asset on the destination chain.
+    /// @param sender The creator of the HTLC.
+    /// @param srcReceiver The recipient of the funds if conditions are met.
+    /// @param srcAsset The asset being locked.
+    /// @param amount The amount of ERC20 tokens locked in the HTLC.
+    /// @param timelock The timestamp after which the funds can be refunded.
+    /// @param tokenContract The address of the ERC20 token contract.
+    event TokenCommitted(
+        bytes32 indexed Id,
+        string[] hopChains,
+        string[] hopAssets,
+        string[] hopAddresses,
+        string dstChain,
+        string dstAddress,
+        string dstAsset,
+        address indexed sender,
+        address indexed srcReceiver,
+        string srcAsset,
+        uint256 amount,
+        uint48 timelock,
+        address tokenContract
+    );
 
-    return (recoveredAddress == contracts[message.Id].sender);
-  }
+    /// @dev Emitted when an HTLC is locked with a hashlock and timelock.
+    event TokenLocked(
+        bytes32 indexed Id,
+        bytes32 hashlock,
+        string dstChain,
+        string dstAddress,
+        string dstAsset,
+        address indexed sender,
+        address indexed srcReceiver,
+        string srcAsset,
+        uint256 amount,
+        uint48 timelock,
+        address tokenContract
+    );
+
+    /// @dev Emitted when a hashlock and timelock are added to an existing HTLC.
+    event TokenLockAdded(bytes32 indexed Id, bytes32 hashlock, uint48 timelock);
+
+    /// @dev Emitted when funds are redeemed from an HTLC using the correct secret.
+    event TokenRedeemed(
+        bytes32 indexed Id,
+        address redeemAddress,
+        uint256 secret,
+        bytes32 hashlock
+    );
+
+    /// @dev Emitted when funds are redeemed from an HTLC using the correct secret.
+    event TokenRefunded(bytes32 indexed Id);
+
+    /// @dev Modifier to ensure HTLC exists before proceeding.
+    modifier _exists(bytes32 Id) {
+        require(hasHTLC(Id), "HTLC Not Exists");
+        _;
+    }
+
+    /// @notice Creates and commits a new hashed time-locked contract (HTLC) for ERC20 tokens.
+    /// @dev Transfers the specified amount of ERC20 tokens to the contract and emits a `TokenCommitted` event.
+    /// @param hopChains The sequence of chains forming the path from the source to the destination chain.
+    /// @param hopAssets The sequence of assets being swapped along the path.
+    /// @param hopAddresses The sequence of addresses involved along the path.
+    /// @param dstChain The destination blockchain.
+    /// @param dstAsset The asset on the destination chain.
+    /// @param dstAddress The recipient address on the destination chain.
+    /// @param srcAsset The asset being locked.
+    /// @param srcReceiver The recipient of the funds if conditions are met.
+    /// @param timelock The timestamp after which the funds can be refunded.
+    /// @param amount The amount of ERC20 tokens to lock in the HTLC.
+    /// @param tokenContract The address of the ERC20 token contract.
+    /// @return Id The unique identifier of the created HTLC.
+    function commit(
+        string[] calldata hopChains,
+        string[] calldata hopAssets,
+        string[] calldata hopAddresses,
+        string calldata dstChain,
+        string calldata dstAsset,
+        string calldata dstAddress,
+        string calldata srcAsset,
+        address srcReceiver,
+        uint48 timelock,
+        uint256 amount,
+        address tokenContract
+    ) external returns (bytes32 Id) {
+        if (amount == 0) revert FundsNotSent(); // Ensure funds are sent.
+        if (timelock < block.timestamp) revert NotFutureTimelock(); // Ensure timelock is in the future.
+        IERC20 token = IERC20(tokenContract);
+
+        if (token.balanceOf(msg.sender) < amount) revert InsufficientBalance();
+        if (token.allowance(msg.sender, address(this)) < amount)
+            revert NoAllowance();
+        token.safeTransferFrom(msg.sender, address(this), amount);
+
+        unchecked {
+            ++contractNonce; // Increment nonce for uniqueness.
+        }
+        Id = bytes32(blockHashAsUint ^ contractNonce);
+
+        // Store HTLC details.
+        contracts[Id] = HTLC(
+            amount,
+            bytes32(bytes1(0x01)),
+            tokenContract,
+            timelock,
+            false,
+            payable(msg.sender),
+            payable(srcReceiver)
+        );
+
+        // Emit the commit event.
+        emit TokenCommitted(
+            Id,
+            hopChains,
+            hopAssets,
+            hopAddresses,
+            dstChain,
+            dstAddress,
+            dstAsset,
+            msg.sender,
+            srcReceiver,
+            srcAsset,
+            amount,
+            timelock,
+            tokenContract
+        );
+    }
+
+    /// @notice Adds a hashlock and updates the timelock for an existing HTLC.
+    /// @dev Can only be called by the HTLC's creator if the HTLC exists and has not been claimed. Emits a `TokenLockAdded` event.
+    /// @param Id The unique identifier of the HTLC to update.
+    /// @param hashlock The hashlock to be added.
+    /// @param timelock The new timelock to be set.
+    /// @return bytes32 The updated HTLC identifier.
+    function addLock(
+        bytes32 Id,
+        bytes32 hashlock,
+        uint48 timelock
+    ) external _exists(Id) returns (bytes32) {
+        HTLC storage htlc = contracts[Id];
+        if (htlc.claimed) revert AlreadyClaimed();
+        if (timelock < block.timestamp) revert NotFutureTimelock();
+        if (msg.sender == htlc.sender) {
+            if (htlc.hashlock == bytes32(bytes1(0x01))) {
+                htlc.hashlock = hashlock;
+                htlc.timelock = timelock;
+            } else {
+                revert HashlockAlreadySet(); // Prevent overwriting hashlock.
+            }
+            emit TokenLockAdded(Id, hashlock, timelock);
+            return Id;
+        } else {
+            revert NoAllowance(); // Ensure only allowed accounts can add a lock.
+        }
+    }
+
+    /// @notice Adds a hashlock and updates the timelock for an existing HTLC using a signed message.
+    /// @dev Verifies the provided signature and updates the HTLC if valid. Emits a `TokenLockAdded` event.
+    /// @param message The details of the lock to be added, including the HTLC ID, hashlock, and timelock.
+    /// @param r The `r` value of the ECDSA signature.
+    /// @param s The `s` value of the ECDSA signature.
+    /// @param v The `v` value of the ECDSA signature.
+    /// @return bytes32 The updated HTLC identifier.
+    function addLockSig(
+        addLockMsg calldata message,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external _exists(message.Id) returns (bytes32) {
+        if (verifyMessage(message, r, s, v)) {
+            HTLC storage htlc = contracts[message.Id];
+            if (htlc.claimed) revert AlreadyClaimed();
+            if (message.timelock < block.timestamp) revert NotFutureTimelock();
+            if (htlc.hashlock == bytes32(bytes1(0x01))) {
+                htlc.hashlock = message.hashlock;
+                htlc.timelock = message.timelock;
+            } else {
+                revert HashlockAlreadySet();
+            }
+            emit TokenLockAdded(message.Id, message.hashlock, message.timelock);
+            return message.Id;
+        } else {
+            revert InvalidSigniture(); // Ensure valid signature.
+        }
+    }
+
+    /// @notice Locks ERC20 tokens in a new hashed time-locked contract (HTLC).
+    /// @dev Transfers the specified amount of ERC20 tokens to the contract and emits a `TokenLocked` event.
+    /// @param Id The unique identifier of the HTLC.
+    /// @param hashlock The hash of the secret required for redemption.
+    /// @param timelock The timestamp after which the funds can be refunded if not claimed.
+    /// @param srcReceiver The recipient of the funds if the HTLC is successfully redeemed.
+    /// @param srcAsset The asset being locked.
+    /// @param dstChain The destination blockchain for the swap.
+    /// @param dstAddress The recipient address on the destination chain.
+    /// @param dstAsset The asset on the destination chain.
+    /// @param amount The amount of ERC20 tokens to lock in the HTLC.
+    /// @param tokenContract The address of the ERC20 token contract.
+    /// @return bytes32 The unique identifier of the created HTLC.
+    function lock(
+        bytes32 Id,
+        bytes32 hashlock,
+        uint48 timelock,
+        address srcReceiver,
+        string calldata srcAsset,
+        string calldata dstChain,
+        string calldata dstAddress,
+        string calldata dstAsset,
+        uint256 amount,
+        address tokenContract
+    ) external returns (bytes32) {
+        if (amount == 0) revert FundsNotSent();
+        if (timelock < block.timestamp) revert NotFutureTimelock();
+        if (hasHTLC(Id)) revert HTLCAlreadyExists();
+        IERC20 token = IERC20(tokenContract);
+
+        if (token.balanceOf(msg.sender) < amount) revert InsufficientBalance();
+        if (token.allowance(msg.sender, address(this)) < amount)
+            revert NoAllowance();
+
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        contracts[Id] = HTLC(
+            amount,
+            hashlock,
+            tokenContract,
+            timelock,
+            false,
+            payable(msg.sender),
+            payable(srcReceiver)
+        );
+
+        emit TokenLocked(
+            Id,
+            hashlock,
+            dstChain,
+            dstAddress,
+            dstAsset,
+            msg.sender,
+            srcReceiver,
+            srcAsset,
+            amount,
+            timelock,
+            tokenContract
+        );
+        return Id;
+    }
+
+    /// @notice Redeems funds from an HTLC using the correct secret.
+    /// @dev Verifies the provided secret against the hashlock and transfers the funds to the recipient. Emits a `TokenRedeemed` event.
+    /// @param Id The unique identifier of the HTLC to be redeemed.
+    /// @param secret The secret value used to unlock the HTLC.
+    /// @return bool Returns `true` if the redemption is successful.
+    function redeem(
+        bytes32 Id,
+        uint256 secret
+    ) external _exists(Id) returns (bool) {
+        HTLC storage htlc = contracts[Id];
+
+        if (htlc.hashlock != sha256(abi.encodePacked(secret)))
+            revert HashlockNotMatch(); // Ensure secret matches hashlock.
+        if (htlc.claimed) revert AlreadyClaimed();
+
+        htlc.claimed = true;
+        IERC20(htlc.tokenContract).safeTransfer(htlc.srcReceiver, htlc.amount);
+        emit TokenRedeemed(Id, msg.sender, secret, htlc.hashlock);
+        return true;
+    }
+
+    /// @notice Refunds the locked funds from an HTLC after the timelock expires.
+    /// @dev Can only be called if the HTLC exists and the timelock has passed. Emits a `TokenRefunded` event.
+    /// @param Id The unique identifier of the HTLC to be refunded.
+    /// @return bool Returns `true` if the refund is successful.
+    function refund(bytes32 Id) external _exists(Id) returns (bool) {
+        HTLC storage htlc = contracts[Id];
+        if (htlc.claimed) revert AlreadyClaimed(); // Prevent refund if already redeemed.
+        if (htlc.timelock > block.timestamp) revert NotPassedTimelock(); // Ensure timelock has passed.
+
+        htlc.claimed = true;
+        IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
+        emit TokenRefunded(Id);
+        return true;
+    }
+
+    /// @notice Retrieves the details of a specific HTLC.
+    /// @dev Returns the HTLC structure associated with the given identifier.
+    /// @param Id The unique identifier of the HTLC.
+    /// @return HTLC The details of the specified HTLC.
+    function getDetails(bytes32 Id) public view returns (HTLC memory) {
+        return contracts[Id];
+    }
+
+    /// @notice Generates a hash of the EIP-712 domain.
+    /// @dev Encodes and hashes the EIP-712 domain fields according to the specification.
+    /// @param domain The EIP-712 domain structure containing the domain details.
+    /// @return bytes32 The hashed representation of the EIP-712 domain.
+    function hashDomain(
+        EIP712Domain memory domain
+    ) private pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    keccak256(
+                        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 salt)"
+                    ),
+                    keccak256(bytes(domain.name)),
+                    keccak256(bytes(domain.version)),
+                    domain.chainId,
+                    domain.verifyingContract,
+                    domain.salt
+                )
+            );
+    }
+
+    /// @notice Generates a hash of the `addLockMsg` structure.
+    /// @dev Encodes and hashes the `addLockMsg` fields for use in EIP-712 signature verification.
+    /// @param message The `addLockMsg` structure containing the HTLC details to be hashed.
+    /// @return bytes32 The hashed representation of the `addLockMsg` structure.
+    function hashMessage(
+        addLockMsg calldata message
+    ) private pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    keccak256(
+                        "addLockMsg(bytes32 Id,bytes32 hashlock,uint48 timelock)"
+                    ),
+                    message.Id,
+                    message.hashlock,
+                    message.timelock
+                )
+            );
+    }
+
+    /// @notice Verifies that an EIP-712 message signature matches the sender of the specified HTLC.
+    /// @dev Combines the domain separator and the hashed message to create the digest, then verifies the signature.
+    /// @param message The `addLockMsg` structure containing the HTLC details.
+    /// @param r The `r` value of the ECDSA signature.
+    /// @param s The `s` value of the ECDSA signature.
+    /// @param v The `v` value of the ECDSA signature.
+    /// @return bool Returns `true` if the signature is valid and matches the sender of the HTLC.
+    function verifyMessage(
+        addLockMsg calldata message,
+        bytes32 r,
+        bytes32 s,
+        uint8 v
+    ) private view returns (bool) {
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, hashMessage(message))
+        );
+        return (ECDSA.recover(digest, v, r, s) == contracts[message.Id].sender);
+    }
+
+    /// @notice Checks whether an HTLC with the given Id exists.
+    /// @dev An HTLC exists if the sender address in its details is non-zero.
+    /// @param Id The unique identifier of the HTLC to check.
+    /// @return Returns `true` if the HTLC exists, otherwise `false`.
+    function hasHTLC(bytes32 Id) private view returns (bool) {
+        return (contracts[Id].sender != address(0));
+    }
 }
