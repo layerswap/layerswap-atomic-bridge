@@ -65,12 +65,14 @@ contract LayerswapV8ERC20 {
         uint256 amount;
         /// @notice The hash of the secret required for redemption.
         bytes32 hashlock;
+        /// @notice The secret required to redeem.
+        uint256 secret;
         /// @notice The ERC20 token contract address.
         address tokenContract;
         /// @notice The timestamp after which the funds can be refunded.
         uint48 timelock;
-        /// @notice Indicates whether the funds were claimed (redeemed or refunded).
-        bool claimed;
+        /// @notice Indicates whether the funds were claimed (redeemed(3) or refunded(2)).
+        uint8 claimed;
         /// @notice The creator of the HTLC.
         address payable sender;
         /// @notice The recipient of the funds if conditions are met.
@@ -207,9 +209,10 @@ contract LayerswapV8ERC20 {
         contracts[Id] = HTLC(
             amount,
             bytes32(bytes1(0x01)),
+            uint256(1),
             tokenContract,
             timelock,
-            false,
+            uint8(1),
             payable(msg.sender),
             payable(srcReceiver)
         );
@@ -244,7 +247,7 @@ contract LayerswapV8ERC20 {
         uint48 timelock
     ) external _exists(Id) returns (bytes32) {
         HTLC storage htlc = contracts[Id];
-        if (htlc.claimed) revert AlreadyClaimed();
+        if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed();
         if (timelock < block.timestamp) revert NotFutureTimelock();
         if (msg.sender == htlc.sender) {
             if (htlc.hashlock == bytes32(bytes1(0x01))) {
@@ -275,7 +278,7 @@ contract LayerswapV8ERC20 {
     ) external _exists(message.Id) returns (bytes32) {
         if (verifyMessage(message, r, s, v)) {
             HTLC storage htlc = contracts[message.Id];
-            if (htlc.claimed) revert AlreadyClaimed();
+            if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed();
             if (message.timelock < block.timestamp) revert NotFutureTimelock();
             if (htlc.hashlock == bytes32(bytes1(0x01))) {
                 htlc.hashlock = message.hashlock;
@@ -328,9 +331,10 @@ contract LayerswapV8ERC20 {
         contracts[Id] = HTLC(
             amount,
             hashlock,
+            uint256(1),
             tokenContract,
             timelock,
-            false,
+            uint8(1),
             payable(msg.sender),
             payable(srcReceiver)
         );
@@ -364,9 +368,10 @@ contract LayerswapV8ERC20 {
 
         if (htlc.hashlock != sha256(abi.encodePacked(secret)))
             revert HashlockNotMatch(); // Ensure secret matches hashlock.
-        if (htlc.claimed) revert AlreadyClaimed();
+        if (htlc.claimed == 3 || htlc.claimed == 2) revert AlreadyClaimed();
 
-        htlc.claimed = true;
+        htlc.claimed = 3;
+        htlc.secret = secret;
         IERC20(htlc.tokenContract).safeTransfer(htlc.srcReceiver, htlc.amount);
         emit TokenRedeemed(Id, msg.sender, secret, htlc.hashlock);
         return true;
@@ -378,10 +383,10 @@ contract LayerswapV8ERC20 {
     /// @return bool Returns `true` if the refund is successful.
     function refund(bytes32 Id) external _exists(Id) returns (bool) {
         HTLC storage htlc = contracts[Id];
-        if (htlc.claimed) revert AlreadyClaimed(); // Prevent refund if already redeemed.
+        if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed(); // Prevent refund if already redeemed or refunded.
         if (htlc.timelock > block.timestamp) revert NotPassedTimelock(); // Ensure timelock has passed.
 
-        htlc.claimed = true;
+        htlc.claimed = 2;
         IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
         emit TokenRefunded(Id);
         return true;

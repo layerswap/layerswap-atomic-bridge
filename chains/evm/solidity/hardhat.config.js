@@ -30,7 +30,7 @@ module.exports = {
       accounts: [process.env.PRIV_KEY],
     },
     arbitrumSepolia: {
-      url: 'https://arbitrum-sepolia.drpc.org',
+      url: 'https://arbitrum-sepolia.infura.io/v3/2d3e18b5f66f40df8d5df3d990d6d941',
       accounts: [process.env.PRIV_KEY],
     },
     sepolia: {
@@ -94,7 +94,7 @@ module.exports = {
         },
       },
       {
-        network: "unicahinSepolia",
+        network: "unichainSepolia",
         chainId: 1301,
         urls: {
           apiURL: "https://sepolia.uniscan.xyz/api",
