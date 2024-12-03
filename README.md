@@ -2,7 +2,7 @@
 
 Live in tesnets - [Layerswap V8](https://layerswap.io/v8)
 
-Read the protocol description and sepc [draft] - [Layerswap V8 Notion](https://layerswap.notion.site)
+Read the protocol description and sepc [draft] - [Layerswap V8](https://v8-docs.layerswap.io)
 
 ## TL;DR
 
@@ -50,8 +50,11 @@ As we continue to experiment and test new ideas, expect significant changes to t
 - [Starknet](./chains/starknet/README.md)
 - [TON](./chains/ton/README.md)
 - [Solana](./chains/solana/README.md)
-- Aptos/Sui (in progress)
-- Stacks (in progress)
+- [Sui](./chains/sui/README.md)
+- [Stacks](./chains/stacks/README.md)
+- Aptos (in progress)
+- XRP (in progress)
+- Cardano (in progress)
 
 ---
 
