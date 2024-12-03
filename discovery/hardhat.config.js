@@ -1,5 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("dotenv").config();
+require('dotenv').config();
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
@@ -13,53 +13,49 @@ module.exports = {
         },
       },
   networks: {
-    mantleSepolia: {
-      url: 'https://endpoints.omniatech.io/v1/mantle/sepolia/public',
-      accounts: [process.env.PRIV_KEY],
-    },
     berachain: {
       url: 'https://bartio.rpc.berachain.com/',
-      accounts: [process.env.PRIV_KEY],
+      accounts: [process.env.MNEMONIC],
     },
     kakarot_sepolia: {
       url: 'https://sepolia-rpc.kakarot.org',
-      accounts: [process.env.PRIV_KEY],
+      accounts: [process.env.MNEMONIC],
     },
     unichainSepolia: {
       url: 'https://sepolia.unichain.org',
-      accounts: [process.env.PRIV_KEY],
+      accounts: [process.env.MNEMONIC],
     },
     arbitrumSepolia: {
-      url: 'https://arbitrum-sepolia.infura.io/v3/2d3e18b5f66f40df8d5df3d990d6d941',
-      accounts: [process.env.PRIV_KEY],
+      url: 'https://arbitrum-sepolia.drpc.org',
+      accounts: [process.env.MNEMONIC],
     },
     sepolia: {
       url: `https://sepolia.infura.io/v3/775081a490784e709d3457ed0e413b21`,
-      accounts: [process.env.PRIV_KEY],
+      accounts: [process.env.MNEMONIC],
     },
     lineaSepolia: {
       url: "https://rpc.sepolia.linea.build",
-      accounts: [process.env.PRIV_KEY],
+      accounts: [process.env.MNEMONIC],
       chainId: 59141,
     },
     optimismSepolia: {
       url: "https://sepolia.optimism.io",
-      accounts: [process.env.PRIV_KEY],
+      accounts: [process.env.MNEMONIC],
       chainId: 11155420,
     },
     taikoHekla: {
       url: "https://rpc.hekla.taiko.xyz.",
-      accounts: [process.env.PRIV_KEY],
+      accounts: [process.env.MNEMONIC],
       chainId: 167009,
     },
     immutableTestnet: {
       url: "https://rpc.testnet.immutable.com",
-      accounts: [process.env.PRIV_KEY],
+      accounts: [process.env.MNEMONIC],
       chainId: 13473,
     },
     minato: {
       url: 'https://rpc.minato.soneium.org/',
-      accounts: [process.env.PRIV_KEY],
+      accounts: [process.env.MNEMONIC],
     },
   },
   etherscan: {
@@ -73,18 +69,9 @@ module.exports = {
       arbitrumSepolia: process.env.arbitrumSepolia,
       minato: process.env.minato,
       sepolia: process.env.sepolia,
-      kakarot_sepolia: process.env.kakarotSepolia,
-      mantleSepolia: process.env.mantleSepolia,
+      kakarot_sepolia: process.env.kakarot_sepolia,
     },
     customChains: [
-      {
-        network: "mantleSepolia",
-        chainId: 5003,
-        urls: {
-          apiURL: "https://api-sepolia.mantlescan.xyz/api",
-          browserURL: "https://sepolia.mantlescan.xyz/",
-        },
-      },
       {
         network: "berachain",
         chainId: 80084,
@@ -94,7 +81,7 @@ module.exports = {
         },
       },
       {
-        network: "unichainSepolia",
+        network: "unicahinSepolia",
         chainId: 1301,
         urls: {
           apiURL: "https://sepolia.uniscan.xyz/api",
