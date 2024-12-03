@@ -52,6 +52,7 @@ As we continue to experiment and test new ideas, expect significant changes to t
 - [Solana](./chains/solana/README.md)
 - [Sui](./chains/sui/README.md)
 - [Stacks](./chains/stacks/README.md)
+- [Fuel](./chains/fuel/README.md)
 - Aptos (in progress)
 - XRP (in progress)
 - Cardano (in progress)
