@@ -45,16 +45,15 @@ contract LayerswapV8 {
 
     /// @dev Custom errors to simplify failure handling in the contract.
     error FundsNotSent();
-    error NotFutureTimelock();
     error NotPassedTimelock();
     error HTLCAlreadyExists();
     error HTLCNotExists();
     error HashlockNotMatch();
     error AlreadyClaimed();
     error NoAllowance();
-    error InvalidSigniture();
+    error InvalidSignature();
     error HashlockAlreadySet();
-    error TransferFailed();
+    error InvalidTimelock();
 
     /// @dev Represents a hashed time-locked contract (HTLC) used in the Layerswap V8 protocol.
     struct HTLC {
@@ -146,6 +145,12 @@ contract LayerswapV8 {
         _;
     }
 
+    /// @dev Modifier to ensure the provided timelock is at least 15 minutes in the future.
+    modifier _validTimelock(uint48 timelock) {
+        if(block.timestamp + 900 > timelock) revert InvalidTimelock();
+        _;
+    }
+
     /// @dev Unique identifier generation using block hash and a nonce.
     uint256 private immutable blockHashAsUint =
         uint256(blockhash(block.number - 20));
@@ -176,13 +181,14 @@ contract LayerswapV8 {
         string calldata srcAsset,
         address srcReceiver,
         uint48 timelock
-    ) external payable returns (bytes32 Id) {
-        if (msg.value == 0) revert FundsNotSent(); // Ensure funds are sent.
-        if (timelock < block.timestamp) revert NotFutureTimelock(); // Ensure timelock is in the future.
-        unchecked {
-            ++contractNonce; // Increment nonce for uniqueness.
-        }
-        Id = bytes32(blockHashAsUint ^ contractNonce);
+    ) external payable _validTimelock(timelock) returns (bytes32 Id) {
+        if (msg.value == 0) revert FundsNotSent(); // Ensure funds are sent.       
+        do {
+            unchecked {
+                ++contractNonce; // Increment nonce for uniqueness.
+            }
+            Id = bytes32(blockHashAsUint ^ contractNonce);
+        } while (hasHTLC(Id));
 
         // Store HTLC details.
         contracts[Id] = HTLC(
@@ -221,9 +227,8 @@ contract LayerswapV8 {
         if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed(); // Prevent refund if already redeemed or refunded.
         if (htlc.timelock > block.timestamp) revert NotPassedTimelock(); // Ensure timelock has passed.
 
+        htlc.sender.call{value: htlc.amount}("");
         htlc.claimed = 2;
-        (bool success, ) = htlc.sender.call{value: htlc.amount}("");
-        if (!success) revert TransferFailed(); // Ensure transfer succeeds.
         emit TokenRefunded(Id);
         return true;
     }
@@ -238,10 +243,9 @@ contract LayerswapV8 {
         bytes32 Id,
         bytes32 hashlock,
         uint48 timelock
-    ) external _exists(Id) returns (bytes32) {
+    ) external _exists(Id) _validTimelock(timelock) returns (bytes32) {
         HTLC storage htlc = contracts[Id];
         if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed();
-        if (timelock < block.timestamp) revert NotFutureTimelock();
         if (msg.sender == htlc.sender) {
             if (htlc.hashlock == bytes32(bytes1(0x01))) {
                 htlc.hashlock = hashlock;
@@ -268,11 +272,10 @@ contract LayerswapV8 {
         bytes32 r,
         bytes32 s,
         uint8 v
-    ) external _exists(message.Id) returns (bytes32) {
+    ) external _exists(message.Id) _validTimelock(message.timelock) returns (bytes32) {
         if (verifyMessage(message, r, s, v)) {
             HTLC storage htlc = contracts[message.Id];
             if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed();
-            if (message.timelock < block.timestamp) revert NotFutureTimelock();
             if (htlc.hashlock == bytes32(bytes1(0x01))) {
                 htlc.hashlock = message.hashlock;
                 htlc.timelock = message.timelock;
@@ -282,7 +285,7 @@ contract LayerswapV8 {
             emit TokenLockAdded(message.Id, message.hashlock, message.timelock);
             return message.Id;
         } else {
-            revert InvalidSigniture(); // Ensure valid signature.
+            revert InvalidSignature(); // Ensure valid signature.
         }
     }
 
@@ -306,9 +309,8 @@ contract LayerswapV8 {
         string calldata dstChain,
         string calldata dstAddress,
         string calldata dstAsset
-    ) external payable returns (bytes32) {
+    ) external payable _validTimelock(timelock) returns (bytes32) {
         if (msg.value == 0) revert FundsNotSent();
-        if (timelock < block.timestamp) revert NotFutureTimelock();
         if (hasHTLC(Id)) revert HTLCAlreadyExists();
         contracts[Id] = HTLC(
             msg.value,
@@ -349,10 +351,9 @@ contract LayerswapV8 {
             revert HashlockNotMatch(); // Ensure secret matches hashlock.
         if (htlc.claimed == 3 || htlc.claimed == 2) revert AlreadyClaimed();
 
+        htlc.srcReceiver.call{value: htlc.amount,gas: 10000}("");
         htlc.claimed = 3;
-        htlc.secret = secret;
-        (bool success, ) = htlc.srcReceiver.call{value: htlc.amount}("");
-        if (!success) revert TransferFailed();
+         htlc.secret = secret;
         emit TokenRedeemed(Id, msg.sender, secret, htlc.hashlock);
         return true;
     }

@@ -47,17 +47,16 @@ contract LayerswapV8ERC20 {
 
     /// @dev Custom errors to simplify failure handling in the contract.
     error FundsNotSent();
-    error NotFutureTimelock();
     error NotPassedTimelock();
     error HTLCAlreadyExists();
     error HTLCNotExists();
     error HashlockNotMatch();
     error AlreadyClaimed();
     error NoAllowance();
-    error InvalidSigniture();
+    error InvalidSignature();
     error HashlockAlreadySet();
-    error TransferFailed();
     error InsufficientBalance();
+    error InvalidTimelock();
 
     /// @dev Represents a hashed time-locked contract (HTLC) for ERC20 tokens.
     struct HTLC {
@@ -160,7 +159,13 @@ contract LayerswapV8ERC20 {
 
     /// @dev Modifier to ensure HTLC exists before proceeding.
     modifier _exists(bytes32 Id) {
-        require(hasHTLC(Id), "HTLC Not Exists");
+        if (!hasHTLC(Id)) revert HTLCNotExists();
+        _;
+    }
+
+    /// @dev Modifier to ensure the provided timelock is at least 15 minutes in the future.
+    modifier _validTimelock(uint48 timelock) {
+        if(block.timestamp + 900 > timelock) revert InvalidTimelock();
         _;
     }
 
@@ -190,9 +195,8 @@ contract LayerswapV8ERC20 {
         uint48 timelock,
         uint256 amount,
         address tokenContract
-    ) external returns (bytes32 Id) {
+    ) external _validTimelock(timelock) returns (bytes32 Id) {
         if (amount == 0) revert FundsNotSent(); // Ensure funds are sent.
-        if (timelock < block.timestamp) revert NotFutureTimelock(); // Ensure timelock is in the future.
         IERC20 token = IERC20(tokenContract);
 
         if (token.balanceOf(msg.sender) < amount) revert InsufficientBalance();
@@ -200,10 +204,12 @@ contract LayerswapV8ERC20 {
             revert NoAllowance();
         token.safeTransferFrom(msg.sender, address(this), amount);
 
-        unchecked {
-            ++contractNonce; // Increment nonce for uniqueness.
-        }
-        Id = bytes32(blockHashAsUint ^ contractNonce);
+        do {
+            unchecked {
+                ++contractNonce; // Increment nonce for uniqueness.
+            }
+            Id = bytes32(blockHashAsUint ^ contractNonce);
+        } while (hasHTLC(Id));
 
         // Store HTLC details.
         contracts[Id] = HTLC(
@@ -245,10 +251,9 @@ contract LayerswapV8ERC20 {
         bytes32 Id,
         bytes32 hashlock,
         uint48 timelock
-    ) external _exists(Id) returns (bytes32) {
+    ) external _exists(Id) _validTimelock(timelock) returns (bytes32) {
         HTLC storage htlc = contracts[Id];
         if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed();
-        if (timelock < block.timestamp) revert NotFutureTimelock();
         if (msg.sender == htlc.sender) {
             if (htlc.hashlock == bytes32(bytes1(0x01))) {
                 htlc.hashlock = hashlock;
@@ -275,11 +280,10 @@ contract LayerswapV8ERC20 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external _exists(message.Id) returns (bytes32) {
+    ) external _exists(message.Id) _validTimelock(message.timelock) returns (bytes32) {
         if (verifyMessage(message, r, s, v)) {
             HTLC storage htlc = contracts[message.Id];
             if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed();
-            if (message.timelock < block.timestamp) revert NotFutureTimelock();
             if (htlc.hashlock == bytes32(bytes1(0x01))) {
                 htlc.hashlock = message.hashlock;
                 htlc.timelock = message.timelock;
@@ -289,7 +293,7 @@ contract LayerswapV8ERC20 {
             emit TokenLockAdded(message.Id, message.hashlock, message.timelock);
             return message.Id;
         } else {
-            revert InvalidSigniture(); // Ensure valid signature.
+            revert InvalidSignature(); // Ensure valid signature.
         }
     }
 
@@ -317,9 +321,8 @@ contract LayerswapV8ERC20 {
         string calldata dstAsset,
         uint256 amount,
         address tokenContract
-    ) external returns (bytes32) {
+    ) external _validTimelock(timelock) returns (bytes32) {
         if (amount == 0) revert FundsNotSent();
-        if (timelock < block.timestamp) revert NotFutureTimelock();
         if (hasHTLC(Id)) revert HTLCAlreadyExists();
         IERC20 token = IERC20(tokenContract);
 
