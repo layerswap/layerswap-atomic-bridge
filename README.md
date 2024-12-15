@@ -9,6 +9,7 @@ Read the protocol description and sepc [draft] - [Layerswap V8](https://v8-docs.
 - Introduces PreHTLC, an improved version of HTLC for practical atomic swaps
 - Permissionless and trustless protocol without reliance on 3rd parties
 - Supports multi-hop transactions for bridging between indirectly connected chains
+- Integrated with LightClient for destination transaction verification
 - Alpha version available for testing on multiple testnets
 
 ## Introduction
