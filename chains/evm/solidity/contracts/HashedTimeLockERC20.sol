@@ -13,6 +13,7 @@ pragma solidity 0.8.23;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title LayerswapV8ERC20 Contract
 /// @notice Implements the Layerswap V8 PreHTLC protocol for ERC20 tokens, enabling secure and atomic cross-chain swaps.
@@ -27,7 +28,7 @@ struct EIP712Domain {
     bytes32 salt;
 }
 
-contract LayerswapV8ERC20 {
+contract LayerswapV8ERC20 is ReentrancyGuard {
     using ECDSA for bytes32;
 
     bytes32 private immutable DOMAIN_SEPARATOR;
@@ -89,11 +90,6 @@ contract LayerswapV8ERC20 {
     }
 
     using SafeERC20 for IERC20;
-
-    /// @dev Unique identifier generation using block hash and a nonce.
-    uint256 private immutable blockHashAsUint =
-        uint256(blockhash(block.number - 20));
-    uint256 private contractNonce = 0;
 
     /// @dev Storage for HTLCs
     mapping(bytes32 => HTLC) private contracts;
@@ -165,7 +161,7 @@ contract LayerswapV8ERC20 {
 
     /// @dev Modifier to ensure the provided timelock is at least 15 minutes in the future.
     modifier _validTimelock(uint48 timelock) {
-        if(block.timestamp + 900 > timelock) revert InvalidTimelock();
+        if (block.timestamp + 900 > timelock) revert InvalidTimelock();
         _;
     }
 
@@ -195,7 +191,7 @@ contract LayerswapV8ERC20 {
         uint48 timelock,
         uint256 amount,
         address tokenContract
-    ) external _validTimelock(timelock) returns (bytes32 Id) {
+    ) external _validTimelock(timelock) nonReentrant returns (bytes32 Id) {
         if (amount == 0) revert FundsNotSent(); // Ensure funds are sent.
         IERC20 token = IERC20(tokenContract);
 
@@ -204,12 +200,18 @@ contract LayerswapV8ERC20 {
             revert NoAllowance();
         token.safeTransferFrom(msg.sender, address(this), amount);
 
-        do {
-            unchecked {
-                ++contractNonce; // Increment nonce for uniqueness.
-            }
-            Id = bytes32(blockHashAsUint ^ contractNonce);
-        } while (hasHTLC(Id));
+        // Generate a unique HTLC ID based on user, time, contract, and chain context.
+        Id = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                block.timestamp,
+                address(this),
+                block.chainid
+            )
+        );
+
+        // Ensure the generated ID does not already exist to prevent overwriting.
+        if (hasHTLC(Id)) revert HTLCAlreadyExists();
 
         // Store HTLC details.
         contracts[Id] = HTLC(
@@ -251,7 +253,7 @@ contract LayerswapV8ERC20 {
         bytes32 Id,
         bytes32 hashlock,
         uint48 timelock
-    ) external _exists(Id) _validTimelock(timelock) returns (bytes32) {
+    ) external _exists(Id) _validTimelock(timelock) nonReentrant returns (bytes32) {
         HTLC storage htlc = contracts[Id];
         if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed();
         if (msg.sender == htlc.sender) {
@@ -280,7 +282,13 @@ contract LayerswapV8ERC20 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external _exists(message.Id) _validTimelock(message.timelock) returns (bytes32) {
+    )
+        external
+        _exists(message.Id)
+        _validTimelock(message.timelock)
+        nonReentrant
+        returns (bytes32)
+    {
         if (verifyMessage(message, r, s, v)) {
             HTLC storage htlc = contracts[message.Id];
             if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed();
@@ -321,7 +329,7 @@ contract LayerswapV8ERC20 {
         string calldata dstAsset,
         uint256 amount,
         address tokenContract
-    ) external _validTimelock(timelock) returns (bytes32) {
+    ) external _validTimelock(timelock) nonReentrant returns (bytes32) {
         if (amount == 0) revert FundsNotSent();
         if (hasHTLC(Id)) revert HTLCAlreadyExists();
         IERC20 token = IERC20(tokenContract);
@@ -366,7 +374,7 @@ contract LayerswapV8ERC20 {
     function redeem(
         bytes32 Id,
         uint256 secret
-    ) external _exists(Id) returns (bool) {
+    ) external _exists(Id) nonReentrant returns (bool) {
         HTLC storage htlc = contracts[Id];
 
         if (htlc.hashlock != sha256(abi.encodePacked(secret)))
@@ -384,7 +392,7 @@ contract LayerswapV8ERC20 {
     /// @dev Can only be called if the HTLC exists and the timelock has passed. Emits a `TokenRefunded` event.
     /// @param Id The unique identifier of the HTLC to be refunded.
     /// @return bool Returns `true` if the refund is successful.
-    function refund(bytes32 Id) external _exists(Id) returns (bool) {
+    function refund(bytes32 Id) external _exists(Id) nonReentrant returns (bool) {
         HTLC storage htlc = contracts[Id];
         if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed(); // Prevent refund if already redeemed or refunded.
         if (htlc.timelock > block.timestamp) revert NotPassedTimelock(); // Ensure timelock has passed.

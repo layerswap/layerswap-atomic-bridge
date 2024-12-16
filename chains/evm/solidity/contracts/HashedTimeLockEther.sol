@@ -11,6 +11,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title LayerswapV8 Contract
 /// @notice Implements the Layerswap V8 PreHTLC protocol, enabling secure and atomic cross-chain swaps.
@@ -25,7 +26,7 @@ struct EIP712Domain {
     bytes32 salt;
 }
 
-contract LayerswapV8 {
+contract LayerswapV8 is ReentrancyGuard {
     using ECDSA for bytes32;
 
     bytes32 private immutable DOMAIN_SEPARATOR;
@@ -147,14 +148,9 @@ contract LayerswapV8 {
 
     /// @dev Modifier to ensure the provided timelock is at least 15 minutes in the future.
     modifier _validTimelock(uint48 timelock) {
-        if(block.timestamp + 900 > timelock) revert InvalidTimelock();
+        if (block.timestamp + 900 > timelock) revert InvalidTimelock();
         _;
     }
-
-    /// @dev Unique identifier generation using block hash and a nonce.
-    uint256 private immutable blockHashAsUint =
-        uint256(blockhash(block.number - 20));
-    uint256 private contractNonce = 0;
 
     /// @dev Storage for HTLCs
     mapping(bytes32 => HTLC) private contracts;
@@ -181,14 +177,27 @@ contract LayerswapV8 {
         string calldata srcAsset,
         address srcReceiver,
         uint48 timelock
-    ) external payable _validTimelock(timelock) returns (bytes32 Id) {
-        if (msg.value == 0) revert FundsNotSent(); // Ensure funds are sent.       
-        do {
-            unchecked {
-                ++contractNonce; // Increment nonce for uniqueness.
-            }
-            Id = bytes32(blockHashAsUint ^ contractNonce);
-        } while (hasHTLC(Id));
+    )
+        external
+        payable
+        _validTimelock(timelock)
+        nonReentrant
+        returns (bytes32 Id)
+    {
+        if (msg.value == 0) revert FundsNotSent(); // Ensure funds are sent.
+
+        // Generate a unique HTLC ID based on user, time, contract, and chain context.
+        Id = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                block.timestamp,
+                address(this),
+                block.chainid
+            )
+        );
+
+        // Ensure the generated ID does not already exist to prevent overwriting.
+        if (hasHTLC(Id)) revert HTLCAlreadyExists();
 
         // Store HTLC details.
         contracts[Id] = HTLC(
@@ -222,13 +231,15 @@ contract LayerswapV8 {
     /// @dev Can only be called if the HTLC exists and the timelock has passed. Emits a `TokenRefunded` event.
     /// @param Id The unique identifier of the HTLC to be refunded.
     /// @return bool Returns `true` if the refund is successful.
-    function refund(bytes32 Id) external _exists(Id) returns (bool) {
+    function refund(
+        bytes32 Id
+    ) external _exists(Id) nonReentrant returns (bool) {
         HTLC storage htlc = contracts[Id];
         if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed(); // Prevent refund if already redeemed or refunded.
         if (htlc.timelock > block.timestamp) revert NotPassedTimelock(); // Ensure timelock has passed.
 
-        htlc.sender.call{value: htlc.amount}("");
         htlc.claimed = 2;
+        htlc.sender.call{value: htlc.amount}("");
         emit TokenRefunded(Id);
         return true;
     }
@@ -243,7 +254,13 @@ contract LayerswapV8 {
         bytes32 Id,
         bytes32 hashlock,
         uint48 timelock
-    ) external _exists(Id) _validTimelock(timelock) returns (bytes32) {
+    )
+        external
+        _exists(Id)
+        _validTimelock(timelock)
+        nonReentrant
+        returns (bytes32)
+    {
         HTLC storage htlc = contracts[Id];
         if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed();
         if (msg.sender == htlc.sender) {
@@ -272,7 +289,13 @@ contract LayerswapV8 {
         bytes32 r,
         bytes32 s,
         uint8 v
-    ) external _exists(message.Id) _validTimelock(message.timelock) returns (bytes32) {
+    )
+        external
+        _exists(message.Id)
+        _validTimelock(message.timelock)
+        nonReentrant
+        returns (bytes32)
+    {
         if (verifyMessage(message, r, s, v)) {
             HTLC storage htlc = contracts[message.Id];
             if (htlc.claimed == 2 || htlc.claimed == 3) revert AlreadyClaimed();
@@ -309,7 +332,7 @@ contract LayerswapV8 {
         string calldata dstChain,
         string calldata dstAddress,
         string calldata dstAsset
-    ) external payable _validTimelock(timelock) returns (bytes32) {
+    ) external payable _validTimelock(timelock) nonReentrant returns (bytes32) {
         if (msg.value == 0) revert FundsNotSent();
         if (hasHTLC(Id)) revert HTLCAlreadyExists();
         contracts[Id] = HTLC(
@@ -344,16 +367,16 @@ contract LayerswapV8 {
     function redeem(
         bytes32 Id,
         uint256 secret
-    ) external _exists(Id) returns (bool) {
+    ) external _exists(Id) nonReentrant returns (bool) {
         HTLC storage htlc = contracts[Id];
 
         if (htlc.hashlock != sha256(abi.encodePacked(secret)))
             revert HashlockNotMatch(); // Ensure secret matches hashlock.
         if (htlc.claimed == 3 || htlc.claimed == 2) revert AlreadyClaimed();
 
-        htlc.srcReceiver.call{value: htlc.amount,gas: 10000}("");
         htlc.claimed = 3;
-         htlc.secret = secret;
+        htlc.secret = secret;
+        htlc.srcReceiver.call{value: htlc.amount, gas: 10000}("");
         emit TokenRedeemed(Id, msg.sender, secret, htlc.hashlock);
         return true;
     }
@@ -435,4 +458,3 @@ contract LayerswapV8 {
         return (contracts[Id].sender != address(0));
     }
 }
-
