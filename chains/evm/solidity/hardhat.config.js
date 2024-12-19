@@ -1,17 +1,25 @@
 require("@nomicfoundation/hardhat-toolbox");
+require('@nomicfoundation/hardhat-ignition');
 require("dotenv").config();
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: {
-        version: '0.8.23',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-          viaIR: true
-        },
+  ignition: {
+    strategyConfig: {
+      create2: {
+        salt: '0x0000000000000000000000000000000000000000000000000000000000000001',
       },
+    },
+  },
+  solidity: {
+    version: '0.8.23',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+      viaIR: true,
+    },
+  },
   networks: {
     mantleSepolia: {
       url: 'https://endpoints.omniatech.io/v1/mantle/sepolia/public',
@@ -38,22 +46,22 @@ module.exports = {
       accounts: [process.env.PRIV_KEY],
     },
     lineaSepolia: {
-      url: "https://rpc.sepolia.linea.build",
+      url: 'https://rpc.sepolia.linea.build',
       accounts: [process.env.PRIV_KEY],
       chainId: 59141,
     },
     optimismSepolia: {
-      url: "https://sepolia.optimism.io",
+      url: 'https://sepolia.optimism.io',
       accounts: [process.env.PRIV_KEY],
       chainId: 11155420,
     },
     taikoHekla: {
-      url: "https://rpc.hekla.taiko.xyz.",
+      url: 'https://rpc.hekla.taiko.xyz.',
       accounts: [process.env.PRIV_KEY],
       chainId: 167009,
     },
     immutableTestnet: {
-      url: "https://rpc.testnet.immutable.com",
+      url: 'https://rpc.testnet.immutable.com',
       accounts: [process.env.PRIV_KEY],
       chainId: 13473,
     },
@@ -78,88 +86,88 @@ module.exports = {
     },
     customChains: [
       {
-        network: "mantleSepolia",
+        network: 'mantleSepolia',
         chainId: 5003,
         urls: {
-          apiURL: "https://api-sepolia.mantlescan.xyz/api",
-          browserURL: "https://sepolia.mantlescan.xyz/",
+          apiURL: 'https://api-sepolia.mantlescan.xyz/api',
+          browserURL: 'https://sepolia.mantlescan.xyz/',
         },
       },
       {
-        network: "berachain",
+        network: 'berachain',
         chainId: 80084,
         urls: {
-          apiURL: "https://api.routescan.io/v2/network/testnet/evm/80084/etherscan/api/",
-          browserURL: "https://bartio.beratrail.io/",
+          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80084/etherscan/api/',
+          browserURL: 'https://bartio.beratrail.io/',
         },
       },
       {
-        network: "unichainSepolia",
+        network: 'unichainSepolia',
         chainId: 1301,
         urls: {
-          apiURL: "https://sepolia.uniscan.xyz/api",
-          browserURL: "	https://sepolia.uniscan.xyz/",
+          apiURL: 'https://sepolia.uniscan.xyz/api',
+          browserURL: '	https://sepolia.uniscan.xyz/',
         },
       },
       {
-        network: "lineaSepolia",
+        network: 'lineaSepolia',
         chainId: 59141,
         urls: {
-          apiURL: "https://api-sepolia.lineascan.build/api",
-          browserURL: "https://sepolia.lineascan.build",
+          apiURL: 'https://api-sepolia.lineascan.build/api',
+          browserURL: 'https://sepolia.lineascan.build',
         },
       },
       {
-        network: "optimismSepolia",
+        network: 'optimismSepolia',
         chainId: 11155420,
         urls: {
-          apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
-          browserURL: "https://sepolia-optimism.etherscan.io/"
+          apiURL: 'https://api-sepolia-optimistic.etherscan.io/api',
+          browserURL: 'https://sepolia-optimism.etherscan.io/',
         },
       },
       {
-        network: "taikoHekla",
+        network: 'taikoHekla',
         chainId: 167009,
         urls: {
-          apiURL: "https://blockscoutapi.hekla.taiko.xyz/api",
-          browserURL: "https://blockscoutapi.hekla.taiko.xyz/"
+          apiURL: 'https://blockscoutapi.hekla.taiko.xyz/api',
+          browserURL: 'https://blockscoutapi.hekla.taiko.xyz/',
         },
       },
       {
-        network: "immutableTestnet",
+        network: 'immutableTestnet',
         chainId: 13473,
         urls: {
-          apiURL: "https://explorer.testnet.immutable.com/api",
-          browserURL: "https://explorer.testnet.immutable.com/"
+          apiURL: 'https://explorer.testnet.immutable.com/api',
+          browserURL: 'https://explorer.testnet.immutable.com/',
         },
       },
       {
-        network: "arbitrumSepolia",
+        network: 'arbitrumSepolia',
         chainId: 421614,
         urls: {
-          apiURL: "https://api-sepolia.arbiscan.io/api",
-          browserURL: "https://sepolia.arbiscan.io/",
+          apiURL: 'https://api-sepolia.arbiscan.io/api',
+          browserURL: 'https://sepolia.arbiscan.io/',
         },
-      },
-       {
-        network: "kakarot_sepolia",
-        chainId: 920637907288165,
-        urls: {
-          apiURL: "https://api.routescan.io/v2/network/testnet/evm/920637907288165/etherscan",
-          browserURL: "https://sepolia.kakarotscan.org"
-        }
       },
       {
-        network: "minato",
-        chainId: 1946,
+        network: 'kakarot_sepolia',
+        chainId: 920637907288165,
         urls: {
-          apiURL: "https://explorer-testnet.soneium.org/api",
-          browserURL: "https://explorer-testnet.soneium.org/",
+          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/920637907288165/etherscan',
+          browserURL: 'https://sepolia.kakarotscan.org',
         },
       },
-    ]
+      {
+        network: 'minato',
+        chainId: 1946,
+        urls: {
+          apiURL: 'https://explorer-testnet.soneium.org/api',
+          browserURL: 'https://explorer-testnet.soneium.org/',
+        },
+      },
+    ],
   },
   sourcify: {
-    enabled: false
-  }
+    enabled: false,
+  },
 };
