@@ -1,13 +1,22 @@
-# Sample Hardhat Project
+# AtomicPool Contract
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+## Overview
+The `AtomicPool` contract enables secure, time-locked fund locking and unlocking, integrating with the Layerswap V8 protocol.
 
-Try running some of the following tasks:
+## Features
+- **Lock Funds**: Create a time-locked pool with a solver.
+- **Unlock Funds**: Retrieve funds after the timelock expires.
+- **Extend Timelock**: Increase the timelock duration.
+- **Punish Solvers**: Penalize solvers for failing conditions using HTLC details.
+- **Integration**: Works with Layerswap V8 for HTLC validation.
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.js
-```
+## Usage
+1. **Deploy**: Pass the Layerswap V8 contract address.
+2. **Lock**: Use `lockPool` to lock funds with a solver and timelock.
+3. **Unlock**: Use `unlockPool` to retrieve funds after the timelock.
+4. **Extend**: Use `extendPoolTime` to increase the timelock.
+5. **Punish**: Use `punishSolver` with HTLC details and secret.
+
+## Requirements
+- **Solidity**: ^0.8.23
+- **Dependencies**: OpenZeppelin `ReentrancyGuard`, Layerswap V8 Interface
