@@ -5,24 +5,24 @@ async function main() {
   const V8tokenAddress = "0x0236d3BfA37bE80Ba34Bc47e3e226EcC118B45dD";
   const secondsPerToken = 1000;
 
-  const LPDiscovery = await hre.ethers.deployContract("LPDiscovery", [
+  const SolverDiscovery = await hre.ethers.deployContract("SolverDiscovery", [
     V8tokenAddress,
     secondsPerToken,
   ]);
 
-  await LPDiscovery.waitForDeployment();
+  await SolverDiscovery.waitForDeployment();
 
-  console.log(`LPDiscovery deployed to: ${LPDiscovery.target}`);
+  console.log(`SolverDiscovery deployed to: ${SolverDiscovery.target}`);
 
   await sleep(30000);
 
   await hre.run("verify:verify", {
-    address: LPDiscovery.target,
+    address: SolverDiscovery.target,
     constructorArguments: [
       V8tokenAddress,
       secondsPerToken,
     ],
-    contract: "contracts/discovery.sol:LPDiscovery",
+    contract: "contracts/discovery.sol:SolverDiscovery",
   });
 
   console.log("Contract verified successfully!");

@@ -5,8 +5,8 @@ async function signHTLC() {
     const domain = {
         name: "LayerswapV8",
         version: "1",
-        chainId: 11155111,
-        verifyingContract: "0x89a21B772dD0Ec4a118d0823C5dD0C87dDbC5749",
+        chainId: 421614,
+        verifyingContract: "0xE2F155B3e9d1c2d2106D23d60e55545fa3c0665f",
         salt: "0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0"
     };
 
@@ -35,9 +35,9 @@ async function signHTLC() {
     };
 
     const message = {
-        Id: "0x3e958a2cdd5d2a505c622a0b16149cfc44e5526c7b89fd8d14850b3cb2366e56",
+        Id: "0x6a3342a938166f66d2cb3a3c66c7d70199fc25b639257e516ee6e961c309126d",
         hashlock: "0x3b7674662e6569056cef73dab8b7809085a32beda0e8eb9e9b580cfc2af22a55",
-        timelock: 1733139766,
+        timelock: 99999999999,
     };
 
     const privateKey =  process.env.PRIV_KEY;

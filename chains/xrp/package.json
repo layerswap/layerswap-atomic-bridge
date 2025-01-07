@@ -1,0 +1,16 @@
+{
+  "name": "xrp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "five-bells-condition": "^5.0.1",
+    "xrpl": "^4.0.0"
+  }
+}

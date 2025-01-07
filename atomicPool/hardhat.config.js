@@ -1,12 +1,11 @@
 require("@nomicfoundation/hardhat-toolbox");
-require('@nomicfoundation/hardhat-ignition');
 require("dotenv").config();
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   ignition: {
     strategyConfig: {
       create2: {
-        salt: '0x0000000000000000000000000000000000000000000000000000000000000001',
+        salt: '0x0000000000000000000000000000000000000000000000000000000000000003',
       },
     },
   },
