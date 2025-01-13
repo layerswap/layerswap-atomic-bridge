@@ -174,9 +174,10 @@ contract LayerswapV8 is ReentrancyGuard {
   /// @param dstAsset The asset on the destination chain.
   /// @param dstAddress The recipient address on the destination chain.
   /// @param srcAsset The asset being locked.
+  /// @param Id The unique identifier of the created HTLC.
   /// @param srcReceiver The recipient of the funds if conditions are met.
   /// @param timelock The timestamp after which the funds can be refunded.
-  /// @return Id The unique identifier of the created HTLC.
+  /// @return bytes32 The unique identifier of the created HTLC.
   function commit(
     string[] calldata hopChains,
     string[] calldata hopAssets,
@@ -185,13 +186,11 @@ contract LayerswapV8 is ReentrancyGuard {
     string calldata dstAsset,
     string calldata dstAddress,
     string calldata srcAsset,
+    bytes32 Id,
     address srcReceiver,
     uint48 timelock
-  ) external payable _validTimelock(timelock) nonReentrant returns (bytes32 Id) {
+  ) external payable _validTimelock(timelock) nonReentrant returns (bytes32) {
     if (msg.value == 0) revert FundsNotSent(); // Ensure funds are sent.
-
-    // Generate a unique HTLC ID based on user, time, contract, and chain context.
-    Id = keccak256(abi.encodePacked(msg.sender, block.timestamp, address(this), block.chainid));
 
     // Ensure the generated ID does not already exist to prevent overwriting.
     if (hasHTLC(Id)) revert HTLCAlreadyExists();
@@ -222,6 +221,8 @@ contract LayerswapV8 is ReentrancyGuard {
       msg.value,
       timelock
     );
+
+    return Id;
   }
 
   /// @notice Refunds the locked funds from an HTLC after the timelock expires.
@@ -385,7 +386,7 @@ contract LayerswapV8 is ReentrancyGuard {
   /// @dev Returns the HTLC structure associated with the given identifier.
   /// @param Id The unique identifier of the HTLC.
   /// @return HTLC The details of the specified HTLC.
-  function getDetails(bytes32 Id) public view returns (HTLC memory) {
+  function getHTLCDetails(bytes32 Id) public view returns (HTLC memory) {
     return contracts[Id];
   }
 
@@ -393,8 +394,16 @@ contract LayerswapV8 is ReentrancyGuard {
   /// @dev Returns the reward amount (in wei) and the timelock after which it can be claimed.
   /// @param Id The unique identifier of the HTLC.
   /// @return Reward A struct with the reward amount and claimable timelock.
-  function getReward(bytes32 Id) public view returns (Reward memory) {
+  function getRewardDetails(bytes32 Id) public view returns (Reward memory) {
     return rewards[Id];
+  }
+
+  /// @notice Generates a unique identifier for the sender to commit.
+  /// @dev Combines the sender's address, the current block timestamp, the contract's address, and the current chain ID to create a unique hash.
+  /// @param sender The address of the sender who is committing.
+  /// @return bytes32 The unique identifier generated for the sender.
+  function getId(address sender) public view returns (bytes32) {
+    return keccak256(abi.encodePacked(sender, block.timestamp, address(this), block.chainid));
   }
 
   /// @notice Generates a hash of the EIP-712 domain.
