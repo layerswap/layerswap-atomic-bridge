@@ -1,0 +1,15 @@
+[package]
+name = "coin"
+version = "1.0.0"
+authors = []
+
+[addresses]
+htlc = "f302aa8054c11d73e1dc2744920867b689cab6c79fe12ded632227517b7fbc68"
+[dev-addresses]
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-framework.git"
+rev = "mainnet"
+subdir = "aptos-framework"
+
+[dev-dependencies]
