@@ -235,7 +235,11 @@ contract LayerswapV8 is ReentrancyGuard {
     if (htlc.timelock > block.timestamp) revert NotPassedTimelock(); // Ensure timelock has passed.
 
     htlc.claimed = 2;
-    htlc.sender.call{ value: htlc.amount }('');
+    if (rewards[Id].amount != 0) {
+      htlc.sender.call{ value: htlc.amount + rewards[Id].amount, gas: 10000 }('');
+    } else {
+      htlc.sender.call{ value: htlc.amount, gas: 10000 }('');
+    }
     emit TokenRefunded(Id);
     return true;
   }
@@ -368,13 +372,13 @@ contract LayerswapV8 is ReentrancyGuard {
 
     if (reward.timelock > block.timestamp) {
       htlc.srcReceiver.call{ value: htlc.amount, gas: 10000 }('');
-      htlc.sender.call{ value: reward.amount }('');
+      htlc.sender.call{ value: reward.amount, gas: 10000 }('');
     } else {
       if (msg.sender == htlc.srcReceiver) {
         htlc.srcReceiver.call{ value: htlc.amount + reward.amount, gas: 10000 }('');
       } else {
         htlc.srcReceiver.call{ value: htlc.amount, gas: 10000 }('');
-        msg.sender.call{ value: reward.amount }('');
+        msg.sender.call{ value: reward.amount, gas: 10000 }('');
       }
     }
 

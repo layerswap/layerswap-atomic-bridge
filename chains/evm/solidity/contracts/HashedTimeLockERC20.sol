@@ -408,7 +408,11 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
     if (htlc.timelock > block.timestamp) revert NotPassedTimelock(); // Ensure timelock has passed.
 
     htlc.claimed = 2;
-    IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
+    if (rewards[Id].amount != 0) {
+      IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount + rewards[Id].amount);
+    } else {
+      IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
+    }
     emit TokenRefunded(Id);
     return true;
   }
