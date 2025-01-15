@@ -430,8 +430,8 @@ mod HashedTimelockERC20 {
                 token.allowance(get_caller_address(), get_contract_address()) >= amount,
                 "Not Enough Allowence"
             );
-
             token.transfer_from(get_caller_address(), get_contract_address(), amount + reward);
+            //Write the HTLC data into the storage
             self
                 .contracts
                 .write(
@@ -448,6 +448,7 @@ mod HashedTimelockERC20 {
                         srcReceiver: srcReceiver
                     }
                 );
+            //Write the Reward data into the storage
             self.rewards.write(Id, Reward { amount: reward, timelock: rewardTimelock });
             self
                 .emit(
@@ -535,26 +536,6 @@ mod HashedTimelockERC20 {
             assert!(htlc.claimed == 1, "Already Claimed");
             assert!(htlc.timelock <= get_block_timestamp().into(), "Not Passed Timelock");
 
-            // self
-            //     .contracts
-            //     .write(
-            //         Id,
-            //         HTLC {
-            //             dstAddress: htlc.dstAddress,
-            //             dstChain: htlc.dstChain,
-            //             dstAsset: htlc.dstAsset,
-            //             srcAsset: htlc.srcAsset,
-            //             sender: htlc.sender,
-            //             srcReceiver: htlc.srcReceiver,
-            //             hashlock: htlc.hashlock,
-            //             secret: htlc.secret,
-            //             amount: htlc.amount,
-            //             timelock: htlc.timelock,
-            //             tokenContract: htlc.tokenContract,
-            //             redeemed: htlc.redeemed,
-            //             refunded: true
-            //         }
-            //     );
             self.contracts.entry(Id).claimed.write(2);
             if reward.amount == 0 {
                 IERC20Dispatcher { contract_address: htlc.tokenContract }
