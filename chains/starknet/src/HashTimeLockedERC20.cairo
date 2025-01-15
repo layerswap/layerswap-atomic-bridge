@@ -64,7 +64,6 @@ pub trait IHashedTimelockERC20<TContractState> {
         s: felt252,
         y_parity: bool,
     ) -> u256;
-    fn getId(self: @TContractState, sender: ContractAddress) -> u256;
     fn getHTLCDetails(self: @TContractState, Id: u256) -> HashedTimelockERC20::HTLC;
     fn getRewardDetails(self: @TContractState, Id: u256) -> HashedTimelockERC20::Reward;
 }
@@ -595,18 +594,7 @@ mod HashedTimelockERC20 {
             self.emit(TokenLockAdded { Id: Id, hashlock: hashlock, timelock: timelock });
             Id
         }
-        /// @dev used to calculate the Id for a PreHTLC
-        fn getId(self: @ContractState, sender: ContractAddress) -> u256 {
-            // calculate a Id for this PreHTLC Using sender, contract_address and timestamp
-            let mut bytes: Bytes = BytesTrait::new(0, array![]);
-            bytes.append_address(sender);
-            bytes.append_address(get_contract_address());
-            bytes.append_u64(get_block_timestamp());
-            let Id = bytes.sha256();
-            //Check that the ID is unique
-            assert!(!self.hasHTLC(Id), "Commitment Already Exists");
-            Id
-        }
+
         /// @dev Returns the data of the HTLC with the given Id.
         /// will return the default values if HTLC with the given Id does not exist.
         fn getHTLCDetails(self: @ContractState, Id: u256) -> HTLC {
