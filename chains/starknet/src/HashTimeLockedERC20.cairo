@@ -264,7 +264,7 @@ mod HashedTimelockERC20 {
                 token.allowance(get_caller_address(), get_contract_address()) >= amount,
                 "Not Enough Allowence"
             );
-            token.transfer_from(get_caller_address(), get_contract_address(), amount); 
+            token.transfer_from(get_caller_address(), get_contract_address(), amount);
 
             //Write the PreHTLC data into the storage
             self
@@ -316,7 +316,7 @@ mod HashedTimelockERC20 {
             srcReceiver: ContractAddress,
             timelock: u64,
             tokenContract: ContractAddress,
-        ) -> u256 {    
+        ) -> u256 {
             //Check that the ID is unique
             assert!(!self.hasHTLC(Id), "Commitment Already Exists");
             assert!(self.validTimelock(timelock), "Invalid TimeLock");
@@ -410,7 +410,7 @@ mod HashedTimelockERC20 {
                 token.balance_of(get_caller_address()) >= amount + reward, "Insufficient Balance"
             );
             assert!(
-                token.allowance(get_caller_address(), get_contract_address()) >= amount,
+                token.allowance(get_caller_address(), get_contract_address()) >= amount + reward,
                 "Not Enough Allowence"
             );
             token.transfer_from(get_caller_address(), get_contract_address(), amount + reward);
