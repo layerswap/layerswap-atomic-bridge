@@ -432,7 +432,9 @@ mod HashedTimelockERC20 {
                     }
                 );
             //Write the Reward data into the storage
-            self.rewards.write(Id, Reward { amount: reward, timelock: rewardTimelock });
+            if reward != 0 {
+                self.rewards.write(Id, Reward { amount: reward, timelock: rewardTimelock });
+            }
             self
                 .emit(
                     TokenLocked {
