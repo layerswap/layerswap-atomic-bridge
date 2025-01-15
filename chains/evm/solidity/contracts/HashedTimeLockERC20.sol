@@ -37,7 +37,7 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
   constructor() {
     DOMAIN_SEPARATOR = hashDomain(
       EIP712Domain({
-        name: 'LayerswapV8ERC20',
+        name: 'LayerswapV8',
         version: '1',
         chainId: block.chainid,
         verifyingContract: address(this),
@@ -204,15 +204,14 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
     uint256 amount,
     address tokenContract
   ) external _validTimelock(timelock) nonReentrant returns (bytes32) {
+    // Ensure the generated ID does not already exist to prevent overwriting.
+    if (hasHTLC(Id)) revert HTLCAlreadyExists();
     if (amount == 0) revert FundsNotSent(); // Ensure funds are sent.
     IERC20 token = IERC20(tokenContract);
 
     if (token.balanceOf(msg.sender) < amount) revert InsufficientBalance();
     if (token.allowance(msg.sender, address(this)) < amount) revert NoAllowance();
     token.safeTransferFrom(msg.sender, address(this), amount);
-
-    // Ensure the generated ID does not already exist to prevent overwriting.
-    if (hasHTLC(Id)) revert HTLCAlreadyExists();
 
     // Store HTLC details.
     contracts[Id] = HTLC(
@@ -330,8 +329,8 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
     uint256 amount,
     address tokenContract
   ) external _validTimelock(timelock) nonReentrant returns (bytes32) {
-    if (amount == 0) revert FundsNotSent();
     if (hasHTLC(Id)) revert HTLCAlreadyExists();
+    if (amount == 0) revert FundsNotSent();
     if (rewardTimelock > timelock || rewardTimelock < block.timestamp) revert InvaliRewardTimelock();
     IERC20 token = IERC20(tokenContract);
 
@@ -349,7 +348,11 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
       payable(msg.sender),
       payable(srcReceiver)
     );
-    rewards[Id] = Reward(reward, rewardTimelock);
+
+    if (reward != 0) {
+      rewards[Id] = Reward(reward, rewardTimelock);
+    }
+
     emit TokenLocked(
       Id,
       hashlock,
@@ -431,14 +434,6 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
   /// @return Reward A struct with the reward amount and claimable timelock.
   function getRewardDetails(bytes32 Id) public view returns (Reward memory) {
     return rewards[Id];
-  }
-
-  /// @notice Generates a unique identifier for the sender to commit.
-  /// @dev Combines the sender's address, the current block timestamp, the contract's address, and the current chain ID to create a unique hash.
-  /// @param sender The address of the sender who is committing.
-  /// @return bytes32 The unique identifier generated for the sender.
-  function getId(address sender) public view returns (bytes32) {
-    return keccak256(abi.encodePacked(sender, block.timestamp, address(this), block.chainid));
   }
 
   /// @notice Generates a hash of the EIP-712 domain.

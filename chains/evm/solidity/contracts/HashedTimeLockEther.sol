@@ -190,10 +190,9 @@ contract LayerswapV8 is ReentrancyGuard {
     address srcReceiver,
     uint48 timelock
   ) external payable _validTimelock(timelock) nonReentrant returns (bytes32) {
-    if (msg.value == 0) revert FundsNotSent(); // Ensure funds are sent.
-
     // Ensure the generated ID does not already exist to prevent overwriting.
     if (hasHTLC(Id)) revert HTLCAlreadyExists();
+    if (msg.value == 0) revert FundsNotSent(); // Ensure funds are sent.
 
     // Store HTLC details.
     contracts[Id] = HTLC(
@@ -325,9 +324,9 @@ contract LayerswapV8 is ReentrancyGuard {
     string calldata dstAddress,
     string calldata dstAsset
   ) external payable _validTimelock(timelock) nonReentrant returns (bytes32) {
-    if (msg.value < reward) revert FundsNotSent();
-    if (rewardTimelock > timelock || rewardTimelock < block.timestamp) revert InvaliRewardTimelock();
     if (hasHTLC(Id)) revert HTLCAlreadyExists();
+    if (msg.value <= reward || msg.value == 0) revert FundsNotSent();
+    if (rewardTimelock > timelock || rewardTimelock < block.timestamp) revert InvaliRewardTimelock();
     contracts[Id] = HTLC(
       msg.value - reward,
       hashlock,
@@ -337,7 +336,11 @@ contract LayerswapV8 is ReentrancyGuard {
       timelock,
       uint8(1)
     );
-    rewards[Id] = Reward(reward, rewardTimelock);
+
+    if (reward != 0) {
+      rewards[Id] = Reward(reward, rewardTimelock);
+    }
+
     emit TokenLocked(
       Id,
       hashlock,
@@ -400,14 +403,6 @@ contract LayerswapV8 is ReentrancyGuard {
   /// @return Reward A struct with the reward amount and claimable timelock.
   function getRewardDetails(bytes32 Id) public view returns (Reward memory) {
     return rewards[Id];
-  }
-
-  /// @notice Generates a unique identifier for the sender to commit.
-  /// @dev Combines the sender's address, the current block timestamp, the contract's address, and the current chain ID to create a unique hash.
-  /// @param sender The address of the sender who is committing.
-  /// @return bytes32 The unique identifier generated for the sender.
-  function getId(address sender) public view returns (bytes32) {
-    return keccak256(abi.encodePacked(sender, block.timestamp, address(this), block.chainid));
   }
 
   /// @notice Generates a hash of the EIP-712 domain.
