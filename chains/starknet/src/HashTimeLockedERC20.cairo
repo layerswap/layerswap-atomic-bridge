@@ -10,6 +10,7 @@ use starknet::ContractAddress;
 pub trait IHashedTimelockERC20<TContractState> {
     fn commit_hop(
         ref self: TContractState,
+        Id: u256,
         hopChains: Span<felt252>,
         hopAssets: Span<felt252>,
         hopAddress: Span<felt252>,
@@ -25,6 +26,7 @@ pub trait IHashedTimelockERC20<TContractState> {
     ) -> u256;
     fn commit(
         ref self: TContractState,
+        Id: u256,
         amount: u256,
         sender_key: felt252,
         dstChain: felt252,
@@ -62,6 +64,7 @@ pub trait IHashedTimelockERC20<TContractState> {
         s: felt252,
         y_parity: bool,
     ) -> u256;
+    fn getId(self: @TContractState, sender: ContractAddress) -> u256;
     fn getHTLCDetails(self: @TContractState, Id: u256) -> HashedTimelockERC20::HTLC;
     fn getRewardDetails(self: @TContractState, Id: u256) -> HashedTimelockERC20::Reward;
 }
@@ -236,6 +239,7 @@ mod HashedTimelockERC20 {
         /// If there is no need in intermediate chains use commit function instead
         fn commit_hop(
             ref self: ContractState,
+            Id: u256,
             hopChains: Span<felt252>,
             hopAssets: Span<felt252>,
             hopAddress: Span<felt252>,
@@ -249,6 +253,8 @@ mod HashedTimelockERC20 {
             amount: u256,
             tokenContract: ContractAddress,
         ) -> u256 {
+            //Check that the ID is unique
+            assert!(!self.hasHTLC(Id), "Commitment Already Exists");
             assert!(self.validTimelock(timelock), "Invalid TimeLock");
             assert!(amount != 0, "Funds Can Not Be Zero");
 
@@ -259,20 +265,7 @@ mod HashedTimelockERC20 {
                 token.allowance(get_caller_address(), get_contract_address()) >= amount,
                 "Not Enough Allowence"
             );
-
-            token.transfer_from(get_caller_address(), get_contract_address(), amount);
-
-            // calculate a Id for this PreHTLC Using sender, contract_address, couter and timestamp
-            let curId = self.commitCounter.read() + 1;
-            self.commitCounter.write(curId);
-            let mut bytes: Bytes = BytesTrait::new(0, array![]);
-            bytes.append_address(get_caller_address());
-            bytes.append_address(get_contract_address());
-            bytes.append_u256(curId);
-            bytes.append_u64(get_block_timestamp());
-            let Id = bytes.sha256();
-            //Check that the ID is unique
-            assert!(!self.hasHTLC(Id), "Commitment Already Exists");
+            token.transfer_from(get_caller_address(), get_contract_address(), amount); 
 
             //Write the PreHTLC data into the storage
             self
@@ -314,6 +307,7 @@ mod HashedTimelockERC20 {
 
         fn commit(
             ref self: ContractState,
+            Id: u256,
             amount: u256,
             sender_key: felt252,
             dstChain: felt252,
@@ -323,7 +317,9 @@ mod HashedTimelockERC20 {
             srcReceiver: ContractAddress,
             timelock: u64,
             tokenContract: ContractAddress,
-        ) -> u256 {
+        ) -> u256 {    
+            //Check that the ID is unique
+            assert!(!self.hasHTLC(Id), "Commitment Already Exists");
             assert!(self.validTimelock(timelock), "Invalid TimeLock");
             assert!(amount != 0, "Funds Can Not Be Zero");
 
@@ -334,19 +330,7 @@ mod HashedTimelockERC20 {
                 token.allowance(get_caller_address(), get_contract_address()) >= amount,
                 "Not Enough Allowence"
             );
-
             token.transfer_from(get_caller_address(), get_contract_address(), amount);
-
-            let curId = self.commitCounter.read() + 1;
-            self.commitCounter.write(curId);
-            let mut bytes: Bytes = BytesTrait::new(0, array![]);
-            bytes.append_address(get_caller_address());
-            bytes.append_address(get_contract_address());
-            bytes.append_u256(curId);
-            bytes.append_u64(get_block_timestamp());
-            let Id = bytes.sha256();
-            //Check that the ID is unique
-            assert!(!self.hasHTLC(Id), "Commitment Already Exists");
 
             //Write the PreHTLC data into the storage
             self
@@ -611,11 +595,25 @@ mod HashedTimelockERC20 {
             self.emit(TokenLockAdded { Id: Id, hashlock: hashlock, timelock: timelock });
             Id
         }
+        /// @dev used to calculate the Id for a PreHTLC
+        fn getId(self: @ContractState, sender: ContractAddress) -> u256 {
+            // calculate a Id for this PreHTLC Using sender, contract_address and timestamp
+            let mut bytes: Bytes = BytesTrait::new(0, array![]);
+            bytes.append_address(sender);
+            bytes.append_address(get_contract_address());
+            bytes.append_u64(get_block_timestamp());
+            let Id = bytes.sha256();
+            //Check that the ID is unique
+            assert!(!self.hasHTLC(Id), "Commitment Already Exists");
+            Id
+        }
         /// @dev Returns the data of the HTLC with the given Id.
         /// will return the default values if HTLC with the given Id does not exist.
         fn getHTLCDetails(self: @ContractState, Id: u256) -> HTLC {
             self.contracts.read(Id)
         }
+        /// @dev Returns the data of the Reward with the given Id.
+        /// will return the default values if Reward with the given Id does not exist.
         fn getRewardDetails(self: @ContractState, Id: u256) -> Reward {
             self.rewards.read(Id)
         }
