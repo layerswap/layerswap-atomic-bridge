@@ -280,9 +280,9 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
   /// @return bytes32 The updated HTLC identifier.
   function addLockSig(
     addLockMsg calldata message,
-    uint8 v,
     bytes32 r,
-    bytes32 s
+    bytes32 s,
+    uint8 v
   ) external _exists(message.Id) _validTimelock(message.timelock) nonReentrant returns (bytes32) {
     if (verifyMessage(message, r, s, v)) {
       HTLC storage htlc = contracts[message.Id];
@@ -386,7 +386,9 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
     htlc.secret = secret;
     Reward storage reward = rewards[Id];
 
-    if (reward.timelock > block.timestamp) {
+    if (reward.amount == 0) {
+      IERC20(htlc.tokenContract).safeTransfer(htlc.srcReceiver, htlc.amount);
+    } else if (reward.timelock > block.timestamp) {
       IERC20(htlc.tokenContract).safeTransfer(htlc.srcReceiver, htlc.amount);
       IERC20(htlc.tokenContract).safeTransfer(htlc.sender, reward.amount);
     } else {

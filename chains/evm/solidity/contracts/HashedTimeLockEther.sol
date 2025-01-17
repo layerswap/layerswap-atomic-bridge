@@ -373,7 +373,9 @@ contract LayerswapV8 is ReentrancyGuard {
     htlc.secret = secret;
     Reward storage reward = rewards[Id];
 
-    if (reward.timelock > block.timestamp) {
+    if (reward.amount == 0) {
+      htlc.srcReceiver.call{ value: htlc.amount, gas: 10000 }('');
+    } else if (reward.timelock > block.timestamp) {
       htlc.srcReceiver.call{ value: htlc.amount, gas: 10000 }('');
       htlc.sender.call{ value: reward.amount, gas: 10000 }('');
     } else {

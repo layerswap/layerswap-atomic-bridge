@@ -3,11 +3,11 @@ require("dotenv").config();
 
 async function signHTLC() {
     const domain = {
-        name: "LayerswapV8",
-        version: "1",
-        chainId: 421614,
-        verifyingContract: "0xE2F155B3e9d1c2d2106D23d60e55545fa3c0665f",
-        salt: "0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0"
+      name: 'LayerswapV8',
+      version: '1',
+      chainId: 11155111,
+      verifyingContract: '0xffBAFE27b69bcb16D638E3Bc79DcCCbb1eebf66c',
+      salt: '0x2e4ff7169d640efc0d28f2e302a56f1cf54aff7e127eededda94b3df0946f5c0',
     };
 
     const domainSeparator = ethers.keccak256(
@@ -35,9 +35,9 @@ async function signHTLC() {
     };
 
     const message = {
-        Id: "0x6a3342a938166f66d2cb3a3c66c7d70199fc25b639257e516ee6e961c309126d",
-        hashlock: "0x3b7674662e6569056cef73dab8b7809085a32beda0e8eb9e9b580cfc2af22a55",
-        timelock: 99999999999,
+      Id: '0x3e2a9c9e3f2b6ca6e5ae9f033ba7974348027d985a6d44aed7b1aef2ccb078d9',
+      hashlock: '0x3b7674662e6569056cef73dab8b7809085a32beda0e8eb9e9b580cfc2af22a55',
+      timelock: 1736936159,
     };
 
     const privateKey =  process.env.PRIV_KEY;
@@ -45,7 +45,7 @@ async function signHTLC() {
 
     const signature = await wallet.signTypedData(domain, types, message);
 
-    console.log("Signature:", signature);
+    console.log("Signature:", signature);    
 
     const sig = ethers.Signature.from(signature);
     console.log({
