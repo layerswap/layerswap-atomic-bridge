@@ -95,15 +95,22 @@ mod HashedTimelockERC20 {
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use alexandria_bytes::{Bytes, BytesTrait};
 
+    /// @dev Used for hashing messages and verifying signatures.
+
+    /// @dev STARKNET domain type hash.
     const STARKNET_DOMAIN_TYPE_HASH: felt252 =
         selector!("StarkNetDomain(name:felt,chainId:felt,version:felt)");
+    /// @dev message type hash
     const MESSAGE_TYPE_HASH: felt252 =
         selector!("Message(Id:u256,hashlock:u256,timelock:u64)u256(low:felt,high:felt)");
+    /// @dev U256 type hash, as u256 is not a native type in Cairo.
     const U256_TYPE_HASH: felt252 = selector!("u256(low:felt,high:felt)");
+
     #[storage]
     struct Storage {
-        commitCounter: u256,
+        /// @dev map from ID to HTLC
         contracts: Map::<u256, HTLC>,
+        /// @dev map from ID to Reward
         rewards: Map::<u256, Reward>,
     }
 
@@ -130,8 +137,8 @@ mod HashedTimelockERC20 {
         srcReceiver: ContractAddress,
     }
 
-    /// @dev Represents the reward details including the amount and the timelock for claiming the
-    /// reward.
+    /// @dev Represents the reward details including the amount
+    /// and the timelock for claiming the reward.
     #[derive(Drop, Serde, starknet::Store)]
     pub struct Reward {
         /// @dev The amount of the reward in ERC20 token to be claimed.
@@ -141,10 +148,14 @@ mod HashedTimelockERC20 {
         timelock: u64,
     }
 
+    /// @dev Represents the data required to add a lock, used in the `addLockSig` function.
     #[derive(Drop, Copy, Hash)]
     struct Message {
+        /// @dev The Id of the HTLC.
         Id: u256,
+        /// @dev The hashlock to be added to the HTLC.
         hashlock: u256,
+        /// @notice The new timelock to be set for the HTLC.
         timelock: u64,
     }
 
@@ -223,10 +234,6 @@ mod HashedTimelockERC20 {
         Id: u256
     }
 
-    #[constructor]
-    fn constructor(ref self: ContractState) {
-        self.commitCounter.write(0);
-    }
     #[abi(embed_v0)]
     impl HashedTimelockERC20 of super::IHashedTimelockERC20<ContractState> {
         /// @dev Sender / Payer sets up a new pre-hash timelock contract depositing the
@@ -431,7 +438,7 @@ mod HashedTimelockERC20 {
                         srcReceiver: srcReceiver
                     }
                 );
-            //Write the Reward data into the storage
+            // Write the Reward data into the storage, if the reward is not zero
             if reward != 0 {
                 self.rewards.write(Id, Reward { amount: reward, timelock: rewardTimelock });
             }
@@ -480,21 +487,30 @@ mod HashedTimelockERC20 {
             self.contracts.entry(Id).secret.write(secret);
             self.contracts.entry(Id).claimed.write(3);
 
-            if reward.timelock > get_block_timestamp() {
-                IERC20Dispatcher { contract_address: htlc.tokenContract }
-                    .transfer(htlc.srcReceiver, htlc.amount);
-                IERC20Dispatcher { contract_address: htlc.tokenContract }
-                    .transfer(htlc.sender, reward.amount);
-            } else {
-                if get_caller_address() == htlc.srcReceiver {
-                    IERC20Dispatcher { contract_address: htlc.tokenContract }
-                        .transfer(htlc.srcReceiver, htlc.amount + reward.amount);
-                } else {
+            if reward.amount != 0 {
+                // if redeem is called before the reward.timelock sender should get the reward back
+                if reward.timelock > get_block_timestamp() {
                     IERC20Dispatcher { contract_address: htlc.tokenContract }
                         .transfer(htlc.srcReceiver, htlc.amount);
                     IERC20Dispatcher { contract_address: htlc.tokenContract }
-                        .transfer(get_caller_address(), reward.amount);
+                        .transfer(htlc.sender, reward.amount);
+                } else {
+                    // if the caller is the receiver then they should get and the amount, and the
+                    // reward
+                    if get_caller_address() == htlc.srcReceiver {
+                        IERC20Dispatcher { contract_address: htlc.tokenContract }
+                            .transfer(htlc.srcReceiver, htlc.amount + reward.amount);
+                    } else {
+                        IERC20Dispatcher { contract_address: htlc.tokenContract }
+                            .transfer(htlc.srcReceiver, htlc.amount);
+                        IERC20Dispatcher { contract_address: htlc.tokenContract }
+                            .transfer(get_caller_address(), reward.amount);
+                    }
                 }
+            } else {
+                // send the tokens to the receiver if the reward is set to zero
+                IERC20Dispatcher { contract_address: htlc.tokenContract }
+                    .transfer(htlc.srcReceiver, htlc.amount);
             }
 
             self
@@ -518,9 +534,11 @@ mod HashedTimelockERC20 {
             assert!(self.hasHTLC(Id), "HTLC Does Not Exist");
             let htlc: HTLC = self.contracts.read(Id);
             let reward: Reward = self.rewards.read(Id);
+            //check that the timelock is passed and the tokens are not claimed
             assert!(htlc.claimed == 1, "Already Claimed");
             assert!(htlc.timelock <= get_block_timestamp().into(), "Not Passed Timelock");
 
+            // set claimed to 2 and send the tokens back to the sender
             self.contracts.entry(Id).claimed.write(2);
             if reward.amount == 0 {
                 IERC20Dispatcher { contract_address: htlc.tokenContract }
