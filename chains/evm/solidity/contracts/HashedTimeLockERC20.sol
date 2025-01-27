@@ -37,7 +37,7 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
   constructor() {
     DOMAIN_SEPARATOR = hashDomain(
       EIP712Domain({
-        name: 'LayerswapV8ERC20',
+        name: 'LayerswapV8',
         version: '1',
         chainId: block.chainid,
         verifyingContract: address(this),
@@ -184,11 +184,12 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
   /// @param dstAsset The asset on the destination chain.
   /// @param dstAddress The recipient address on the destination chain.
   /// @param srcAsset The asset being locked.
+  /// @param Id The unique identifier of the created HTLC.
   /// @param srcReceiver The recipient of the funds if conditions are met.
   /// @param timelock The timestamp after which the funds can be refunded.
   /// @param amount The amount of ERC20 tokens to lock in the HTLC.
   /// @param tokenContract The address of the ERC20 token contract.
-  /// @return Id The unique identifier of the created HTLC.
+  /// @return bytes32 The unique identifier of the created HTLC.
   function commit(
     string[] calldata hopChains,
     string[] calldata hopAssets,
@@ -197,23 +198,20 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
     string calldata dstAsset,
     string calldata dstAddress,
     string calldata srcAsset,
+    bytes32 Id,
     address srcReceiver,
     uint48 timelock,
     uint256 amount,
     address tokenContract
-  ) external _validTimelock(timelock) nonReentrant returns (bytes32 Id) {
+  ) external _validTimelock(timelock) nonReentrant returns (bytes32) {
+    // Ensure the generated ID does not already exist to prevent overwriting.
+    if (hasHTLC(Id)) revert HTLCAlreadyExists();
     if (amount == 0) revert FundsNotSent(); // Ensure funds are sent.
     IERC20 token = IERC20(tokenContract);
 
     if (token.balanceOf(msg.sender) < amount) revert InsufficientBalance();
     if (token.allowance(msg.sender, address(this)) < amount) revert NoAllowance();
     token.safeTransferFrom(msg.sender, address(this), amount);
-
-    // Generate a unique HTLC ID based on user, time, contract, and chain context.
-    Id = keccak256(abi.encodePacked(msg.sender, block.timestamp, address(this), block.chainid));
-
-    // Ensure the generated ID does not already exist to prevent overwriting.
-    if (hasHTLC(Id)) revert HTLCAlreadyExists();
 
     // Store HTLC details.
     contracts[Id] = HTLC(
@@ -243,6 +241,7 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
       timelock,
       tokenContract
     );
+    return Id;
   }
 
   /// @notice Adds a hashlock and updates the timelock for an existing HTLC.
@@ -281,9 +280,9 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
   /// @return bytes32 The updated HTLC identifier.
   function addLockSig(
     addLockMsg calldata message,
-    uint8 v,
     bytes32 r,
-    bytes32 s
+    bytes32 s,
+    uint8 v
   ) external _exists(message.Id) _validTimelock(message.timelock) nonReentrant returns (bytes32) {
     if (verifyMessage(message, r, s, v)) {
       HTLC storage htlc = contracts[message.Id];
@@ -330,8 +329,8 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
     uint256 amount,
     address tokenContract
   ) external _validTimelock(timelock) nonReentrant returns (bytes32) {
-    if (amount == 0) revert FundsNotSent();
     if (hasHTLC(Id)) revert HTLCAlreadyExists();
+    if (amount == 0) revert FundsNotSent();
     if (rewardTimelock > timelock || rewardTimelock < block.timestamp) revert InvaliRewardTimelock();
     IERC20 token = IERC20(tokenContract);
 
@@ -349,7 +348,11 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
       payable(msg.sender),
       payable(srcReceiver)
     );
-    rewards[Id] = Reward(reward, rewardTimelock);
+
+    if (reward != 0) {
+      rewards[Id] = Reward(reward, rewardTimelock);
+    }
+
     emit TokenLocked(
       Id,
       hashlock,
@@ -383,7 +386,9 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
     htlc.secret = secret;
     Reward storage reward = rewards[Id];
 
-    if (reward.timelock > block.timestamp) {
+    if (reward.amount == 0) {
+      IERC20(htlc.tokenContract).safeTransfer(htlc.srcReceiver, htlc.amount);
+    } else if (reward.timelock > block.timestamp) {
       IERC20(htlc.tokenContract).safeTransfer(htlc.srcReceiver, htlc.amount);
       IERC20(htlc.tokenContract).safeTransfer(htlc.sender, reward.amount);
     } else {
@@ -408,7 +413,11 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
     if (htlc.timelock > block.timestamp) revert NotPassedTimelock(); // Ensure timelock has passed.
 
     htlc.claimed = 2;
-    IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
+    if (rewards[Id].amount != 0) {
+      IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount + rewards[Id].amount);
+    } else {
+      IERC20(htlc.tokenContract).safeTransfer(htlc.sender, htlc.amount);
+    }
     emit TokenRefunded(Id);
     return true;
   }
@@ -417,7 +426,7 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
   /// @dev Returns the HTLC structure associated with the given identifier.
   /// @param Id The unique identifier of the HTLC.
   /// @return HTLC The details of the specified HTLC.
-  function getDetails(bytes32 Id) public view returns (HTLC memory) {
+  function getHTLCDetails(bytes32 Id) public view returns (HTLC memory) {
     return contracts[Id];
   }
 
@@ -425,7 +434,7 @@ contract LayerswapV8ERC20 is ReentrancyGuard {
   /// @dev Returns the reward amount (in ERC20 token) and the timelock after which it can be claimed.
   /// @param Id The unique identifier of the HTLC.
   /// @return Reward A struct with the reward amount and claimable timelock.
-  function getReward(bytes32 Id) public view returns (Reward memory) {
+  function getRewardDetails(bytes32 Id) public view returns (Reward memory) {
     return rewards[Id];
   }
 
